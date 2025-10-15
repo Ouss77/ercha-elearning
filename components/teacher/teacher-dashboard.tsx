@@ -4,12 +4,10 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { LogoutButton } from "@/components/auth/logout-button"
 import { MyCourses } from "./my-courses"
 import { StudentProgress } from "./student-progress"
 import { CourseAnalytics } from "./course-analytics"
-import { BookOpen, Users, GraduationCap, BarChart3, Clock, Award } from "lucide-react"
+import { BookOpen, Users, BarChart3, Clock, Award } from "lucide-react"
 import type { User } from "@/lib/auth"
 
 interface TeacherDashboardProps {
@@ -59,29 +57,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Espace Professeur</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                Professeur
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {user.firstName} {user.lastName}
-              </span>
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -91,12 +67,6 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Bonjour {user.firstName} !</h2>
-              <p className="text-muted-foreground">Suivez la progression de vos étudiants et gérez vos cours.</p>
-            </div>
-
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card className="border-border bg-card">
@@ -314,7 +284,6 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
             <CourseAnalytics />
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
--- Seed initial data for the e-learning platform
+-- Seed initial data for the e-learning platform (aligned with current schema)
 
 -- Insert default domains
 INSERT INTO domains (name, description, color) VALUES
@@ -8,19 +8,18 @@ INSERT INTO domains (name, description, color) VALUES
 ('Gestion', 'Management, leadership, gestion de projet', '#f59e0b')
 ON CONFLICT DO NOTHING;
 
--- Updated to use simplified schema with 'name' and 'password' fields
 -- Insert default admin user (password: admin123)
 INSERT INTO users (email, password, name, role, is_active) VALUES
-('admin@elearning.com', 'admin123', 'Admin System', 'admin', true)
+('admin@elearning.com', 'admin123', 'Admin System', 'ADMIN', true)
 ON CONFLICT (email) DO NOTHING;
 
--- Insert sample teacher
+-- Insert sample trainer (enum: TRAINER)
 INSERT INTO users (email, password, name, role, is_active) VALUES
-('prof.martin@elearning.com', 'teacher123', 'Jean Martin', 'teacher', true)
+('prof.martin@elearning.com', 'teacher123', 'Jean Martin', 'TRAINER', true)
 ON CONFLICT (email) DO NOTHING;
 
--- Insert sample students
+-- Insert sample students (enum: STUDENT)
 INSERT INTO users (email, password, name, role, is_active) VALUES
-('marie.dupont@student.com', 'student123', 'Marie Dupont', 'student', true),
-('pierre.bernard@student.com', 'student123', 'Pierre Bernard', 'student', true)
+('marie.dupont@student.com', 'student123', 'Marie Dupont', 'STUDENT', true),
+('pierre.bernard@student.com', 'student123', 'Pierre Bernard', 'STUDENT', true)
 ON CONFLICT (email) DO NOTHING;

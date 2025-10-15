@@ -4,9 +4,8 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { LogoutButton } from "@/components/auth/logout-button"
 import { CourseCard } from "./course-card"
-import { BookOpen, GraduationCap, Trophy, Clock, TrendingUp, Play } from "lucide-react"
+import { BookOpen, Trophy, Clock, TrendingUp, Play } from "lucide-react"
 import type { User } from "@/lib/auth"
 
 interface StudentDashboardProps {
@@ -116,37 +115,9 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   const completedCourses = enrolledCourses.filter((course) => course.isCompleted)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Mon Espace Étudiant</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                Étudiant
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {user.firstName} {user.lastName}
-              </span>
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Bonjour {user.firstName} !</h2>
-          <p className="text-muted-foreground">Continuez votre parcours d'apprentissage et atteignez vos objectifs.</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Cours Inscrits</CardTitle>
@@ -190,9 +161,9 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <p className="text-xs text-muted-foreground">cette semaine</p>
             </CardContent>
           </Card>
-        </div>
+      </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Continue Learning */}
@@ -290,7 +261,6 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 </div>
               </CardContent>
             </Card>
-          </div>
         </div>
       </div>
     </div>
