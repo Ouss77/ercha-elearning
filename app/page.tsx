@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth"
 import { LogoutButton } from "@/components/auth/logout-button"
 import Link from "next/link"
 
+//TODO : Rename Route Groups to French
+
 // Helper function to get dashboard URL based on role
 function getDashboardUrl(role: string): string {
   const normalizedRole = role.toUpperCase()
@@ -13,14 +15,14 @@ function getDashboardUrl(role: string): string {
     case "ADMIN":
       return "/admin"
     case "SUB_ADMIN":
-      return "/sub-admin"
+      return "/sous-admin"
     case "TRAINER":
     case "TEACHER":
-      return "/teacher"
+      return "/formateur"
     case "STUDENT":
-      return "/student"
+      return "/etudiant"
     default:
-      return "/student"
+      return "/etudiant"
   }
 }
 
@@ -51,10 +53,10 @@ export default async function HomePage() {
               ) : (
                 <>
                   <Button variant="ghost" asChild>
-                    <Link href="/login">Connexion</Link>
+                    <Link href="/connexion">Connexion</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/register">Commencer</Link>
+                    <Link href="/inscription">Commencer</Link>
                   </Button>
                 </>
               )}
@@ -81,10 +83,10 @@ export default async function HomePage() {
             ) : (
               <>
                 <Button size="lg" className="px-8" asChild>
-                  <Link href="/register">Commencer</Link>
+                  <Link href="/inscription">Commencer</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="px-8 bg-transparent" asChild>
-                  <Link href="/login">Se connecter</Link>
+                  <Link href="/connexion">Se connecter</Link>
                 </Button>
               </>
             )}
@@ -156,7 +158,7 @@ export default async function HomePage() {
                 </Button>
               ) : (
                 <Button size="lg" className="px-8" asChild>
-                  <Link href="/register">Demander l'accès</Link>
+                  <Link href="/inscription">Demander l'accès</Link>
                 </Button>
               )}
             </CardContent>

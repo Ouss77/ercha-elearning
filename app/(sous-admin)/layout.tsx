@@ -12,7 +12,7 @@ export default async function SubAdminLayout({
   const user = await requireAuth(["SUB_ADMIN"])
 
   if (!user) {
-    redirect("/login")
+    redirect("/connexion")
   }
 
   return (

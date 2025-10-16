@@ -17,12 +17,12 @@ export default async function CourseAnalyticsPage({ params }: PageProps) {
   const token = cookieStore.get("auth-token")?.value
 
   if (!token) {
-    redirect("/login")
+    redirect("/connexion")
   }
 
   const user = getSession(token)
   if (!user || user.role !== "admin") {
-    redirect("/unauthorized")
+    redirect("/non-autorise")
   }
 
   return (

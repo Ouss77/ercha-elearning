@@ -146,7 +146,7 @@ export function CourseViewer({ courseId, user }: CourseViewerProps) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/student">
+              <Link href="/etudiant">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Link>

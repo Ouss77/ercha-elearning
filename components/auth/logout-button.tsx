@@ -12,7 +12,7 @@ export function LogoutButton() {
     setIsLoading(true)
     try {
       await signOut({ 
-        callbackUrl: "/login",
+        callbackUrl: "/connexion",
         redirect: true 
       })
     } catch (error) {
