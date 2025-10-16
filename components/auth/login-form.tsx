@@ -126,7 +126,7 @@ export function LoginForm() {
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" disabled={isLoading}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -140,14 +140,14 @@ export function LoginForm() {
       <div className="text-sm text-muted-foreground text-center">
         <p>
           Pas encore de compte ?{" "}
-          <a href="/inscription" className="text-primary hover:underline">
+          <a href="/inscription" className="text-primary font-medium hover:underline">
             S'inscrire
           </a>
         </p>
         {process.env.NODE_ENV === "development" && (
-          <div className="mt-4 p-3 border border-yellow-300 rounded text-sm text-yellow-800">
-            <p className="font-semibold">Mode développement</p>
-            <div className="text-sm text-muted-foreground">
+          <div className="mt-4 p-4 border border-primary/20 bg-primary/5 rounded-lg text-sm">
+            <p className="font-semibold text-foreground mb-2">Mode développement</p>
+            <div className="text-sm text-muted-foreground space-y-1">
               <p>
                 <strong>Connexion simplifiée :</strong>
               </p>
