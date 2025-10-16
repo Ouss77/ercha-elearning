@@ -8,7 +8,7 @@ import { UsersManagement } from "./users-management"
 import { CoursesManagement } from "./courses-management"
 import { DomainsManagement } from "./domains-management"
 import { Users, BookOpen, BarChart3, UserPlus, BookPlus, TrendingUp, Activity } from "lucide-react"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface AdminDashboardProps {
   user: User

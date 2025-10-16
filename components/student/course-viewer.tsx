@@ -10,7 +10,7 @@ import { ChapterContent } from "./chapter-content"
 import { QuizComponent } from "./quiz-component"
 import { ArrowLeft, CheckCircle, Lock, FileText, Video, ImageIcon, LinkIcon } from "lucide-react"
 import Link from "next/link"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface CourseViewerProps {
   courseId: number

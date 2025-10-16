@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth/auth"
 import { CourseCreator } from "@/components/course/course-creator"
 
 export default async function CreateCoursePage() {

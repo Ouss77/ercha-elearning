@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
-import { updateUserStatus, deleteUser } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth/auth"
+import { updateUserStatus, deleteUser } from "@/lib/db/db"
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {

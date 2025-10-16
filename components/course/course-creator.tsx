@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { ChapterManager } from "./chapter-manager"
 import { ArrowLeft, Save, Eye } from "lucide-react"
 import Link from "next/link"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface CourseCreatorProps {
   user: User

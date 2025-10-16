@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth/auth"
 import { CourseEditor } from "@/components/course/course-editor"
 
 interface EditCoursePageProps {

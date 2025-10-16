@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth/auth"
 import { CourseViewer } from "@/components/student/course-viewer"
 
 interface CoursePageProps {

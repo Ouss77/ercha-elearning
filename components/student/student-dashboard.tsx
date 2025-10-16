@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { CourseCard } from "./course-card"
 import { BookOpen, Trophy, Clock, TrendingUp, Play } from "lucide-react"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface StudentDashboardProps {
   user: User

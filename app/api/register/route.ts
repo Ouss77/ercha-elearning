@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { hash } from "bcryptjs"
 import { registerSchema } from "@/lib/schemas/auth"
-import { db } from "@/lib/db"
+import { db } from "@/lib/db/db"
 import { users } from "@/drizzle/schema"
 import { eq } from "drizzle-orm"
 
