@@ -6,18 +6,18 @@ export default withAuth(
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
-    // Role-based route protection
-    if (path.startsWith("/admin") && token?.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url))
-    }
-    if (path.startsWith("/sub-admin") && token?.role !== "SUB_ADMIN") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url))
-    }
-    if (path.startsWith("/teacher") && token?.role !== "TRAINER") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url))
-    }
-    if (path.startsWith("/student") && token?.role !== "STUDENT") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url))
+    // Role-based route protection (DRY)
+    const roleByPrefix = {
+      "/admin": "ADMIN",
+      "/sub-admin": "SUB_ADMIN",
+      "/teacher": "TRAINER",
+      "/student": "STUDENT",
+    } as const
+
+    for (const [prefix, requiredRole] of Object.entries(roleByPrefix)) {
+      if (path.startsWith(prefix) && token?.role !== requiredRole) {
+        return NextResponse.redirect(new URL("/unauthorized", req.url))
+      }
     }
 
     return NextResponse.next()

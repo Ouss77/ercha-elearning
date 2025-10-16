@@ -1,9 +1,10 @@
 import "next-auth"
 import "next-auth/jwt"
+import type { Role } from "@/lib/schemas/user"
 
 declare module "next-auth" {
   interface User {
-    role: string
+    role: Role
   }
 
   interface Session {
@@ -11,7 +12,7 @@ declare module "next-auth" {
       id: string
       email: string
       name: string
-      role: string
+      role: Role
       image?: string
     }
   }
@@ -19,22 +20,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: string
+    role: Role
     id: string
   }
-}
-
-// Updated User interface to match NextAuth session structure
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: "ADMIN" | "SUB_ADMIN" | "TRAINER" | "STUDENT" | "admin" | "student" | "teacher"
-  image?: string
-}
-
-export interface AuthResult {
-  success: boolean
-  user?: User
-  error?: string
 }

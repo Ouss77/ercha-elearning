@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "NEXTAUTH_SECRET": "@nextauth-secret",
+    "NEXTAUTH_URL": "@nextauth-url"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database-url",
+      "NEXTAUTH_SECRET": "@nextauth-secret",
+      "NEXTAUTH_URL": "@nextauth-url"
+    }
+  }
+}

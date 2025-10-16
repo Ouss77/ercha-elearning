@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { createUser, getAllUsers } from "@/lib/db"
+import { roleSchema } from "@/lib/schemas/user"
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,11 +39,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    if (!["admin", "teacher", "student"].includes(role)) {
+    const parsedRole = roleSchema.safeParse(role)
+    if (!parsedRole.success) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
-    const result = await createUser({ email, password, name, role })
+    const result = await createUser({ email, password, name, role: parsedRole.data })
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 })

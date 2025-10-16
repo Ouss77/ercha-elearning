@@ -189,12 +189,16 @@ See `drizzle/README-AUTH-TESTS.md` for details.
 
 ## Deployment
 
-### Vercel (Recommended)
+This project is configured with CI/CD for automated deployments to Vercel.
+
+### Quick Deploy to Vercel (Recommended)
 
 1. Push your code to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
+2. Import project in Vercel dashboard
+3. Add environment variables (see below)
+4. Deploy automatically on every push to `main`
+
+**📖 For detailed setup instructions, see [CI-CD-SETUP.md](./CI-CD-SETUP.md)**
 
 ### Environment Variables for Production
 
@@ -204,6 +208,15 @@ NEXTAUTH_URL=https://your-domain.com
 NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
 NODE_ENV=production
 ```
+
+### CI/CD Features
+
+✅ **Automatic deployments** on push to `main`  
+✅ **Preview deployments** for all pull requests  
+✅ **Automated testing** via GitHub Actions  
+✅ **Build verification** before deployment  
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment documentation.
 
 ## Contributing
 
