@@ -16,11 +16,11 @@ export default async function UnauthorizedPage() {
       case "ADMIN":
         return "/admin"
       case "SUB_ADMIN":
-        return "/sub-admin"
+        return "/sous-admin"
       case "TRAINER":
-        return "/teacher"
+        return "/formateur"
       case "STUDENT":
-        return "/student"
+        return "/etudiant"
       default:
         return "/"
     }
@@ -43,7 +43,7 @@ export default async function UnauthorizedPage() {
             </Button>
           ) : (
             <Button asChild>
-              <Link href="/login">Se connecter</Link>
+              <Link href="/connexion">Se connecter</Link>
             </Button>
           )}
           <Button asChild variant="outline">

@@ -54,13 +54,13 @@ export function LoginForm() {
               router.push("/admin");
               break;
             case "SUB_ADMIN":
-              router.push("/sub-admin");
+              router.push("/sous-admin");
               break;
             case "TRAINER":
-              router.push("/teacher");
+              router.push("/formateur");
               break;
             case "STUDENT":
-              router.push("/student");
+              router.push("/etudiant");
               break;
             default:
               router.push("/");
@@ -140,7 +140,7 @@ export function LoginForm() {
       <div className="text-sm text-muted-foreground text-center">
         <p>
           Pas encore de compte ?{" "}
-          <a href="/register" className="text-primary hover:underline">
+          <a href="/inscription" className="text-primary hover:underline">
             S'inscrire
           </a>
         </p>

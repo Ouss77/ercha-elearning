@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { getSession } from "@/lib/auth"
+import { getSession } from "@/lib/auth/auth"
 import { ProgressAnalytics } from "@/components/progress/progress-analytics"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -17,12 +17,12 @@ export default async function CourseAnalyticsPage({ params }: PageProps) {
   const token = cookieStore.get("auth-token")?.value
 
   if (!token) {
-    redirect("/login")
+    redirect("/connexion")
   }
 
   const user = getSession(token)
   if (!user || user.role !== "admin") {
-    redirect("/unauthorized")
+    redirect("/non-autorise")
   }
 
   return (

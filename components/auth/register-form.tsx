@@ -72,7 +72,7 @@ export function RegisterForm() {
         setError(data.error || "Erreur lors de l'inscription")
       } else {
         // Redirect to login on success
-        router.push("/login?registered=true")
+        router.push("/connexion?registered=true")
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -198,7 +198,7 @@ export function RegisterForm() {
 
       <div className="text-sm text-muted-foreground text-center">
         <p>Vous avez déjà un compte ?{" "}
-          <a href="/login" className="text-primary hover:underline">
+          <a href="/connexion" className="text-primary hover:underline">
             Se connecter
           </a>
         </p>

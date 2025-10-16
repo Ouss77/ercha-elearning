@@ -10,7 +10,7 @@ import { ChapterContent } from "./chapter-content"
 import { QuizComponent } from "./quiz-component"
 import { ArrowLeft, CheckCircle, Lock, FileText, Video, ImageIcon, LinkIcon } from "lucide-react"
 import Link from "next/link"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface CourseViewerProps {
   courseId: number
@@ -146,7 +146,7 @@ export function CourseViewer({ courseId, user }: CourseViewerProps) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/student">
+              <Link href="/etudiant">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Link>

@@ -9,14 +9,14 @@ export default withAuth(
     // Role-based route protection (DRY)
     const roleByPrefix = {
       "/admin": "ADMIN",
-      "/sub-admin": "SUB_ADMIN",
-      "/teacher": "TRAINER",
-      "/student": "STUDENT",
+      "/sous-admin": "SUB_ADMIN",
+      "/formateur": "TRAINER",
+      "/etudiant": "STUDENT",
     } as const
 
     for (const [prefix, requiredRole] of Object.entries(roleByPrefix)) {
       if (path.startsWith(prefix) && token?.role !== requiredRole) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url))
+        return NextResponse.redirect(new URL("/non-autorise", req.url))
       }
     }
 
@@ -30,5 +30,5 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: ["/admin/:path*", "/sub-admin/:path*", "/teacher/:path*", "/student/:path*"]
+  matcher: ["/admin/:path*", "/sous-admin/:path*", "/formateur/:path*", "/etudiant/:path*"]
 }

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, Eye, Trash2 } from "lucide-react"
 import Link from "next/link"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface CourseEditorProps {
   courseId: number

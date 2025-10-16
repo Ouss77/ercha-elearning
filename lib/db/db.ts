@@ -1,15 +1,15 @@
 // Re-export Drizzle-based functions for backward compatibility
-export { db, handleDbError } from "./db/index"
+export { db, handleDbError } from "./index"
 export {
   getUserByEmail,
   createUser,
   getUserById,
   getAllUsers,
-} from "./db/queries"
+} from "./queries"
 
 // Legacy functions that need to be migrated or removed
 // These are kept for backward compatibility but should be updated to use Drizzle
-import { db, handleDbError } from "./db/index"
+import { db, handleDbError } from "./index"
 import { users } from "@/drizzle/schema"
 import { eq } from "drizzle-orm"
 

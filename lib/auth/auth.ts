@@ -40,7 +40,7 @@ export async function requireAuth(allowedRoles?: string[]) {
   const user = await getCurrentUser()
 
   if (!user) {
-    redirect("/login")
+    redirect("/connexion")
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
@@ -49,7 +49,7 @@ export async function requireAuth(allowedRoles?: string[]) {
     const normalizedAllowedRoles = allowedRoles.map(normalizeRole)
     
     if (!normalizedAllowedRoles.includes(normalizedUserRole)) {
-      redirect("/unauthorized")
+      redirect("/non-autorise")
     }
   }
 

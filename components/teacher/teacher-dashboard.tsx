@@ -8,7 +8,7 @@ import { MyCourses } from "./my-courses"
 import { StudentProgress } from "./student-progress"
 import { CourseAnalytics } from "./course-analytics"
 import { BookOpen, Users, BarChart3, Clock, Award } from "lucide-react"
-import type { User } from "@/lib/auth"
+import type { User } from "@/lib/auth/auth"
 
 interface TeacherDashboardProps {
   user: User

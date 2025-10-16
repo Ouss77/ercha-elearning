@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth/auth"
 import { StudentDashboard } from "@/components/student/student-dashboard"
 
 export default async function StudentPage() {

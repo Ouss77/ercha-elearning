@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
-import { createUser, getAllUsers } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth/auth"
+import { createUser, getAllUsers } from "@/lib/db/db"
 import { roleSchema } from "@/lib/schemas/user"
 
 export async function GET(request: NextRequest) {

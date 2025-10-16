@@ -92,7 +92,7 @@ export function CourseCard({ course }: CourseCardProps) {
           )}
 
           <Button asChild className="w-full">
-            <Link href={`/student/course/${course.id}`}>
+            <Link href={`/etudiant/course/${course.id}`}>
               <Play className="w-4 h-4 mr-2" />
               {course.progress > 0 ? "Continuer" : "Commencer"}
             </Link>
