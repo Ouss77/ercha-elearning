@@ -38,7 +38,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const user = await getCurrentUser()
 
-    if (!user || (user.role.toUpperCase() !== "ADMIN" && user.role.toLowerCase() !== "admin")) {
+    if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

@@ -1,12 +1,20 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/auth-options"
-import { User } from "@/types/next-auth"
+import type { Role } from "@/lib/schemas/user"
 
+export interface AuthUser {
+  id: string
+  email: string
+  name: string
+  role: Role
+  image?: string
+}
 
+export type User = AuthUser
 
 // Get current user from NextAuth session
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const session = await getServerSession(authOptions)
     
@@ -66,13 +74,13 @@ function normalizeRole(role: string): string {
 // These are kept to avoid breaking existing code but use NextAuth internally
 
 // @deprecated Use NextAuth signIn instead
-export function createSession(user: User): string {
+export function createSession(user: AuthUser): string {
   console.warn("createSession is deprecated. Use NextAuth signIn instead.")
   return ""
 }
 
 // @deprecated Use NextAuth session instead
-export function getSession(token: string): User | null {
+export function getSession(token: string): AuthUser | null {
   console.warn("getSession is deprecated. Use getServerSession from NextAuth instead.")
   return null
 }

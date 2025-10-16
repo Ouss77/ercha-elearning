@@ -9,7 +9,6 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run drizzle/seed.ts",
-    "validate:env": "bash scripts/validate-env.sh",
     "deploy:check": "npm run validate:env && npm run build"
   },
   "dependencies": {

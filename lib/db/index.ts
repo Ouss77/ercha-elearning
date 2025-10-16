@@ -27,13 +27,13 @@ export function handleDbError(error: unknown) {
 
   if (error instanceof Error) {
     return {
-      success: false,
+      success: false as const,
       error: error.message,
     }
   }
 
   return {
-    success: false,
+    success: false as const,
     error: "An unknown database error occurred",
   }
 }

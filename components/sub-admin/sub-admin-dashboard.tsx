@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Users, BookOpen, BarChart3, FileText, UserPlus, TrendingUp, Clock } from "lucide-react"
-import type { User } from "@/types/next-auth"
+import type { User } from "@/lib/auth"
 
 interface SubAdminDashboardProps {
   user: User
