@@ -30,31 +30,32 @@ export function CourseCard({ course }: CourseCardProps) {
   const getDomainColor = (domain: string) => {
     switch (domain) {
       case "Informatique":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+        return "bg-primary/10 text-primary border border-primary/20"
       case "Marketing":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+        return "bg-chart-3/10 text-chart-3 border border-chart-3/20"
       case "Design":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+        return "bg-chart-2/10 text-chart-2 border border-chart-2/20"
       case "Gestion":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
+        return "bg-chart-4/10 text-chart-4 border border-chart-4/20"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+        return "bg-muted text-muted-foreground border border-border"
     }
   }
 
   return (
-    <Card className="border-border bg-card hover:bg-accent/50 transition-colors">
-      <div className="relative">
+    <Card className="border-border/50 bg-card hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 group overflow-hidden">
+      <div className="relative overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-primary to-chart-2"></div>
         <Image
           src={course.thumbnail || "/placeholder.svg"}
           alt={course.title}
           width={300}
           height={200}
-          className="w-full h-32 object-cover rounded-t-lg"
+          className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {course.isCompleted && (
-          <div className="absolute top-2 right-2">
-            <Badge className="bg-green-500 text-white">
+          <div className="absolute top-3 right-3">
+            <Badge className="bg-primary text-white shadow-lg">
               <CheckCircle className="w-3 h-3 mr-1" />
               Terminé
             </Badge>
@@ -91,7 +92,7 @@ export function CourseCard({ course }: CourseCardProps) {
             </div>
           )}
 
-          <Button asChild className="w-full">
+          <Button asChild className="w-full bg-primary hover:bg-primary/90 shadow-md shadow-primary/20">
             <Link href={`/etudiant/course/${course.id}`}>
               <Play className="w-4 h-4 mr-2" />
               {course.progress > 0 ? "Continuer" : "Commencer"}

@@ -185,7 +185,7 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" disabled={isLoading}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -198,7 +198,7 @@ export function RegisterForm() {
 
       <div className="text-sm text-muted-foreground text-center">
         <p>Vous avez déjà un compte ?{" "}
-          <a href="/connexion" className="text-primary hover:underline">
+          <a href="/connexion" className="text-primary font-medium hover:underline">
             Se connecter
           </a>
         </p>

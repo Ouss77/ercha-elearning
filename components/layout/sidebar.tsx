@@ -65,11 +65,15 @@ export function Sidebar({ role }: SidebarProps) {
   const menuItems = menuItemsByRole[role] || []
 
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border">
+    <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border/50">
       <div className="flex flex-col flex-1 overflow-y-auto pt-5 pb-4">
         <div className="flex items-center flex-shrink-0 px-4 mb-6">
-          <GraduationCap className="h-8 w-8 text-sidebar-primary" />
-          <span className="ml-2 text-xl font-bold text-sidebar-foreground">EduPlatform</span>
+          <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
+            <GraduationCap className="h-6 w-6 text-white" />
+          </div>
+          <span className="ml-2 text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            EduPlatform
+          </span>
         </div>
         <nav className="flex-1 px-3 space-y-1">
           {menuItems.map((item) => {
@@ -81,16 +85,16 @@ export function Sidebar({ role }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    ? "bg-gradient-to-r from-primary/10 to-chart-2/10 text-primary border-l-4 border-primary shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-1"
                 )}
               >
                 <Icon
                   className={cn(
-                    "mr-3 h-5 w-5 flex-shrink-0",
-                    isActive ? "text-sidebar-primary" : "text-sidebar-foreground/60"
+                    "mr-3 h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                    isActive ? "text-primary" : "text-sidebar-foreground/60"
                   )}
                 />
                 {item.title}
