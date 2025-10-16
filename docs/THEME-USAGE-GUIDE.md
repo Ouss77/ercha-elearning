@@ -2,6 +2,88 @@
 
 Quick reference for using the new teal/turquoise theme in your components.
 
+## Theme Toggle
+
+### Using the Theme Toggle Component
+The theme toggle is available as a ready-to-use component and is already integrated in:
+- **Dashboard Header** (`components/layout/header.tsx`) - For authenticated users
+- **Homepage Header** (`components/layout/home-header.tsx`) - For all visitors
+- **Auth Pages** (`components/auth/auth-page-wrapper.tsx`) - Top-right corner
+
+```tsx
+import { ThemeToggle } from "@/components/theme-toggle"
+
+// In your component
+<ThemeToggle />
+```
+
+### Component Implementation Example
+The `HomeHeader` component shows how to integrate the theme toggle:
+
+```tsx
+"use client"
+
+import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button"
+
+export function HomeHeader({ user }: { user: any }) {
+  return (
+    <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            {/* ... */}
+          </div>
+          
+          {/* Actions with Theme Toggle */}
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+            {/* Other buttons */}
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
+```
+
+### Programmatic Theme Control
+```tsx
+"use client"
+
+import { useTheme } from "next-themes"
+
+export function MyComponent() {
+  const { theme, setTheme } = useTheme()
+  
+  // Get current theme
+  console.log(theme) // "light" or "dark"
+  
+  // Change theme
+  setTheme("dark")
+  
+  // Toggle theme
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+  
+  return (
+    <button onClick={toggleTheme}>
+      Toggle Theme
+    </button>
+  )
+}
+```
+
+### Theme Configuration
+- **Default Theme**: Light mode 🌞
+- **System Preference**: Disabled (user must manually toggle)
+- **Persistence**: User preference saved in localStorage
+- **Attribute**: `class` (adds `.dark` class to `<html>`)
+- **Provider**: `next-themes` library
+- **No Flash**: SSR-friendly with `suppressHydrationWarning`
+
 ## Color Reference
 
 ### Primary Colors
@@ -312,10 +394,80 @@ className="group-hover:scale-110 transition-transform"
 
 ## Dark Mode Considerations
 
-The theme automatically adjusts for dark mode. To test:
-1. System dark mode will trigger automatically
-2. Colors become slightly more saturated in dark mode
-3. Backgrounds shift to navy tones
-4. Primary color becomes brighter for better contrast
+The theme automatically adjusts for dark mode. The CSS variable system handles all color transitions seamlessly.
 
-No additional dark mode classes needed - the CSS variables handle everything!
+### How to Test Dark Mode
+1. Click the sun/moon toggle button in the header
+2. Observe smooth color transitions
+3. Refresh page - theme persists
+4. Colors become slightly more saturated in dark mode
+5. Backgrounds shift to navy tones
+6. Primary color becomes brighter for better contrast
+
+### Where to Find the Toggle
+- **Dashboard Pages**: Header (top-right, before user profile)
+- **Homepage**: Header (top-right, before action buttons)
+- **Login Page**: Top-right corner
+- **Registration Page**: Top-right corner
+
+### Dark Mode Specific Styling
+If you need to add dark mode specific styles:
+
+```tsx
+// Using Tailwind's dark: modifier
+className="bg-white dark:bg-gray-900"
+className="text-gray-900 dark:text-gray-100"
+
+// Conditional styling based on theme
+"use client"
+import { useTheme } from "next-themes"
+
+export function MyComponent() {
+  const { theme } = useTheme()
+  
+  return (
+    <div className={theme === "dark" ? "special-dark-style" : "special-light-style"}>
+      {theme === "dark" ? <MoonIcon /> : <SunIcon />}
+    </div>
+  )
+}
+```
+
+### Client Component Requirement
+The `useTheme` hook and `ThemeToggle` component require the `"use client"` directive:
+
+```tsx
+"use client"
+
+import { useTheme } from "next-themes"
+import { ThemeToggle } from "@/components/theme-toggle"
+
+// Now you can use theme features
+```
+
+### Hydration Handling
+The theme toggle handles hydration gracefully:
+- Shows a placeholder during SSR
+- Loads actual theme state on client
+- Prevents flash of wrong theme
+- Uses `suppressHydrationWarning` in root layout
+
+### Helper Utilities
+For utilities that need theme awareness, extract to client components:
+
+```tsx
+// ❌ Don't use in Server Components
+export default async function Page() {
+  const { theme } = useTheme() // Error!
+  return <div>...</div>
+}
+
+// ✅ Use in Client Components
+"use client"
+export function ThemedComponent() {
+  const { theme } = useTheme() // Works!
+  return <div>...</div>
+}
+```
+
+No additional dark mode classes needed for most components - the CSS variables handle everything automatically!

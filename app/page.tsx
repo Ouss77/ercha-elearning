@@ -2,29 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { BookOpen, Users, GraduationCap, BarChart3 } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth/auth"
-import { LogoutButton } from "@/components/auth/logout-button"
+import { HomeHeader } from "@/components/layout/home-header"
 import Link from "next/link"
+import { getDashboardUrl } from "@/lib/utils/utils"
 
 //TODO : Rename Route Groups to French
 
-// Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
-  const normalizedRole = role.toUpperCase()
-  
-  switch (normalizedRole) {
-    case "ADMIN":
-      return "/admin"
-    case "SUB_ADMIN":
-      return "/sous-admin"
-    case "TRAINER":
-    case "TEACHER":
-      return "/formateur"
-    case "STUDENT":
-      return "/etudiant"
-    default:
-      return "/etudiant"
-  }
-}
+
 
 export default async function HomePage() {
   const user = await getCurrentUser()
@@ -32,42 +16,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                EduPlatform
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <span className="text-sm text-muted-foreground hidden md:inline">
-                    Bonjour, {user.name}
-                  </span>
-                  <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" asChild>
-                    <Link href={getDashboardUrl(user.role)}>Tableau de bord</Link>
-                  </Button>
-                  <LogoutButton />
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" className="hidden md:inline-flex" asChild>
-                    <Link href="/connexion">Connexion</Link>
-                  </Button>
-                  <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" asChild>
-                    <Link href="/inscription">Commencer</Link>
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <HomeHeader user={user} />
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden bg-gradient-to-br from-background via-accent/20 to-primary/5">

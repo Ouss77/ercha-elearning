@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface HeaderProps {
   user: {
@@ -81,6 +82,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
         {/* User profile section */}
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
           <div className="flex items-center space-x-3">
             <Avatar className="h-9 w-9 ring-2 ring-primary/20">
               <AvatarImage src={user.image || undefined} alt={user.name || "User"} />

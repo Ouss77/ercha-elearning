@@ -1,14 +1,11 @@
 import { RegisterForm } from "@/components/auth/register-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AuthPageWrapper } from "@/components/auth/auth-page-wrapper"
 import { GraduationCap } from "lucide-react"
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-accent/10 to-primary/5 p-4 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-20 left-20 w-64 h-64 bg-chart-2/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-      
+    <AuthPageWrapper>
       <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl relative z-10">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -25,6 +22,6 @@ export default function RegisterPage() {
           <RegisterForm />
         </CardContent>
       </Card>
-    </div>
+    </AuthPageWrapper>
   )
 }
