@@ -1,72 +1,41 @@
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/auth-options"
+import type { Role } from "@/lib/schemas/user"
 
-export interface User {
+export interface AuthUser {
   id: string
   email: string
   name: string
-  role: "admin" | "student" | "teacher"
-  active: boolean
-  created_at: string
+  role: Role
+  image?: string
 }
 
-export interface AuthResult {
-  success: boolean
-  user?: User
-  error?: string
-}
+export type User = AuthUser
 
-// Simple session management without JWT
-const sessions = new Map<string, { user: User; expires: number }>()
-
-// Generate session token
-function generateSessionToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
-}
-
-// Create session
-export function createSession(user: User): string {
-  const token = generateSessionToken()
-  const expires = Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-  sessions.set(token, { user, expires })
-  return token
-}
-
-// Get session
-export function getSession(token: string): User | null {
-  const session = sessions.get(token)
-  if (!session) return null
-
-  if (Date.now() > session.expires) {
-    sessions.delete(token)
-    return null
-  }
-
-  return session.user
-}
-
-// Clear session
-export function clearSession(token: string) {
-  sessions.delete(token)
-}
-
-// Get current user from cookies
-export async function getCurrentUser(): Promise<User | null> {
+// Get current user from NextAuth session
+export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("auth-token")?.value
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !session.user) {
+      return null
+    }
 
-    if (!token) return null
-
-    const user = getSession(token)
-    return user
+    return {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      role: session.user.role as any,
+      image: session.user.image
+    }
   } catch (error) {
     console.error("Error getting current user:", error)
     return null
   }
 }
 
-// Require authentication
+// Require authentication with role-based access control
 export async function requireAuth(allowedRoles?: string[]) {
   const user = await getCurrentUser()
 
@@ -74,26 +43,59 @@ export async function requireAuth(allowedRoles?: string[]) {
     redirect("/login")
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    redirect("/unauthorized")
+  if (allowedRoles && allowedRoles.length > 0) {
+    // Normalize roles for comparison (handle both old and new role formats)
+    const normalizedUserRole = normalizeRole(user.role)
+    const normalizedAllowedRoles = allowedRoles.map(normalizeRole)
+    
+    if (!normalizedAllowedRoles.includes(normalizedUserRole)) {
+      redirect("/unauthorized")
+    }
   }
 
   return user
 }
 
-// Set auth cookie
-export async function setAuthCookie(token: string) {
-  const cookieStore = await cookies()
-  cookieStore.set("auth-token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  })
+// Helper function to normalize role names for backward compatibility
+function normalizeRole(role: string): string {
+  const roleMap: Record<string, string> = {
+    'admin': 'ADMIN',
+    'teacher': 'TRAINER',
+    'student': 'STUDENT',
+    'ADMIN': 'ADMIN',
+    'TRAINER': 'TRAINER',
+    'STUDENT': 'STUDENT',
+    'SUB_ADMIN': 'SUB_ADMIN'
+  }
+  return roleMap[role] || role
 }
 
-// Clear auth cookie
+// Legacy functions for backward compatibility
+// These are kept to avoid breaking existing code but use NextAuth internally
+
+// @deprecated Use NextAuth signIn instead
+export function createSession(user: AuthUser): string {
+  console.warn("createSession is deprecated. Use NextAuth signIn instead.")
+  return ""
+}
+
+// @deprecated Use NextAuth session instead
+export function getSession(token: string): AuthUser | null {
+  console.warn("getSession is deprecated. Use getServerSession from NextAuth instead.")
+  return null
+}
+
+// @deprecated Use NextAuth signOut instead
+export function clearSession(token: string) {
+  console.warn("clearSession is deprecated. Use NextAuth signOut instead.")
+}
+
+// @deprecated NextAuth handles cookies automatically
+export async function setAuthCookie(token: string) {
+  console.warn("setAuthCookie is deprecated. NextAuth handles cookies automatically.")
+}
+
+// @deprecated NextAuth handles cookies automatically
 export async function clearAuthCookie() {
-  const cookieStore = await cookies()
-  cookieStore.delete("auth-token")
+  console.warn("clearAuthCookie is deprecated. NextAuth handles cookies automatically.")
 }

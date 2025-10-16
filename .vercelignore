@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Development
+.env.local
+.env.development.local
+.env.test.local
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+
+# Documentation (only in development)
+*.md
+!README.md
+
+# Database (migrations are included, but not local files)
+drizzle/test-*.ts
+
+# Scripts
+scripts/
+
+# Git
+.git
+.gitignore

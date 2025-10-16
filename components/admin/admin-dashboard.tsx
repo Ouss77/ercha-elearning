@@ -4,12 +4,10 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { LogoutButton } from "@/components/auth/logout-button"
 import { UsersManagement } from "./users-management"
 import { CoursesManagement } from "./courses-management"
 import { DomainsManagement } from "./domains-management"
-import { Users, BookOpen, GraduationCap, BarChart3, UserPlus, BookPlus, TrendingUp, Activity } from "lucide-react"
+import { Users, BookOpen, BarChart3, UserPlus, BookPlus, TrendingUp, Activity } from "lucide-react"
 import type { User } from "@/lib/auth"
 
 interface AdminDashboardProps {
@@ -31,29 +29,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">EduPlatform Admin</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                Administrateur
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {user.firstName} {user.lastName}
-              </span>
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -195,7 +171,6 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             <DomainsManagement />
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   )
 }

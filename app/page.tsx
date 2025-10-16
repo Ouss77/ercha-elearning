@@ -3,6 +3,26 @@ import { Button } from "@/components/ui/button"
 import { BookOpen, Users, GraduationCap, BarChart3 } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { LogoutButton } from "@/components/auth/logout-button"
+import Link from "next/link"
+
+// Helper function to get dashboard URL based on role
+function getDashboardUrl(role: string): string {
+  const normalizedRole = role.toUpperCase()
+  
+  switch (normalizedRole) {
+    case "ADMIN":
+      return "/admin"
+    case "SUB_ADMIN":
+      return "/sub-admin"
+    case "TRAINER":
+    case "TEACHER":
+      return "/teacher"
+    case "STUDENT":
+      return "/student"
+    default:
+      return "/student"
+  }
+}
 
 export default async function HomePage() {
   const user = await getCurrentUser()
@@ -21,16 +41,21 @@ export default async function HomePage() {
               {user ? (
                 <>
                   <span className="text-sm text-muted-foreground">
-                    Bonjour, {user.firstName} ({user.role})
+                    Bonjour, {user.name} ({user.role})
                   </span>
+                  <Button asChild>
+                    <Link href={getDashboardUrl(user.role)}>Aller au tableau de bord</Link>
+                  </Button>
                   <LogoutButton />
                 </>
               ) : (
                 <>
                   <Button variant="ghost" asChild>
-                    <a href="/login">Connexion</a>
+                    <Link href="/login">Connexion</Link>
                   </Button>
-                  <Button>Commencer</Button>
+                  <Button asChild>
+                    <Link href="/register">Commencer</Link>
+                  </Button>
                 </>
               )}
             </div>
@@ -49,12 +74,20 @@ export default async function HomePage() {
             progression en temps réel.
           </p>
           <div className="flex justify-center space-x-4">
-            <Button size="lg" className="px-8">
-              Explorer les cours
-            </Button>
-            <Button variant="outline" size="lg" className="px-8 bg-transparent">
-              En savoir plus
-            </Button>
+            {user ? (
+              <Button size="lg" className="px-8" asChild>
+                <Link href={getDashboardUrl(user.role)}>Aller au tableau de bord</Link>
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" className="px-8" asChild>
+                  <Link href="/register">Commencer</Link>
+                </Button>
+                <Button variant="outline" size="lg" className="px-8 bg-transparent" asChild>
+                  <Link href="/login">Se connecter</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -106,15 +139,26 @@ export default async function HomePage() {
         <div className="container mx-auto text-center">
           <Card className="max-w-2xl mx-auto border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
             <CardHeader>
-              <CardTitle className="text-3xl mb-4">Prêt à commencer votre parcours d'apprentissage ?</CardTitle>
+              <CardTitle className="text-3xl mb-4">
+                {user ? "Continuez votre parcours d'apprentissage" : "Prêt à commencer votre parcours d'apprentissage ?"}
+              </CardTitle>
               <CardDescription className="text-lg">
-                Rejoignez notre plateforme et accédez à des cours de qualité dans tous les domaines.
+                {user 
+                  ? "Accédez à votre tableau de bord pour continuer vos cours et suivre votre progression."
+                  : "Rejoignez notre plateforme et accédez à des cours de qualité dans tous les domaines."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button size="lg" className="px-8">
-                Demander l'accès
-              </Button>
+              {user ? (
+                <Button size="lg" className="px-8" asChild>
+                  <Link href={getDashboardUrl(user.role)}>Accéder au tableau de bord</Link>
+                </Button>
+              ) : (
+                <Button size="lg" className="px-8" asChild>
+                  <Link href="/register">Demander l'accès</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

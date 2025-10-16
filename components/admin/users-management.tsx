@@ -19,12 +19,13 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import { UserPlus, Search, Trash2 } from "lucide-react"
+import type { Role } from "@/lib/schemas/user"
 
 interface User {
   id: number
   email: string
   name: string
-  role: "admin" | "student" | "teacher"
+  role: Role
   is_active: boolean
   created_at: string
 }
@@ -107,26 +108,30 @@ export function UsersManagement() {
     }
   }
 
-  const getRoleBadgeVariant = (role: string) => {
+  const getRoleBadgeVariant = (role: Role) => {
     switch (role) {
-      case "admin":
+      case "ADMIN":
         return "default"
-      case "teacher":
+      case "SUB_ADMIN":
+        return "default"
+      case "TRAINER":
         return "secondary"
-      case "student":
+      case "STUDENT":
         return "outline"
       default:
         return "outline"
     }
   }
 
-  const getRoleLabel = (role: string) => {
+  const getRoleLabel = (role: Role) => {
     switch (role) {
-      case "admin":
+      case "ADMIN":
         return "Administrateur"
-      case "teacher":
+      case "SUB_ADMIN":
+        return "Sous-administrateur"
+      case "TRAINER":
         return "Professeur"
-      case "student":
+      case "STUDENT":
         return "Étudiant"
       default:
         return role
@@ -184,9 +189,9 @@ export function UsersManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les rôles</SelectItem>
-                <SelectItem value="admin">Administrateurs</SelectItem>
-                <SelectItem value="teacher">Professeurs</SelectItem>
-                <SelectItem value="student">Étudiants</SelectItem>
+                <SelectItem value="ADMIN">Administrateurs</SelectItem>
+                <SelectItem value="TRAINER">Professeurs</SelectItem>
+                <SelectItem value="STUDENT">Étudiants</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -314,9 +319,9 @@ function CreateUserForm({ onClose }: { onClose: () => void }) {
             <SelectValue placeholder="Sélectionner un rôle" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="student">Étudiant</SelectItem>
-            <SelectItem value="teacher">Professeur</SelectItem>
-            <SelectItem value="admin">Administrateur</SelectItem>
+            <SelectItem value="STUDENT">Étudiant</SelectItem>
+            <SelectItem value="TRAINER">Professeur</SelectItem>
+            <SelectItem value="ADMIN">Administrateur</SelectItem>
           </SelectContent>
         </Select>
       </div>
