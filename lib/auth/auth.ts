@@ -2,16 +2,11 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/auth-options"
 import type { Role } from "@/lib/schemas/user"
+import type { AuthUser } from "@/types/user"
 
-export interface AuthUser {
-  id: string
-  email: string
-  name: string
-  role: Role
-  image?: string
-}
-
+// Re-export AuthUser as User for backward compatibility
 export type User = AuthUser
+export type { AuthUser }
 
 // Get current user from NextAuth session
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -19,6 +14,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user) {
+      return null
+    }
+
+    // If the user is not active, treat as not authenticated
+    if ((session.user as any).active === false) {
       return null
     }
 

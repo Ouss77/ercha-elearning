@@ -23,7 +23,16 @@ export const createUserSchema = z.object({
     .url("Invalid URL format")
     .optional()
     .or(z.literal("")),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  
+  // Student-specific optional fields
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(), // ISO date string
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().default("Morocco"),
+  bio: z.string().optional(),
 })
 
 // User update schema (for updating existing users)
@@ -42,7 +51,16 @@ export const updateUserSchema = z.object({
     .url("Invalid URL format")
     .optional()
     .or(z.literal("")),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  
+  // Student-specific optional fields
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  bio: z.string().optional(),
 })
 
 // User profile update schema (for users updating their own profile)
@@ -55,7 +73,16 @@ export const updateProfileSchema = z.object({
     .string()
     .url("Invalid URL format")
     .optional()
-    .or(z.literal(""))
+    .or(z.literal("")),
+  
+  // Additional profile fields
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  bio: z.string().optional(),
 })
 
 // Password change schema

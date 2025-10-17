@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hash(validatedData.password, 10)
 
-    // Create user with default STUDENT role
+        // Create user with default STUDENT role
     const [newUser] = await db
       .insert(users)
       .values({
@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name: validatedData.name,
         role: "STUDENT",
-        consentTimestamp: new Date()
       })
       .returning()
 

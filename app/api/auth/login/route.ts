@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Email ou mot de passe incorrect" }, { status: 401 })
     }
 
-    if (!dbUser.is_active) {
+    if (!dbUser.isActive) {
       return NextResponse.json({ success: false, error: "Compte désactivé" }, { status: 403 })
     }
 
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
       email: dbUser.email,
       name: dbUser.name,
       role: dbUser.role,
-      active: dbUser.is_active,
-      created_at: dbUser.created_at,
+      active: dbUser.isActive,
+      createdAt: dbUser.createdAt,
     }
 
     const sessionToken = createSession(user)
