@@ -9,6 +9,7 @@ import { StudentProgress } from "./student-progress"
 import { CourseAnalytics } from "./course-analytics"
 import { BookOpen, Users, BarChart3, Clock, Award } from "lucide-react"
 import type { User } from "@/lib/auth/auth"
+import { Badge } from "../ui/badge"
 
 interface TeacherDashboardProps {
   user: User

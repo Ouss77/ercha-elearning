@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const result = await getAllUsers()
 
-    if (!result.success) {
+    if (result.success === false) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
@@ -33,20 +33,52 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, password, name, role } = body
+    const { 
+      email, 
+      password, 
+      name, 
+      role,
+      phone,
+      dateOfBirth,
+      address,
+      city,
+      postalCode,
+      country,
+      bio,
+      avatarUrl,
+      isActive
+    } = body
 
-    if (!email || !password || !name || !role) {
+    if (!email || !password || !name) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const parsedRole = roleSchema.safeParse(role)
+    const parsedRole = roleSchema.safeParse(role || "STUDENT")
     if (!parsedRole.success) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
-    const result = await createUser({ email, password, name, role: parsedRole.data })
+    const userData: any = {
+      email,
+      password,
+      name,
+      role: parsedRole.data,
+    }
 
-    if (!result.success) {
+    // Add optional fields
+    if (phone) userData.phone = phone
+    if (dateOfBirth) userData.dateOfBirth = new Date(dateOfBirth)
+    if (address) userData.address = address
+    if (city) userData.city = city
+    if (postalCode) userData.postalCode = postalCode
+    if (country) userData.country = country
+    if (bio) userData.bio = bio
+    if (avatarUrl) userData.photoUrl = avatarUrl
+    if (isActive !== undefined) userData.isActive = isActive
+
+    const result = await createUser(userData)
+
+    if (result.success === false) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 

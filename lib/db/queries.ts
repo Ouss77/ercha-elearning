@@ -12,7 +12,8 @@ import {
   finalProjects, 
   projectSubmissions 
 } from "@/drizzle/schema"
-import { mapUserFromDb, mapUserToDb, mapCourseFromDb, mapEnrollmentFromDb, type AppUser } from "./mappers"
+import { mapUserFromDb, mapUserToDb, mapCourseFromDb, mapEnrollmentFromDb } from "./mappers"
+import type { User } from "@/types/user"
 
 // User query functions
 export async function getUserByEmail(email: string) {
@@ -31,24 +32,44 @@ export async function createUser(data: {
   name: string
   role?: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN"
   photoUrl?: string | null
+  phone?: string | null
+  dateOfBirth?: Date | null
+  address?: string | null
+  city?: string | null
+  postalCode?: string | null
+  country?: string | null
+  bio?: string | null
+  isActive?: boolean
 }) {
   try {
     // Map application data to database format
     const dbData = mapUserToDb(data)
     
+    const insertData: any = {
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      role: data.role || "STUDENT",
+      avatarUrl: dbData.avatarUrl,
+      isActive: data.isActive ?? true,
+      country: data.country || "Morocco",
+    }
+
+    // Add optional fields if they exist
+    if (data.phone) insertData.phone = data.phone
+    if (data.dateOfBirth) insertData.dateOfBirth = data.dateOfBirth
+    if (data.address) insertData.address = data.address
+    if (data.city) insertData.city = data.city
+    if (data.postalCode) insertData.postalCode = data.postalCode
+    if (data.bio) insertData.bio = data.bio
+    
     const result = await db
       .insert(users)
-      .values({
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        role: data.role || "STUDENT",
-        avatarUrl: dbData.avatarUrl,
-      })
+      .values(insertData)
       .returning()
     
     const mappedUser = mapUserFromDb(result[0])
-    return { success: true, data: mappedUser }
+    return { success: true as const, data: mappedUser }
   } catch (error) {
     return handleDbError(error)
   }
@@ -67,8 +88,8 @@ export async function getUserById(id: number) {
 export async function getAllUsers() {
   try {
     const result = await db.select().from(users)
-    const mappedUsers = result.map(mapUserFromDb).filter((u): u is AppUser => u !== null)
-    return { success: true, data: mappedUsers }
+    const mappedUsers = result.map(mapUserFromDb).filter((u): u is User => u !== null)
+    return { success: true as const, data: mappedUsers }
   } catch (error) {
     return handleDbError(error)
   }
@@ -81,6 +102,13 @@ export async function updateUser(id: number, data: Partial<{
   role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN"
   photoUrl: string | null
   isActive: boolean
+  phone: string | null
+  dateOfBirth: Date | null
+  address: string | null
+  city: string | null
+  postalCode: string | null
+  country: string | null
+  bio: string | null
 }>) {
   try {
     // Map application data to database format

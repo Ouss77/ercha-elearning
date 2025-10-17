@@ -24,7 +24,10 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      authorized: ({ token }) => {
+        // Only allow access if the user is authenticated and active
+        return !!(token && (token as any).active !== false)
+      }
     }
   }
 )

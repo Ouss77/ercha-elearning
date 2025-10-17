@@ -24,6 +24,11 @@ export const authOptions: NextAuthOptions = {
 
         const user = result.data
 
+        // Deny sign-in for deactivated users
+        if (user.isActive === false) {
+          return null
+        }
+
         const isPasswordValid = await compare(credentials.password, user.password)
         if (!isPasswordValid) {
           return null
@@ -36,16 +41,18 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-          image: user.photoUrl || undefined
-        }
+          image: user.photoUrl || undefined,
+          isActive: user.isActive
+        } as any
       }
     })
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.id = user.id
+        token.role = (user as any).role
+        token.id = (user as any).id
+        token.active = (user as any).isActive ?? true
       }
       return token
     },
@@ -53,6 +60,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.role = token.role as string
         session.user.id = token.id as string
+        ;(session.user as any).active = (token as any).active ?? true
       }
       return session
     }
