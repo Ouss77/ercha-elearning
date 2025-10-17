@@ -181,9 +181,25 @@ export async function getEnrollmentById(id: number) {
 
 export async function getEnrollmentsByStudentId(studentId: number) {
   try {
-    const result = await db.select().from(enrollments).where(eq(enrollments.studentId, studentId))
-    const mappedEnrollments = result.map(mapEnrollmentFromDb).filter(e => e !== null)
-    return { success: true, data: mappedEnrollments }
+    const result = await db
+      .select({
+        id: enrollments.id,
+        studentId: enrollments.studentId,
+        courseId: enrollments.courseId,
+        enrolledAt: enrollments.createdAt,
+        completedAt: enrollments.completedAt,
+        course: {
+          id: courses.id,
+          title: courses.title,
+          description: courses.description,
+          isActive: courses.isActive,
+        }
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .where(eq(enrollments.studentId, studentId))
+    
+    return { success: true, data: result }
   } catch (error) {
     return handleDbError(error)
   }

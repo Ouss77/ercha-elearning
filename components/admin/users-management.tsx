@@ -157,7 +157,7 @@ export function UsersManagement() {
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>Gérez les comptes étudiants, professeurs et administrateurs</CardDescription>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 place-content-end">
               <BulkUserUpload onUploadComplete={fetchUsers} />
               <Link href="/admin/utilisateurs/creer" className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto">
@@ -219,7 +219,12 @@ export function UsersManagement() {
                         <TableCell className="font-medium">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
-                              <span>{user.name}</span>
+                              <Link 
+                                href={`/admin/utilisateurs/${user.id}/details`}
+                                className="hover:text-primary hover:underline cursor-pointer"
+                              >
+                                {user.name}
+                              </Link>
                               <span className={`sm:hidden h-2 w-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`} title={user.isActive ? 'Actif' : 'Inactif'}></span>
                             </div>
                             <span className="text-xs text-muted-foreground md:hidden">{user.email}</span>
