@@ -55,24 +55,24 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card/80 backdrop-blur-md shadow-sm">
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+      <div className="flex h-16 items-center justify-between gap-2 px-2 sm:px-4 lg:px-6">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden hover:bg-primary/10"
+          className="lg:hidden hover:bg-primary/10 flex-shrink-0"
           onClick={onMenuClick}
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           <span className="sr-only">Toggle menu</span>
         </Button>
 
         {/* Logo - visible on mobile */}
-        <div className="flex items-center space-x-2 lg:hidden">
-          <div className="h-8 w-8 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
-            <GraduationCap className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden flex-1 min-w-0">
+          <div className="h-7 w-7 sm:h-8 sm:w-8 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center flex-shrink-0">
+            <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
-          <span className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
             EduPlatform
           </span>
         </div>
@@ -81,21 +81,21 @@ export function Header({ user, onMenuClick }: HeaderProps) {
         <div className="hidden lg:block flex-1" />
 
         {/* User profile section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
           <ThemeToggle />
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-primary/20 flex-shrink-0">
               <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-chart-2/20 text-primary font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-chart-2/20 text-primary font-semibold text-xs sm:text-sm">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="hidden md:flex md:flex-col md:items-start">
-              <span className="text-sm font-semibold text-foreground">
+            <div className="hidden md:flex md:flex-col md:items-start min-w-0">
+              <span className="text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[200px]">
                 {user.name || user.email}
               </span>
               {user.role && (
-                <Badge className={`text-xs border ${getRoleBadgeClass(user.role)}`}>
+                <Badge className={`text-xs border whitespace-nowrap ${getRoleBadgeClass(user.role)}`}>
                   {roleLabels[user.role]}
                 </Badge>
               )}
