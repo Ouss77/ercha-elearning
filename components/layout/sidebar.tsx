@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils/utils";
 import {
   LayoutDashboard,
   Users,
@@ -17,16 +17,16 @@ import {
   Award,
   User,
   Activity,
-} from "lucide-react"
+} from "lucide-react";
 
 interface MenuItem {
-  title: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 interface SidebarProps {
-  role: "ADMIN" | "SUB_ADMIN" | "TRAINER" | "STUDENT"
+  role: "ADMIN" | "SUB_ADMIN" | "TRAINER" | "STUDENT";
 }
 
 const menuItemsByRole: Record<string, MenuItem[]> = {
@@ -54,36 +54,36 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { title: "Feedback", href: "/formateur/feedback", icon: FileText },
   ],
   STUDENT: [
-    { title: "Dashboard", href: "/etudiant", icon: LayoutDashboard },
-    { title: "My Courses", href: "/etudiant/courses", icon: BookOpen },
-    { title: "Progress", href: "/etudiant/progress", icon: BarChart3 },
-    { title: "Certificates", href: "/etudiant/certificates", icon: Award },
-    { title: "Profile", href: "/etudiant/profile", icon: User },
+    { title: "Tableau de bord", href: "/etudiant", icon: LayoutDashboard },
+    { title: "Mes Cours", href: "/etudiant/cours", icon: BookOpen },
+    { title: "Ma Progression", href: "/etudiant/progres", icon: BarChart3 },
+    { title: "Mes Certificats", href: "/etudiant/certifications", icon: Award },
+    { title: "Mon Profil", href: "/etudiant/profil", icon: User },
   ],
-}
+};
 
 export function Sidebar({ role }: SidebarProps) {
-  const pathname = usePathname()
-  const menuItems = menuItemsByRole[role] || []
+  const pathname = usePathname();
+  const menuItems = menuItemsByRole[role] || [];
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border/50">
       <div className="flex flex-col flex-1 overflow-y-auto pt-5 pb-4">
         <div className="flex items-center flex-shrink-0 px-4 mb-6">
           <Link href="/" className="flex items-center">
-          <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
-            <GraduationCap className="h-6 w-6 text-white" />
-          </div>
-          <span className="ml-2 text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            EduPlatform
-          </span>
+            <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <span className="ml-2 text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              EduPlatform
+            </span>
           </Link>
         </div>
         <nav className="flex-1 px-3 space-y-1">
           {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+
             return (
               <Link
                 key={item.href}
@@ -103,10 +103,10 @@ export function Sidebar({ role }: SidebarProps) {
                 />
                 {item.title}
               </Link>
-            )
+            );
           })}
         </nav>
       </div>
     </aside>
-  )
+  );
 }
