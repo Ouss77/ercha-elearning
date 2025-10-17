@@ -3,78 +3,64 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Star, ArrowRight, BookOpen, Clock } from "lucide-react";
+import { Users, ArrowRight, BookOpen, Layers } from "lucide-react";
 import Link from "next/link";
 
 interface Course {
   id: string;
   title: string;
   description: string;
-  price: string;
+  domain: string;
+  domainColor: string;
   students: number;
-  rating: number;
-  duration: string;
-  level: string;
-  image?: string;
-  featured?: boolean;
+  chapters: number;
+  professor: string;
 }
 
 /**
  * Popular Courses Section
  * Features:
- * - Course cards with images
- * - Student count and ratings
- * - Price display
- * - Featured badge
+ * - Three main courses from admin dashboard
+ * - Clean design matching hero
+ * - Domain badges with colors
+ * - Student and chapter counts
  * - "Browse All Courses" link
- * - Matches hero section design
  */
 export function PopularCourses() {
   const courses: Course[] = [
     {
       id: "1",
-      title: "Développement Web Complet",
+      title: "Introduction à React",
       description:
-        "Maîtrisez HTML, CSS, JavaScript et les frameworks modernes pour créer des sites web professionnels.",
-      price: "Gratuit",
-      students: 156,
-      rating: 4.8,
-      duration: "8 semaines",
-      level: "Débutant",
-      featured: true,
+        "Apprenez les bases de React et créez vos premières applications",
+      domain: "Informatique",
+      domainColor:
+        "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+      students: 45,
+      chapters: 8,
+      professor: "Jean Martin",
     },
     {
       id: "2",
-      title: "Introduction à Python",
-      description:
-        "Apprenez les bases de la programmation Python et créez vos premiers projets.",
-      price: "Gratuit",
-      students: 298,
-      rating: 4.9,
-      duration: "6 semaines",
-      level: "Débutant",
+      title: "Marketing Digital Avancé",
+      description: "Stratégies avancées de marketing digital et analytics",
+      domain: "Marketing",
+      domainColor:
+        "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      students: 32,
+      chapters: 12,
+      professor: "Jean Martin",
     },
     {
       id: "3",
-      title: "Data Science avec R",
-      description:
-        "Explorez l'analyse de données, la visualisation et les statistiques avec R.",
-      price: "Gratuit",
-      students: 162,
-      rating: 4.7,
-      duration: "10 semaines",
-      level: "Intermédiaire",
-    },
-    {
-      id: "4",
       title: "Design UX/UI Moderne",
-      description:
-        "Créez des interfaces utilisateur attrayantes et des expériences mémorables.",
-      price: "Gratuit",
-      students: 251,
-      rating: 4.9,
-      duration: "7 semaines",
-      level: "Tous niveaux",
+      description: "Principes de design et création d'interfaces utilisateur",
+      domain: "Design",
+      domainColor:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
+      students: 28,
+      chapters: 10,
+      professor: "Jean Martin",
     },
   ];
 
@@ -202,7 +188,7 @@ export function PopularCourses() {
             className="mt-4 md:mt-0 border-2 border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950"
             asChild
           >
-            <Link href="/courses">
+            <Link href="/insciption">
               Tous les cours
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -210,83 +196,77 @@ export function PopularCourses() {
         </div>
 
         {/* Course Cards Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {courses.map((course) => (
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {courses.map((course, index) => (
             <Card
               key={course.id}
-              className="group relative bg-white dark:bg-card border-gray-200 dark:border-border hover:shadow-2xl transition-all duration-300 overflow-hidden"
+              className="group relative bg-white dark:bg-card border-2 border-gray-100 dark:border-border hover:border-teal-300 dark:hover:border-teal-600 hover:shadow-2xl transition-all duration-300 overflow-hidden"
             >
-              {/* Featured Badge */}
-              {course.featured && (
-                <div className="absolute top-3 left-3 z-10">
-                  <Badge className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white border-0">
-                    POPULAIRE
+              {/* Course Header with Gradient */}
+              <div className="relative h-32 bg-gradient-to-br from-teal-500 to-emerald-500 dark:from-teal-600 dark:to-emerald-600 overflow-hidden">
+                {/* Decorative pattern */}
+                <div className="absolute inset-0 opacity-20">
+                  <div className="absolute top-4 right-4">
+                    <BookOpen className="h-16 w-16 text-white" />
+                  </div>
+                  {/* Decorative circles */}
+                  <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/2"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+
+                {/* Domain Badge */}
+                <div className="absolute top-4 left-4 z-10">
+                  <Badge
+                    className={`${course.domainColor} border-0 font-semibold`}
+                  >
+                    {course.domain}
                   </Badge>
                 </div>
-              )}
-
-              {/* Course Image Placeholder */}
-              <div className="relative h-40 bg-gradient-to-br from-teal-400 to-emerald-400 dark:from-teal-600 dark:to-emerald-600 overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <BookOpen className="h-16 w-16 text-white/30" />
-                </div>
-                {/* Decorative pattern overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
 
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2">
+              <CardHeader className="pb-3 pt-6">
+                <CardTitle className="text-xl font-bold text-gray-900 dark:text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors mb-2">
                   {course.title}
                 </CardTitle>
-                <p className="text-sm text-gray-600 dark:text-muted-foreground line-clamp-2 mt-2">
+                <p className="text-sm text-gray-600 dark:text-muted-foreground leading-relaxed">
                   {course.description}
                 </p>
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {/* Course Meta */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{course.duration}</span>
+                {/* Course Stats */}
+                <div className="grid grid-cols-2 gap-4 py-4 border-y border-gray-100 dark:border-border">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Users className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-foreground">
+                      {course.students}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-muted-foreground">
+                      Étudiants
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {course.level}
-                  </Badge>
-                </div>
-
-                {/* Price */}
-                <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                  {course.price}
-                </div>
-
-                {/* Students & Rating */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-border">
-                  <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{course.students} étudiants</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < Math.floor(course.rating)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300 dark:text-gray-600"
-                        }`}
-                      />
-                    ))}
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-foreground">
+                      {course.chapters}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-muted-foreground">
+                      Chapitres
+                    </div>
                   </div>
                 </div>
 
                 {/* CTA Button */}
                 <Button
-                  className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white"
+                  className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white shadow-lg hover:shadow-xl transition-all"
                   asChild
                 >
-                  <Link href={`/courses/${course.id}`}>
-                    Voir le cours
+                  <Link href={`/inscription`}>
+                    Découvrir le cours
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

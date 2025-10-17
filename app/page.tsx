@@ -11,7 +11,7 @@ import { getCurrentUser } from "@/lib/auth/auth";
 import { HomeHeader } from "@/components/layout/home-header";
 import { Hero } from "@/components/landing/hero";
 import { StatsSection } from "@/components/landing/stats-section";
-import { PopularCourses } from "@/components/landing/popular-courses";
+import { Courses } from "@/components/landing/courses";
 import Link from "next/link";
 import { getDashboardUrl } from "@/lib/utils/utils";
 
@@ -32,7 +32,7 @@ export default async function HomePage() {
       <StatsSection />
 
       {/* Popular Courses Section */}
-      <PopularCourses />
+      <Courses />
 
       {/* Features Grid */}
       <section className="py-20 px-4">
