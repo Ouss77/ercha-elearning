@@ -219,7 +219,7 @@ export function UsersManagement() {
                         <TableCell className="font-medium">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
-                              <Link 
+                              <Link
                                 href={`/admin/utilisateurs/${user.id}/details`}
                                 className="hover:text-primary hover:underline cursor-pointer"
                               >
