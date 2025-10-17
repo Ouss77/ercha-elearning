@@ -6,6 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Upload, Download, AlertCircle, CheckCircle, Loader2, X } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface UploadResult {
   success: boolean
@@ -20,6 +30,7 @@ export function BulkUserUpload({ onUploadComplete }: { onUploadComplete?: () => 
   const [uploading, setUploading] = useState(false)
   const [result, setResult] = useState<UploadResult | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,9 +52,15 @@ export function BulkUserUpload({ onUploadComplete }: { onUploadComplete?: () => 
     }
   }
 
+  const confirmUpload = () => {
+    if (!file) return
+    setShowConfirmDialog(true)
+  }
+
   const handleUpload = async () => {
     if (!file) return
-
+    
+    setShowConfirmDialog(false)
     setUploading(true)
     setResult(null)
 
@@ -247,7 +264,7 @@ export function BulkUserUpload({ onUploadComplete }: { onUploadComplete?: () => 
               </div>
 
               <Button
-                onClick={handleUpload}
+                onClick={confirmUpload}
                 disabled={!file || uploading}
                 className="w-full"
               >
@@ -332,6 +349,32 @@ export function BulkUserUpload({ onUploadComplete }: { onUploadComplete?: () => 
           )}
         </div>
       </DialogContent>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer l&apos;importation en masse</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir importer les utilisateurs depuis le fichier &quot;{file?.name}&quot; ? 
+              Cette action créera de nouveaux comptes utilisateurs dans le système.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={uploading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpload} disabled={uploading}>
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Importation...
+                </>
+              ) : (
+                "Confirmer l'importation"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }

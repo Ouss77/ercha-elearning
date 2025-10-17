@@ -13,6 +13,16 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Loader2, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Course {
   id: number
@@ -54,6 +64,7 @@ export default function UserFormPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourses, setSelectedCourses] = useState<number[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   useEffect(() => {
     if (isEditMode) {
@@ -133,10 +144,15 @@ export default function UserFormPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setShowConfirmDialog(true)
+  }
+
+  const handleSubmit = async () => {
     setError("")
     setLoading(true)
+    setShowConfirmDialog(false)
 
     try {
       const url = isEditMode ? `/api/users/${userId}` : "/api/users"
@@ -257,7 +273,7 @@ export default function UserFormPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Informations de base</h3>
@@ -513,6 +529,35 @@ export default function UserFormPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEditMode ? "Confirmer la modification" : "Confirmer la création"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isEditMode 
+                ? "Êtes-vous sûr de vouloir modifier cet utilisateur ? Les modifications seront appliquées immédiatement."
+                : "Êtes-vous sûr de vouloir créer cet utilisateur ? Un compte sera créé avec les informations fournies."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditMode ? "Modification..." : "Création..."}
+                </>
+              ) : (
+                isEditMode ? "Confirmer la modification" : "Confirmer la création"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

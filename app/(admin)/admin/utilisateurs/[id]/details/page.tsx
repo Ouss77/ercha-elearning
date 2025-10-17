@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { Role } from "@/lib/schemas/user"
 import { requireAuth } from "@/lib/auth/auth"
 import { getUserById } from "@/lib/db/db"
+import { getEnrollmentsByStudentId } from "@/lib/db/queries"
 import { notFound } from "next/navigation"
 
 interface Course {
@@ -61,7 +62,12 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   let enrollments: Enrollment[] = []
 
   if (user.role === "STUDENT") {
-    enrollments = await fetchEnrollments(params.id)
+    const enrollmentsResult = await getEnrollmentsByStudentId(userId)
+    if (enrollmentsResult.success && Array.isArray(enrollmentsResult.data)) {
+      enrollments = enrollmentsResult.data as Enrollment[]
+    } else {
+      enrollments = []
+    }
   }
 
   const getRoleBadgeVariant = (role: Role) => {
