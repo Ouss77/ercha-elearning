@@ -22,6 +22,7 @@ import {
   FileText,
   Award,
   User,
+  Activity,
 } from "lucide-react"
 
 interface MenuItem {
@@ -38,12 +39,13 @@ interface MobileNavProps {
 
 const menuItemsByRole: Record<string, MenuItem[]> = {
   ADMIN: [
-    { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { title: "Users", href: "/admin/users", icon: Users },
-    { title: "Courses", href: "/admin/courses", icon: BookOpen },
-    { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { title: "Compliance", href: "/admin/compliance", icon: Shield },
-    { title: "Settings", href: "/admin/settings", icon: Settings },
+    { title: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
+    { title: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
+    { title: "Cours", href: "/admin/cours", icon: BookOpen },
+    { title: "Domaines", href: "/admin/domaines", icon: Activity },
+    { title: "Analytique", href: "/admin/analytics", icon: BarChart3 },
+    { title: "Conformité", href: "/admin/compliance", icon: Shield },
+    { title: "Paramètres", href: "/admin/settings", icon: Settings },
   ],
   SUB_ADMIN: [
     { title: "Dashboard", href: "/sous-admin", icon: LayoutDashboard },

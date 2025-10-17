@@ -6,10 +6,11 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { SessionProvider } from "@/components/auth/session-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "EduPlatform - Plateforme E-learning",
+  title: "Erchad - Plateforme E-learning",
   description: "Plateforme d'apprentissage en ligne moderne",
   generator: "v0.app",
 }
@@ -31,6 +32,7 @@ export default function RootLayout({
           <SessionProvider>
             <Suspense fallback={null}>{children}</Suspense>
           </SessionProvider>
+          <Toaster />
         </ThemeProvider>
         <Analytics />
       </body>

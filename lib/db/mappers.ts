@@ -6,14 +6,10 @@
  */
 
 import type { users, courses, enrollments } from "@/drizzle/schema"
+import type { User, DbUser } from "@/types/user"
 
-// Type for database user record
-type DbUser = typeof users.$inferSelect
-
-// Type for application user record with photoUrl
-export type AppUser = Omit<DbUser, 'avatarUrl'> & {
-  photoUrl?: string | null
-}
+// Re-export for backward compatibility
+export type AppUser = User
 
 // Type for database course record
 type DbCourse = typeof courses.$inferSelect
@@ -36,7 +32,7 @@ export type AppEnrollment = DbEnrollment & {
  * Map database user record to application user record
  * Converts avatar_url (DB) to photoUrl (App)
  */
-export function mapUserFromDb(dbUser: DbUser | null | undefined): AppUser | null {
+export function mapUserFromDb(dbUser: DbUser | null | undefined): User | null {
   if (!dbUser) return null
   
   const { avatarUrl, ...rest } = dbUser
@@ -50,7 +46,7 @@ export function mapUserFromDb(dbUser: DbUser | null | undefined): AppUser | null
  * Map application user data to database user data
  * Converts photoUrl (App) to avatar_url (DB)
  */
-export function mapUserToDb(appUser: Partial<AppUser>): Partial<Omit<DbUser, 'id' | 'createdAt' | 'updatedAt'>> {
+export function mapUserToDb(appUser: Partial<User>): Partial<Omit<DbUser, 'id' | 'createdAt' | 'updatedAt'>> {
   const { photoUrl, ...rest } = appUser
   return {
     ...rest,

@@ -1,41 +1,31 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
-import { UserPlus, Search, Trash2 } from "lucide-react"
+import { UserPlus, Search, Trash2, PenBox, BookOpen } from "lucide-react"
 import type { Role } from "@/lib/schemas/user"
-
-interface User {
-  id: number
-  email: string
-  name: string
-  role: Role
-  is_active: boolean
-  created_at: string
-}
+import type { UserListItem } from "@/types/user"
+import Link from "next/link"
+import { BulkUserUpload } from "@/components/admin/bulk-user-upload"
+import { CourseEnrollmentDialog } from "@/components/admin/course-enrollment-dialog"
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog"
+import { toast } from "sonner"
 
 export function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState<string>("all")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [enrollmentDialogOpen, setEnrollmentDialogOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<UserListItem | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -51,9 +41,11 @@ export function UsersManagement() {
         setUsers(data.users || [])
       } else {
         console.error("[v0] Failed to fetch users:", data.error)
+        toast.error("Erreur lors du chargement des utilisateurs")
       }
     } catch (error) {
       console.error("[v0] Error fetching users:", error)
+      toast.error("Erreur lors du chargement des utilisateurs")
     } finally {
       setLoading(false)
     }
@@ -75,36 +67,49 @@ export function UsersManagement() {
       const response = await fetch(`/api/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !user.is_active }),
+        body: JSON.stringify({ isActive: !user.isActive }),
       })
 
       if (response.ok) {
-        setUsers(users.map((u) => (u.id === userId ? { ...u, is_active: !u.is_active } : u)))
+        setUsers(users.map((u) => (u.id === userId ? { ...u, isActive: !u.isActive } : u)))
+        toast.success(`Utilisateur ${!user.isActive ? 'activé' : 'désactivé'} avec succès`)
       } else {
         const data = await response.json()
         console.error("[v0] Failed to update user:", data.error)
+        toast.error("Erreur lors de la mise à jour du statut")
       }
     } catch (error) {
       console.error("[v0] Error updating user:", error)
+      toast.error("Erreur lors de la mise à jour du statut")
     }
   }
 
-  const deleteUser = async (userId: number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return
+  const handleDeleteClick = (user: UserListItem) => {
+    setUserToDelete(user)
+    setDeleteDialogOpen(true)
+  }
+
+  const deleteUser = async () => {
+    if (!userToDelete) return
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userToDelete.id}`, {
         method: "DELETE",
       })
 
       if (response.ok) {
-        setUsers(users.filter((u) => u.id !== userId))
+        setUsers(users.filter((u) => u.id !== userToDelete.id))
+        toast.success("Utilisateur supprimé avec succès")
+        setDeleteDialogOpen(false)
+        setUserToDelete(null)
       } else {
         const data = await response.json()
         console.error("[v0] Failed to delete user:", data.error)
+        toast.error("Erreur lors de la suppression de l'utilisateur")
       }
     } catch (error) {
       console.error("[v0] Error deleting user:", error)
+      toast.error("Erreur lors de la suppression de l'utilisateur")
     }
   }
 
@@ -138,35 +143,29 @@ export function UsersManagement() {
     }
   }
 
+  const handleManageCourses = (userId: number) => {
+    setSelectedUserId(userId)
+    setEnrollmentDialogOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-border bg-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>Gérez les comptes étudiants, professeurs et administrateurs</CardDescription>
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
+            <div className="flex flex-col sm:flex-row gap-2 place-content-end">
+              <BulkUserUpload onUploadComplete={fetchUsers} />
+              <Link href="/admin/utilisateurs/creer" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Ajouter un utilisateur
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
-                  <DialogDescription>Ajoutez un nouvel utilisateur à la plateforme</DialogDescription>
-                </DialogHeader>
-                <CreateUserForm
-                  onClose={() => {
-                    setIsCreateDialogOpen(false)
-                    fetchUsers()
-                  }}
-                />
-              </DialogContent>
-            </Dialog>
+              </Link>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -200,153 +199,123 @@ export function UsersManagement() {
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Chargement...</div>
           ) : (
-            <div className="rounded-md border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date de création</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>{getRoleLabel(user.role)}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Switch checked={user.is_active} onCheckedChange={() => toggleUserStatus(user.id)} />
-                          <span className="text-sm text-muted-foreground">{user.is_active ? "Actif" : "Inactif"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
+            <div className="rounded-md border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px]">Utilisateur</TableHead>
+                      <TableHead className="hidden md:table-cell min-w-[200px]">Email</TableHead>
+                      <TableHead className="min-w-[120px]">Rôle</TableHead>
+                      <TableHead className="hidden lg:table-cell min-w-[100px]">Cours</TableHead>
+                      <TableHead className="hidden sm:table-cell min-w-[120px]">Statut</TableHead>
+                      <TableHead className="hidden xl:table-cell min-w-[120px]">Date de création</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/admin/utilisateurs/${user.id}/details`}
+                                className="hover:text-primary hover:underline cursor-pointer"
+                              >
+                                {user.name}
+                              </Link>
+                              <span className={`sm:hidden h-2 w-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`} title={user.isActive ? 'Actif' : 'Inactif'}></span>
+                            </div>
+                            <span className="text-xs text-muted-foreground md:hidden">{user.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs whitespace-nowrap">
+                            {getRoleLabel(user.role)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => deleteUser(user.id)}
+                            onClick={() => handleManageCourses(user.id)}
+                            className="text-primary hover:text-primary whitespace-nowrap"
+                            disabled={!["STUDENT", "TRAINER"].includes(user.role) || user.isActive === false}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            {["STUDENT", "TRAINER"].includes(user.role) ? "Gérer" : "—"}
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center space-x-2">
+                            <Switch checked={user.isActive} onCheckedChange={() => toggleUserStatus(user.id)} />
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{user.isActive ? "Actif" : "Inactif"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">{new Date(user.createdAt).toLocaleDateString("fr-FR")}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Link href={`/admin/utilisateurs/${user.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary hover:text-primary"
+                                title="Modifier"
+                              >
+                                <PenBox className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteClick(user)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleManageCourses(user.id)}
+                              className="lg:hidden text-primary hover:text-primary"
+                              disabled={!["STUDENT", "TRAINER"].includes(user.role) || user.isActive === false}
+                              title="Gérer les cours"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Course Enrollment Dialog */}
+      {selectedUserId && (
+        <CourseEnrollmentDialog
+          userId={selectedUserId}
+          open={enrollmentDialogOpen}
+          onOpenChange={setEnrollmentDialogOpen}
+          onEnrollmentComplete={fetchUsers}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={deleteUser}
+        title="Supprimer l'utilisateur"
+        itemName={userToDelete ? `l'utilisateur ${userToDelete.name}` : undefined}
+      />
     </div>
-  )
-}
-
-function CreateUserForm({ onClose }: { onClose: () => void }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    role: "",
-    password: "",
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    try {
-      const response = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        console.log("[v0] User created successfully:", data.user)
-        onClose()
-      } else {
-        setError(data.error || "Erreur lors de la création")
-      }
-    } catch (error) {
-      console.error("[v0] Error creating user:", error)
-      setError("Erreur de connexion au serveur")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Nom complet</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="role">Rôle</Label>
-        <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un rôle" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="STUDENT">Étudiant</SelectItem>
-            <SelectItem value="TRAINER">Professeur</SelectItem>
-            <SelectItem value="ADMIN">Administrateur</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
-          type="password"
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          required
-        />
-      </div>
-
-      {error && <div className="text-sm text-destructive">{error}</div>}
-
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-          Annuler
-        </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? "Création..." : "Créer l'utilisateur"}
-        </Button>
-      </div>
-    </form>
   )
 }

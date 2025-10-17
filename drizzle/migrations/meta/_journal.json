@@ -15,6 +15,20 @@
       "when": 1760547000000,
       "tag": "0003_add_enum_types",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760661284745,
+      "tag": "0004_chief_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1760662935601,
+      "tag": "0005_chunky_risque",
+      "breakpoints": true
     }
   ]
 }

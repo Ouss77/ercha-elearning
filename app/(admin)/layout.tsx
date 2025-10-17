@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import { requireAuth } from "@/lib/auth/auth"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
+import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 
 export default async function AdminLayout({
   children,
@@ -15,15 +14,5 @@ export default async function AdminLayout({
     redirect("/connexion")
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Sidebar role="ADMIN" />
-      <div className="lg:pl-64">
-        <Header user={user} />
-        <main className="py-6 px-4 lg:px-8">
-          {children}
-        </main>
-      </div>
-    </div>
-  )
+  return <LayoutWrapper role="ADMIN" user={user}>{children}</LayoutWrapper>
 }
