@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "EduPlatform - Plateforme E-learning",
+  title: "Erchad - Plateforme E-learning",
   description: "Plateforme d'apprentissage en ligne moderne",
   generator: "v0.app",
 }

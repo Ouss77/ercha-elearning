@@ -152,15 +152,15 @@ export function UsersManagement() {
     <div className="space-y-6">
       <Card className="border-border bg-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>Gérez les comptes étudiants, professeurs et administrateurs</CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <BulkUserUpload onUploadComplete={fetchUsers} />
-              <Link href="/admin/utilisateurs/creer">
-                <Button>
+              <Link href="/admin/utilisateurs/creer" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Ajouter un utilisateur
                 </Button>
@@ -199,73 +199,95 @@ export function UsersManagement() {
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Chargement...</div>
           ) : (
-            <div className="rounded-md border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Cours</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date de création</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>{getRoleLabel(user.role)}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleManageCourses(user.id)}
-                          className="text-primary hover:text-primary"
-                          disabled={!["STUDENT", "TRAINER"].includes(user.role) || user.isActive === false}
-                        >
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          {["STUDENT", "TRAINER"].includes(user.role) ? "Gérer" : "—"}
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Switch checked={user.isActive} onCheckedChange={() => toggleUserStatus(user.id)} />
-                          <span className="text-sm text-muted-foreground">{user.isActive ? "Actif" : "Inactif"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString("fr-FR")}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-
-                          <Link href={`/admin/utilisateurs/${user.id}`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-primary hover:text-destructive"
-
-                          >
-                            <PenBox className="h-4 w-4" />
-                          </Button>
-                          </Link>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteClick(user)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <div className="rounded-md border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px]">Utilisateur</TableHead>
+                      <TableHead className="hidden md:table-cell min-w-[200px]">Email</TableHead>
+                      <TableHead className="min-w-[120px]">Rôle</TableHead>
+                      <TableHead className="hidden lg:table-cell min-w-[100px]">Cours</TableHead>
+                      <TableHead className="hidden sm:table-cell min-w-[120px]">Statut</TableHead>
+                      <TableHead className="hidden xl:table-cell min-w-[120px]">Date de création</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span>{user.name}</span>
+                              <span className={`sm:hidden h-2 w-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`} title={user.isActive ? 'Actif' : 'Inactif'}></span>
+                            </div>
+                            <span className="text-xs text-muted-foreground md:hidden">{user.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs whitespace-nowrap">
+                            {getRoleLabel(user.role)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleManageCourses(user.id)}
+                            className="text-primary hover:text-primary whitespace-nowrap"
+                            disabled={!["STUDENT", "TRAINER"].includes(user.role) || user.isActive === false}
+                          >
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            {["STUDENT", "TRAINER"].includes(user.role) ? "Gérer" : "—"}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center space-x-2">
+                            <Switch checked={user.isActive} onCheckedChange={() => toggleUserStatus(user.id)} />
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{user.isActive ? "Actif" : "Inactif"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">{new Date(user.createdAt).toLocaleDateString("fr-FR")}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Link href={`/admin/utilisateurs/${user.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary hover:text-primary"
+                                title="Modifier"
+                              >
+                                <PenBox className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteClick(user)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleManageCourses(user.id)}
+                              className="lg:hidden text-primary hover:text-primary"
+                              disabled={!["STUDENT", "TRAINER"].includes(user.role) || user.isActive === false}
+                              title="Gérer les cours"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
