@@ -21,7 +21,7 @@ export default async function CourseAnalyticsPage({ params }: PageProps) {
   }
 
   const user = getSession(token)
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== "ADMIN") {
     redirect("/non-autorise")
   }
 
