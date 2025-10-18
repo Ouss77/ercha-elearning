@@ -87,7 +87,7 @@ export async function getAllUsers(roleFilter?: "STUDENT" | "TRAINER" | "SUB_ADMI
       : db.select().from(users);
 
     const result = await query;
-    
+
     // For each user, get their enrolled courses and teaching courses
     const usersWithCourses = await Promise.all(
       result.map(async (user) => {
@@ -100,7 +100,7 @@ export async function getAllUsers(roleFilter?: "STUDENT" | "TRAINER" | "SUB_ADMI
             .from(enrollments)
             .innerJoin(courses, eq(enrollments.courseId, courses.id))
             .where(eq(enrollments.studentId, user.id));
-          
+
           courseSlugs.push(...enrolledCourses.map(c => c.slug));
         }
 
@@ -110,7 +110,7 @@ export async function getAllUsers(roleFilter?: "STUDENT" | "TRAINER" | "SUB_ADMI
             .select({ slug: courses.slug })
             .from(courses)
             .where(eq(courses.teacherId, user.id));
-          
+
           courseSlugs.push(...teachingCourses.map(c => c.slug));
         }
 

@@ -88,7 +88,7 @@ export async function POST(
     // Parse and validate request body
     const body = await request.json()
     console.log(`[POST /api/courses/${courseId}/chapters] Request body:`, body)
-    
+
     const validatedData = createChapterSchema.parse(body)
     console.log(`[POST /api/courses/${courseId}/chapters] Validated data:`, validatedData)
 
