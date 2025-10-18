@@ -100,7 +100,7 @@ export async function getUserById(id: number) {
 export async function getAllUsers() {
   try {
     const usersResult = await db.select().from(users);
-    
+
     // Fetch all student enrollments in a single query
     const allStudentEnrollments = await db
       .select({
@@ -109,7 +109,7 @@ export async function getAllUsers() {
       })
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id));
-    
+
     // Fetch all trainer courses in a single query
     const allTrainerCourses = await db
       .select({
@@ -118,7 +118,7 @@ export async function getAllUsers() {
       })
       .from(courses)
       .where(sql`${courses.teacherId} IS NOT NULL`);
-    
+
     // Create lookup maps for fast access
     const studentEnrollmentMap = new Map<number, string[]>();
     allStudentEnrollments.forEach(({ studentId, courseSlug }) => {
@@ -129,7 +129,7 @@ export async function getAllUsers() {
         studentEnrollmentMap.get(studentId)!.push(courseSlug);
       }
     });
-    
+
     const trainerCoursesMap = new Map<number, string[]>();
     allTrainerCourses.forEach(({ teacherId, courseSlug }) => {
       if (teacherId) {
@@ -139,25 +139,25 @@ export async function getAllUsers() {
         trainerCoursesMap.get(teacherId)!.push(courseSlug);
       }
     });
-    
+
     // Map users with their courses
     const usersWithCourses = usersResult.map((user) => {
       const mappedUser = mapUserFromDb(user);
       if (!mappedUser) return null;
-      
+
       let enrolledCourses: string[] = [];
       if (user.role === "STUDENT") {
         enrolledCourses = studentEnrollmentMap.get(user.id) || [];
       } else if (user.role === "TRAINER") {
         enrolledCourses = trainerCoursesMap.get(user.id) || [];
       }
-      
+
       return {
         ...mappedUser,
         enrolledCourses
       };
     });
-    
+
     const filteredUsers = usersWithCourses.filter((u): u is User & { enrolledCourses: string[] } => u !== null);
     return { success: true as const, data: filteredUsers };
   } catch (error) {
@@ -245,14 +245,14 @@ export async function createCourse(data: {
   try {
     // Generate base slug from title
     const baseSlug = generateSlug(data.title);
-    
+
     // Get existing slugs to ensure uniqueness
     const existingCourses = await db.select({ slug: courses.slug }).from(courses);
     const existingSlugs = existingCourses.map(c => c.slug);
-    
+
     // Generate unique slug
     const slug = generateUniqueSlug(baseSlug, existingSlugs);
-    
+
     const result = await db
       .insert(courses)
       .values({
@@ -286,22 +286,22 @@ export async function updateCourse(
 ) {
   try {
     let updateData: any = { ...data, updatedAt: new Date() };
-    
+
     // If title is being updated, regenerate slug
     if (data.title) {
       const baseSlug = generateSlug(data.title);
-      
+
       // Get existing slugs (excluding current course)
       const existingCourses = await db
         .select({ slug: courses.slug })
         .from(courses)
         .where(ne(courses.id, id));
       const existingSlugs = existingCourses.map(c => c.slug);
-      
+
       // Generate unique slug
       updateData.slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
-    
+
     const result = await db
       .update(courses)
       .set(updateData)
