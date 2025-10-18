@@ -4,7 +4,7 @@ import { Hero } from "@/components/landing/hero";
 import { StatsSection } from "@/components/landing/stats-section";
 import { Courses } from "@/components/landing/courses";
 import { Features } from "@/components/landing/features";
-import { Testimonials } from "@/components/landing/testimonials";
+import { Teachers } from "@/components/landing/teachers";
 import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/layout/footer";
 
@@ -31,7 +31,7 @@ export default async function HomePage() {
       <Features />
 
       {/* Testimonials Section */}
-      <Testimonials />
+      <Teachers />
 
       {/* CTA Section */}
       <CTASection />

@@ -76,7 +76,7 @@ export function CTASection() {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-white text-teal-600 hover:bg-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 px-8"
+              className="border-2 border-white text-teal-600 hover:bg-white/10 hover:text-white backdrop-blur-sm shadow-xl hover:shadow-2xl dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-950 transition-all duration-300 px-8"
             >
               Contactez-nous
             </Button>
