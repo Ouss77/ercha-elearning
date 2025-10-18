@@ -14,7 +14,7 @@ export const users = pgTable("users", {
   role: roleEnum("role").notNull().default("STUDENT"),
   avatarUrl: varchar("avatar_url", { length: 500 }),
   isActive: boolean("is_active").default(true),
-
+  
   // Student-specific information
   phone: varchar("phone", { length: 20 }),
   dateOfBirth: timestamp("date_of_birth"),
@@ -25,7 +25,7 @@ export const users = pgTable("users", {
 
   // Additional info
   bio: text("bio"),
-
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
