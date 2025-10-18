@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
+import { Logo } from "@/components/ui/logo";
 import {
   LayoutDashboard,
   Users,
@@ -11,7 +12,6 @@ import {
   Shield,
   Settings,
   UserCog,
-  GraduationCap,
   ClipboardList,
   FileText,
   Award,
@@ -70,14 +70,7 @@ export function Sidebar({ role }: SidebarProps) {
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border/50">
       <div className="flex flex-col flex-1 overflow-y-auto pt-5 pb-4">
         <div className="flex items-center flex-shrink-0 px-4 mb-6">
-          <Link href="/" className="flex items-center">
-            <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-white" />
-            </div>
-            <span className="ml-2 text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              EduPlatform
-            </span>
-          </Link>
+          <Logo iconSize="md" />
         </div>
         <nav className="flex-1 px-3 space-y-1">
           {menuItems.map((item) => {

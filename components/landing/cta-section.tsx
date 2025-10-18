@@ -63,22 +63,22 @@ export function CTASection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link href="/register">
+          <Link href="/a-propos">
             <Button
               size="lg"
               className="bg-white text-teal-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group px-8"
             >
-              Créer un Compte
+              En Savoir Plus
               <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
-          <Link href="/student">
+          <Link href="/contact">
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-white text-teal-600 dark:text-white hover:bg-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 px-8"
+              className="border-2 border-white text-teal-600 hover:bg-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 px-8"
             >
-              Explorer les Cours
+              Contactez-nous
             </Button>
           </Link>
         </div>
@@ -93,7 +93,7 @@ export function CTASection() {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-sm">Aucune carte requise</span>
+            <span className="text-sm">Formations Professionnelles</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -103,7 +103,7 @@ export function CTASection() {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-sm">Inscription gratuite</span>
+            <span className="text-sm">Certificats Reconnus</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -113,7 +113,7 @@ export function CTASection() {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-sm">Accès immédiat</span>
+            <span className="text-sm">Suivi Personnalisé</span>
           </div>
         </div>
       </div>

@@ -236,7 +236,7 @@ export function Hero({ user }: HeroProps) {
                 className="px-8 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white shadow-xl"
                 asChild
               >
-                <Link href="/inscription">Commencer gratuitement</Link>
+                <Link href="/a-propos">À Propos de Nous</Link>
               </Button>
               <Button
                 variant="outline"
@@ -244,7 +244,7 @@ export function Hero({ user }: HeroProps) {
                 className="px-8 border-2 border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950"
                 asChild
               >
-                <Link href="/connexion">Se connecter</Link>
+                <Link href="/contact">Contactez-nous</Link>
               </Button>
             </div>
           )}
