@@ -20,9 +20,8 @@ export function Footer() {
 
   const footerLinks = {
     platform: [
-      { label: "Nos Cours", href: "/student" },
-      { label: "Devenir Formateur", href: "/register" },
-      { label: "Tarifs", href: "#" },
+      { label: "Nos Cours", href: "/etudiant/cours" },
+      { label: "Devenir Formateur", href: "/insrciption" },
       { label: "Certificats", href: "#" },
     ],
     company: [

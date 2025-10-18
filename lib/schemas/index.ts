@@ -21,3 +21,23 @@ export {
   type ChangePasswordInput,
   type UserIdParam
 } from "./user"
+
+// Domain schemas
+export {
+  createDomainSchema,
+  updateDomainSchema,
+  domainIdSchema,
+  type CreateDomainInput,
+  type UpdateDomainInput,
+  type DomainIdParam
+} from "./domain"
+
+// Course schemas
+export {
+  createCourseSchema,
+  updateCourseSchema,
+  courseIdSchema,
+  type CreateCourseInput,
+  type UpdateCourseInput,
+  type CourseIdParam
+} from "./course"

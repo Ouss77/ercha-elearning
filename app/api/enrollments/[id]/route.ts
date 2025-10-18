@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser()
@@ -19,7 +19,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
 
-    const { id } = await params
+    const { id } = params
     await db.delete(enrollments).where(eq(enrollments.id, Number(id)))
 
     return NextResponse.json({ success: true }, { status: 200 })
