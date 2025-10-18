@@ -136,33 +136,205 @@ export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
         completedChapters: sql<number>`cast(count(distinct ${chapterProgress.id}) as int)`,
       })
       .from(enrollments)
-      .innerJoin(courses, eq(enrollments.courseId, courses.id))
-      .leftJoin(domains, eq(courses.domainId, domains.id))
-      .leftJoin(users, eq(courses.teacherId, users.id))
-      .leftJoin(chapters, eq(courses.id, chapters.courseId))
-      .leftJoin(
-        chapterProgress,
-        and(
-          eq(chapterProgress.chapterId, chapters.id),
-          eq(chapterProgress.studentId, studentId)
-        )
-      )
-      .where(eq(enrollments.studentId, studentId))
-      .groupBy(
-        enrollments.id,
-        courses.id,
-        courses.title,
-        courses.description,
-        courses.thumbnailUrl,
-        enrollments.createdAt,
-        enrollments.completedAt,
-        domains.id,
-        domains.name,
-        domains.color,
-        users.id,
-        users.name
-      )
-      .orderBy(desc(enrollments.createdAt));
+      .innerJoin(courses, eq(enrollments.courseId, courses.id));
+
+    // Fetch all trainer courses in a single query
+    const allTrainerCourses = await db
+      .select({
+        teacherId: courses.teacherId,
+        courseSlug: courses.slug,
+      })
+      .from(courses)
+      .where(sql`${courses.teacherId} IS NOT NULL`);
+
+    // Create lookup maps for fast access
+    const studentEnrollmentMap = new Map<number, string[]>();
+    allStudentEnrollments.forEach(({ studentId, courseSlug }) => {
+      if (studentId) {
+        if (!studentEnrollmentMap.has(studentId)) {
+          studentEnrollmentMap.set(studentId, []);
+        }
+        studentEnrollmentMap.get(studentId)!.push(courseSlug);
+      }
+    });
+
+    const trainerCoursesMap = new Map<number, string[]>();
+    allTrainerCourses.forEach(({ teacherId, courseSlug }) => {
+      if (teacherId) {
+        if (!trainerCoursesMap.has(teacherId)) {
+          trainerCoursesMap.set(teacherId, []);
+        }
+        trainerCoursesMap.get(teacherId)!.push(courseSlug);
+      }
+    });
+
+    // Map users with their courses
+    const usersWithCourses = usersResult.map((user) => {
+      const mappedUser = mapUserFromDb(user);
+      if (!mappedUser) return null;
+
+      let enrolledCourses: string[] = [];
+      if (user.role === "STUDENT") {
+        enrolledCourses = studentEnrollmentMap.get(user.id) || [];
+      } else if (user.role === "TRAINER") {
+        enrolledCourses = trainerCoursesMap.get(user.id) || [];
+      }
+
+      return {
+        ...mappedUser,
+        enrolledCourses,
+      };
+    });
+
+    const filteredUsers = usersWithCourses.filter((u): u is User & { enrolledCourses: string[] } => u !== null);
+    return { success: true as const, data: filteredUsers };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function updateUser(
+  id: number,
+  data: Partial<{
+    email: string;
+    password: string;
+    name: string;
+    role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN";
+    avatarUrl: string | null;
+    isActive: boolean;
+    phone: string | null;
+    dateOfBirth: Date | null;
+    address: string | null;
+    city: string | null;
+    postalCode: string | null;
+    country: string | null;
+    bio: string | null;
+  }>
+) {
+  try {
+    // Hash password if it's being updated
+    let dataToUpdate = { ...data };
+    if (data.password && data.password.trim() !== "") {
+      dataToUpdate.password = await hash(data.password, 10);
+    }
+
+    const result = await db
+      .update(users)
+      .set(dataToUpdate)
+      .where(eq(users.id, id))
+      .returning();
+
+    const mappedUser = mapUserFromDb(result[0]);
+    return { success: true, data: mappedUser };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getTeachers() {
+  try {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, "TRAINER"));
+
+    const mappedUsers = result
+      .map(mapUserFromDb)
+      .filter((u): u is User => u !== null);
+    return { success: true, data: mappedUsers };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function validateTeacherAssignment(teacherId: number) {
+  try {
+    const result = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(and(eq(users.id, teacherId), eq(users.role, "TRAINER")))
+      .limit(1);
+
+    return { success: true, data: result.length > 0 };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+// Course query functions
+export async function createCourse(data: {
+  title: string;
+  description?: string | null;
+  domainId: number;
+  teacherId?: number | null;
+  thumbnailUrl?: string | null;
+  isActive?: boolean;
+}) {
+  try {
+    // Generate base slug from title
+    const baseSlug = generateSlug(data.title);
+
+    // Get existing slugs to ensure uniqueness
+    const existingCourses = await db.select({ slug: courses.slug }).from(courses);
+    const existingSlugs = existingCourses.map(c => c.slug);
+
+    // Generate unique slug
+    const slug = generateUniqueSlug(baseSlug, existingSlugs);
+
+    const result = await db
+      .insert(courses)
+      .values({
+        title: data.title,
+        slug,
+        description: data.description,
+        domainId: data.domainId,
+        teacherId: data.teacherId,
+        thumbnailUrl: data.thumbnailUrl,
+        isActive: data.isActive ?? false, // Default to false for new courses
+      })
+      .returning();
+
+    const mappedCourse = mapCourseFromDb(result[0]);
+    return { success: true, data: mappedCourse };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function updateCourse(
+  id: number,
+  data: Partial<{
+    title: string;
+    description: string | null;
+    domainId: number;
+    teacherId: number | null;
+    thumbnailUrl: string | null;
+    isActive: boolean;
+  }>
+) {
+  try {
+    let updateData: any = { ...data, updatedAt: new Date() };
+
+    // If title is being updated, regenerate slug
+    if (data.title) {
+      const baseSlug = generateSlug(data.title);
+
+      // Get existing slugs (excluding current course)
+      const existingCourses = await db
+        .select({ slug: courses.slug })
+        .from(courses)
+        .where(ne(courses.id, id));
+      const existingSlugs = existingCourses.map(c => c.slug);
+
+      // Generate unique slug
+      updateData.slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    const result = await db
+      .update(courses)
+      .set(updateData)
+      .where(eq(courses.id, id))
+      .returning();
 
     return { success: true, data: result };
   } catch (error) {
