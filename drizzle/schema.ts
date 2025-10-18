@@ -56,13 +56,24 @@ export const courses = pgTable("courses", {
 // Chapters table
 export const chapters = pgTable("chapters", {
   id: serial("id").primaryKey(),
-  courseId: integer("course_id").references(() => courses.id),
+  courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
-  orderIndex: integer("order_index").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+})
+
+// Content Items table
+export const contentItems = pgTable("content_items", {
+  id: serial("id").primaryKey(),
+  chapterId: integer("chapter_id").references(() => chapters.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
   contentType: varchar("content_type", { length: 20 }).notNull(),
-  contentData: jsonb("content_data").notNull(),
-  createdAt: timestamp("created_at").defaultNow()
+  orderIndex: integer("order_index").notNull().default(0),
+  contentData: jsonb("content_data").notNull().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
 // Chapter Progress table

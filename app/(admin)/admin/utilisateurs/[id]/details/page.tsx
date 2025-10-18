@@ -259,7 +259,6 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         </CardContent>
       </Card>
 
-      {/* TODO: Fix the empty enrollment issue */}
       {/* Enrolled Courses (for Students) */}
       {user.role === "STUDENT" && (
         <Card className="border-border bg-card">

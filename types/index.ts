@@ -13,5 +13,25 @@ export type {
   UserProfile 
 } from "./user"
 
+// Chapter and Content Item types
+export type {
+  Chapter,
+  ContentItem,
+  ChapterWithContent,
+  TypedContentItem,
+  ContentType,
+  ContentData,
+  VideoContent,
+  TextContent,
+  QuizContent,
+  TestContent,
+  ExamContent,
+  QuizQuestion,
+  TestQuestion,
+  ExamQuestion,
+  Attachment,
+  Difficulty
+} from "./chapter"
+
 // Re-export next-auth types
 export type { Role } from "@/lib/schemas/user"
