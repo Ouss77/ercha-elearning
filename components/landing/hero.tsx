@@ -223,9 +223,9 @@ export function Hero({ user }: HeroProps) {
           <div className="flex items-center justify-center gap-2 text-gray-700 dark:text-foreground">
             <span className="text-lg">Découvrez</span>
             <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
-              325+
+              15+
             </span>
-            <span className="text-lg">cours de formation professionnelle</span>
+            <span className="text-lg">cours dans 3 domaines clés</span>
           </div>
 
           {/* CTA Buttons - Only show if not authenticated */}

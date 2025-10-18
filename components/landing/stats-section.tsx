@@ -7,27 +7,27 @@ import { Users, BookOpen, Award, TrendingUp } from "lucide-react";
 export function StatsSection() {
   const stats = [
     {
-      icon: Users,
-      value: "19.5K",
-      label: "Étudiants actifs",
+      icon: BookOpen,
+      value: "15+",
+      label: "Cours disponibles",
       color: "text-teal-600 dark:text-teal-400",
     },
     {
-      icon: BookOpen,
-      value: "325+",
-      label: "Cours disponibles",
+      icon: Users,
+      value: "60+",
+      label: "Étudiants actifs",
       color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       icon: Award,
-      value: "12.5K",
-      label: "Cours complétés",
+      value: "3",
+      label: "Formateurs experts",
       color: "text-cyan-600 dark:text-cyan-400",
     },
     {
       icon: TrendingUp,
-      value: "96%",
-      label: "Taux de satisfaction",
+      value: "3",
+      label: "Domaines clés",
       color: "text-green-600 dark:text-green-400",
     },
   ];

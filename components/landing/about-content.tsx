@@ -8,6 +8,7 @@ import {
   Award,
   BookOpen,
   TrendingUp,
+  Eye,
 } from "lucide-react";
 
 export function AboutContent() {
@@ -23,8 +24,9 @@ export function AboutContent() {
             </span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Une plateforme d'apprentissage moderne dédiée à la formation
-            professionnelle et au développement des compétences.
+            Une plateforme d'apprentissage moderne dédiée à la formation dans
+            trois domaines clés : Développement Web, Design Graphique et
+            Marketing Digital.
           </p>
         </div>
 
@@ -32,7 +34,7 @@ export function AboutContent() {
         <Card className="mb-12 border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20">
           <CardContent className="p-8 md:p-12">
             <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 rounded-lg bg-teal-600 dark:bg-teal-500">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-teal-600 to-emerald-600 dark:from-teal-500 dark:to-emerald-500">
                 <Target className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -40,13 +42,12 @@ export function AboutContent() {
                   Notre Mission
                 </h2>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                  Démocratiser l'accès à une formation de qualité en offrant une
-                  plateforme d'apprentissage innovante qui permet à chacun de
-                  développer ses compétences professionnelles et d'atteindre ses
-                  objectifs de carrière. Nous croyons que l'éducation est la clé
-                  du succès et nous nous engageons à fournir les meilleurs
-                  outils et contenus pour accompagner nos apprenants tout au
-                  long de leur parcours.
+                  Offrir une formation de qualité dans trois domaines
+                  stratégiques : le développement web, le design graphique et le
+                  marketing digital. Nous croyons en l'apprentissage pratique et
+                  personnalisé, permettant à chaque étudiant de développer des
+                  compétences concrètes adaptées aux besoins du marché du
+                  travail algérien et régional.
                 </p>
               </div>
             </div>
@@ -57,21 +58,20 @@ export function AboutContent() {
         <Card className="mb-12 border-border bg-gradient-to-br from-emerald-50/50 to-cyan-50/50 dark:from-emerald-950/20 dark:to-cyan-950/20">
           <CardContent className="p-8 md:p-12">
             <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 rounded-lg bg-emerald-600 dark:bg-emerald-500">
-                <GraduationCap className="h-6 w-6 text-white" />
+              <div className="p-3 rounded-lg bg-gradient-to-br from-teal-600 to-emerald-600 dark:from-teal-500 dark:to-emerald-500">
+                <Eye className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
                   Notre Vision
                 </h2>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                  Devenir la référence en matière de formation en ligne en
-                  Algérie et dans la région MENA, en offrant des parcours
-                  d'apprentissage personnalisés, des certifications reconnues et
-                  un suivi pédagogique de qualité. Nous aspirons à créer une
-                  communauté d'apprenants engagés et à contribuer au
-                  développement des compétences qui répondent aux besoins du
-                  marché du travail.
+                  Devenir une référence en matière de formation professionnelle
+                  en Algérie dans nos trois domaines d'expertise. Nous aspirons
+                  à créer des parcours d'apprentissage structurés qui répondent
+                  aux standards internationaux, tout en restant accessibles et
+                  adaptés au contexte local. Notre objectif est de former des
+                  professionnels compétents et confiants.
                 </p>
               </div>
             </div>
@@ -136,7 +136,7 @@ export function AboutContent() {
           <Card className="border-border text-center">
             <CardContent className="p-6">
               <div className="text-3xl md:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-2">
-                325+
+                15+
               </div>
               <p className="text-sm text-muted-foreground">Cours Disponibles</p>
             </CardContent>
@@ -145,7 +145,7 @@ export function AboutContent() {
           <Card className="border-border text-center">
             <CardContent className="p-6">
               <div className="text-3xl md:text-4xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
-                1,250+
+                60+
               </div>
               <p className="text-sm text-muted-foreground">Étudiants Actifs</p>
             </CardContent>
@@ -154,7 +154,7 @@ export function AboutContent() {
           <Card className="border-border text-center">
             <CardContent className="p-6">
               <div className="text-3xl md:text-4xl font-bold text-cyan-600 dark:text-cyan-400 mb-2">
-                50+
+                3
               </div>
               <p className="text-sm text-muted-foreground">
                 Formateurs Experts
@@ -165,11 +165,9 @@ export function AboutContent() {
           <Card className="border-border text-center">
             <CardContent className="p-6">
               <div className="text-3xl md:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-2">
-                95%
+                3
               </div>
-              <p className="text-sm text-muted-foreground">
-                Taux de Satisfaction
-              </p>
+              <p className="text-sm text-muted-foreground">Domaines Clés</p>
             </CardContent>
           </Card>
         </div>
@@ -188,13 +186,13 @@ export function AboutContent() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">
-                      Contenu Diversifié
+                      Trois Domaines Clés
                     </h3>
                     <p className="text-muted-foreground">
-                      Des cours dans différents domaines : Informatique,
-                      Marketing, Design, et bien plus encore. Chaque cours est
-                      structuré en chapitres progressifs avec des quiz
-                      d'évaluation.
+                      Formation spécialisée en Développement Web, Design
+                      Graphique et Marketing Digital. Chaque cours est structuré
+                      en chapitres progressifs avec des quiz d'évaluation et des
+                      projets pratiques.
                     </p>
                   </div>
                 </div>
@@ -249,12 +247,13 @@ export function AboutContent() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">
-                      Accompagnement
+                      Accompagnement Personnalisé
                     </h3>
                     <p className="text-muted-foreground">
-                      Bénéficiez du soutien de formateurs qualifiés et d'une
-                      communauté d'apprenants pour échanger, poser vos questions
-                      et progresser ensemble.
+                      Un formateur expert dédié pour chaque domaine. Suivi
+                      individualisé, feedback constructif et support continu
+                      pour garantir votre réussite dans votre parcours
+                      d'apprentissage.
                     </p>
                   </div>
                 </div>

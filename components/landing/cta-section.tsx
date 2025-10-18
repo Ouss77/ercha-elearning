@@ -57,8 +57,8 @@ export function CTASection() {
 
         {/* Description */}
         <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Rejoignez plus de 1,250 étudiants qui ont déjà transformé leur
-          carrière grâce à nos formations de qualité
+          Rejoignez notre communauté d'apprenants dans les domaines du
+          développement web, design graphique et marketing digital
         </p>
 
         {/* CTA Buttons */}

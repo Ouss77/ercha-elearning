@@ -145,10 +145,10 @@ export function ContactContent() {
                       Email
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      contact@eduplatform.dz
+                      contact@eduplatform.ma
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      support@eduplatform.dz
+                      support@eduplatform.ma
                     </p>
                   </div>
                 </div>
@@ -162,10 +162,10 @@ export function ContactContent() {
                       Téléphone
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      +213 XX XX XX XX XX
+                      +212 XX XX XX XX XX
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      +213 XX XX XX XX XX
+                      +212 XX XX XX XX XX
                     </p>
                   </div>
                 </div>
@@ -179,11 +179,9 @@ export function ContactContent() {
                       Adresse
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Centre-ville, Alger
+                      Hay Moulay Rachid, Casablanca
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Algérie 16000
-                    </p>
+                    <p className="text-sm text-muted-foreground">Maroc 20500</p>
                   </div>
                 </div>
 
@@ -196,7 +194,7 @@ export function ContactContent() {
                       Horaires
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Lun - Ven: 08:00 - 18:00
+                      Lun - Ven: 09:00 - 17:00
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Sam: 09:00 - 13:00

@@ -91,8 +91,8 @@ export function Courses() {
       (acc, course) => acc + course.totalChapters,
       0
     ),
-    totalStudents: "1250",
-    satisfactionRate: 98,
+    totalStudents: "60+",
+    satisfactionRate: 95,
   };
 
   return (
