@@ -2,8 +2,8 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,15 @@ export function LoginForm() {
     Partial<Record<keyof LoginInput, string>>
   >({});
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for inactive user error on mount
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "inactive") {
+      setError("Votre compte a été désactivé par un administrateur. Veuillez contacter le support.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +163,7 @@ export function LoginForm() {
               <p>• Utilisez n'importe quel email et mot de passe</p>
               <p>• admin@example.com → Rôle Admin</p>
               <p>• subadmin@example.com → Rôle Sub Admin</p>
-              <p>• trainer@example.com → Rôle Formateur</p>
+              <p>• teacher@example.com → Rôle Formateur</p>
               <p>• student@example.com → Rôle Étudiant</p>
               <p>
                 • Mot de passe pour tous les comptes de test : "password123"

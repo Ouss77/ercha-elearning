@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Loader2, BookOpen } from "lucide-react"
+import { AvatarPicker } from "@/components/ui/avatar-picker"
+import { ArrowLeft, Loader2, BookOpen, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import {
@@ -65,6 +66,7 @@ export default function UserFormPage() {
   const [selectedCourses, setSelectedCourses] = useState<number[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (isEditMode) {
@@ -122,7 +124,7 @@ export default function UserFormPage() {
           name: data.user.name || "",
           email: data.user.email || "",
           role: data.user.role || "STUDENT",
-          password: "", // Don't populate password for security
+          password: data.user.password || "", // Show hashed password for admin viewing
           phone: data.user.phone || "",
           dateOfBirth: data.user.dateOfBirth ? new Date(data.user.dateOfBirth).toISOString().split('T')[0] : "",
           address: data.user.address || "",
@@ -305,14 +307,30 @@ export default function UserFormPage() {
                   <Label htmlFor="password">
                     Mot de passe {isEditMode ? <span className="text-muted-foreground text-xs">(laissez vide pour ne pas modifier)</span> : "*"}
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder={isEditMode ? "Nouveau mot de passe (optionnel)" : "Mot de passe sécurisé"}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required={!isEditMode}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={isEditMode ? "Nouveau mot de passe (optionnel)" : "Mot de passe sécurisé"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required={!isEditMode}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -329,7 +347,10 @@ export default function UserFormPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
+              </div>
+              
+              {/* Contact Info - 3 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Téléphone</Label>
                   <Input
@@ -350,82 +371,8 @@ export default function UserFormPage() {
                     onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Address Information */}
-            <div className="space-y-4 pt-4 border-t border-border">
-              <h3 className="text-lg font-medium">Adresse</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address">Adresse complète</Label>
-                  <Input
-                    id="address"
-                    placeholder="123 Rue Example"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city">Ville</Label>
-                  <Input
-                    id="city"
-                    placeholder="Casablanca"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="postalCode">Code postal</Label>
-                  <Input
-                    id="postalCode"
-                    placeholder="20000"
-                    value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="country">Pays</Label>
-                  <Input
-                    id="country"
-                    placeholder="Morocco"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Information */}
-            <div className="space-y-4 pt-4 border-t border-border">
-              <h3 className="text-lg font-medium">Informations complémentaires</h3>
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="avatarUrl">URL de l&apos;avatar</Label>
-                  <Input
-                    id="avatarUrl"
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={formData.avatarUrl}
-                    onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Biographie</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="Parlez-nous un peu de vous..."
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
+                
+                <div className="flex items-center space-x-2 pt-8">
                   <input
                     id="isActive"
                     type="checkbox"
@@ -436,6 +383,77 @@ export default function UserFormPage() {
                   <Label htmlFor="isActive" className="cursor-pointer">
                     Compte actif
                   </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Information */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h3 className="text-lg font-medium">Adresse</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address">Adresse complète</Label>
+                  <Input
+                    id="address"
+                    placeholder="123 Rue Example"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Ville</Label>
+                    <Input
+                      id="city"
+                      placeholder="Casablanca"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Code postal</Label>
+                    <Input
+                      id="postalCode"
+                      placeholder="20000"
+                      value={formData.postalCode}
+                      onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Pays</Label>
+                    <Input
+                      id="country"
+                      placeholder="Morocco"
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h3 className="text-lg font-medium">Informations complémentaires</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <AvatarPicker
+                  value={formData.avatarUrl}
+                  onChange={(value) => setFormData({ ...formData, avatarUrl: value })}
+                  label="Avatar"
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Biographie</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="Parlez-nous un peu de vous..."
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    rows={4}
+                  />
                 </div>
               </div>
             </div>

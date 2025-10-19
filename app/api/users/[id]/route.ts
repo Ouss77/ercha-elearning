@@ -154,7 +154,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (postalCode !== undefined) updateData.postalCode = postalCode || null
     if (country !== undefined) updateData.country = country || null
     if (bio !== undefined) updateData.bio = bio || null
-    if (avatarUrl !== undefined) updateData.photoUrl = avatarUrl || null
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl || null
     if (isActive !== undefined) updateData.isActive = isActive
 
     const result = await updateUser(userId, updateData)

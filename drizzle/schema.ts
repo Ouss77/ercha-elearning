@@ -43,6 +43,7 @@ export const domains = pgTable("domains", {
 export const courses = pgTable("courses", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description"),
   domainId: integer("domain_id").references(() => domains.id),
   teacherId: integer("teacher_id").references(() => users.id),
