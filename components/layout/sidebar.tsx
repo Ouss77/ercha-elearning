@@ -47,11 +47,11 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { title: "Notes", href: "/sous-admin/notes", icon: FileText },
   ],
   TRAINER: [
-    { title: "Dashboard", href: "/formateur", icon: LayoutDashboard },
-    { title: "My Courses", href: "/formateur/courses", icon: BookOpen },
-    { title: "Students", href: "/formateur/students", icon: Users },
-    { title: "Quizzes", href: "/formateur/quizzes", icon: ClipboardList },
-    { title: "Feedback", href: "/formateur/feedback", icon: FileText },
+    { title: "Tableau de bord", href: "/formateur", icon: LayoutDashboard },
+    { title: "Mes Cours", href: "/formateur/cours", icon: BookOpen },
+    { title: "Étudiants", href: "/formateur/etudiants", icon: Users },
+    { title: "Analyses", href: "/formateur/analyses", icon: BarChart3 },
+    { title: "Mon Profil", href: "/formateur/profil", icon: User },
   ],
   STUDENT: [
     { title: "Tableau de bord", href: "/etudiant", icon: LayoutDashboard },
