@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -26,6 +26,22 @@ import type { User } from "@/lib/auth/auth";
 
 interface CertificatesViewProps {
   user: User;
+  enrolledCourses: Array<{
+    enrollmentId: number;
+    courseId: number;
+    courseTitle: string;
+    courseDescription: string | null;
+    courseThumbnailUrl: string | null;
+    enrolledAt: Date;
+    completedAt: Date | null;
+    domainId: number | null;
+    domainName: string | null;
+    domainColor: string | null;
+    teacherId: number | null;
+    teacherName: string | null;
+    totalChapters: number;
+    completedChapters: number;
+  }>;
 }
 
 interface Certificate {
@@ -37,12 +53,16 @@ interface Certificate {
   grade: number;
   certificateNumber: string;
   status: "issued" | "pending";
+  progress?: number;
 }
 
-export function CertificatesView({ user }: CertificatesViewProps) {
+export function CertificatesView({
+  user,
+  enrolledCourses: rawEnrolledCourses,
+}: CertificatesViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Mock certificates data
+  // Mock certificates data (keep for testing)
   const [certificates] = useState<Certificate[]>([
     {
       id: "CERT-2025-001",
@@ -56,29 +76,42 @@ export function CertificatesView({ user }: CertificatesViewProps) {
     },
   ]);
 
-  // Mock courses in progress that will have certificates
-  const [pendingCertificates] = useState<Certificate[]>([
-    {
-      id: "PENDING-001",
-      courseTitle: "Introduction à React",
-      courseDomain: "Informatique",
-      completedAt: "",
-      instructor: "Jean Martin",
-      grade: 0,
-      certificateNumber: "",
-      status: "pending",
-    },
-    {
-      id: "PENDING-002",
-      courseTitle: "Design UX/UI Moderne",
-      courseDomain: "Design",
-      completedAt: "",
-      instructor: "Jean Martin",
-      grade: 0,
-      certificateNumber: "",
-      status: "pending",
-    },
-  ]);
+  // Transform incomplete enrolled courses to pending certificates
+  const pendingCertificates: Certificate[] = useMemo(() => {
+    return rawEnrolledCourses
+      .filter((enrollment) => enrollment.completedAt === null) // Only incomplete courses
+      .map((enrollment) => {
+        const progress =
+          enrollment.totalChapters > 0
+            ? Math.round(
+                (enrollment.completedChapters / enrollment.totalChapters) * 100
+              )
+            : 0;
+
+        return {
+          id: `PENDING-${enrollment.courseId}`,
+          courseTitle: enrollment.courseTitle,
+          courseDomain: enrollment.domainName || "Non classé",
+          completedAt: "",
+          instructor: enrollment.teacherName || "Non assigné",
+          grade: 0,
+          certificateNumber: "",
+          status: "pending" as const,
+          progress,
+        };
+      });
+  }, [rawEnrolledCourses]);
+
+  // Create domain color mapping from database
+  const domainColorMap = useMemo(() => {
+    const colorMap: Record<string, string> = {};
+    rawEnrolledCourses.forEach((enrollment) => {
+      if (enrollment.domainName && enrollment.domainColor) {
+        colorMap[enrollment.domainName] = enrollment.domainColor;
+      }
+    });
+    return colorMap;
+  }, [rawEnrolledCourses]);
 
   const filteredCertificates = certificates.filter(
     (cert) =>
@@ -87,12 +120,32 @@ export function CertificatesView({ user }: CertificatesViewProps) {
   );
 
   const getDomainColor = (domain: string) => {
+    // Use database domain colors or fallback to default colors
+    if (domainColorMap[domain]) {
+      // Convert bg-color-500 to badge-friendly classes
+      const baseColor = domainColorMap[domain].replace("bg-", "");
+      return `bg-${baseColor.replace("500", "100")} text-${baseColor.replace(
+        "500",
+        "700"
+      )} dark:bg-${baseColor.replace(
+        "500",
+        "950"
+      )} dark:text-${baseColor.replace("500", "400")}`;
+    }
+
+    // Fallback colors
     const colors: Record<string, string> = {
       Informatique:
         "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+      "Développement Web":
+        "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
       Marketing:
         "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      "Marketing Digital":
+        "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
       Design:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
+      "Design Graphique":
         "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
     };
     return (
@@ -394,10 +447,30 @@ export function CertificatesView({ user }: CertificatesViewProps) {
                         Certificat en attente
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Complétez tous les chapitres
+                        {cert.progress !== undefined
+                          ? `Progression: ${cert.progress}%`
+                          : "Complétez tous les chapitres"}
                       </p>
                     </div>
                   </div>
+                  {cert.progress !== undefined && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">
+                          Progression
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {cert.progress}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-cyan-600 h-2 rounded-full transition-all"
+                          style={{ width: `${cert.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <Button className="w-full" variant="outline">
                     Continuer le cours
                     <ExternalLink className="h-4 w-4 ml-2" />
