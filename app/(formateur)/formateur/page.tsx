@@ -1,5 +1,7 @@
 import { requireAuth } from "@/lib/auth/auth";
+import { redirect } from "next/navigation";
 import { TeacherDashboard } from "@/components/teacher/teacher-dashboard";
+import { getTeacherDashboardSummary } from "@/lib/db/queries";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,5 +12,13 @@ export const metadata: Metadata = {
 export default async function TeacherPage() {
   const user = await requireAuth(["TRAINER"]);
 
-  return <TeacherDashboard user={user} />;
+  // Fetch teacher dashboard data
+  const teacherId = parseInt(user.id);
+  const dashboardResult = await getTeacherDashboardSummary(teacherId);
+
+  if (!dashboardResult.success || !dashboardResult.data) {
+    redirect("/non-autorise");
+  }
+
+  return <TeacherDashboard user={user} dashboardData={dashboardResult.data} />;
 }

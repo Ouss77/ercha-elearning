@@ -1407,3 +1407,228 @@ export async function getStudentQuizAttemptsWithDetails(studentId: number) {
     return handleDbError(error);
   }
 }
+
+// Get teacher's courses with enrollment and progress statistics
+export async function getTeacherCoursesWithStats(teacherId: number) {
+  try {
+    const result = await db
+      .select({
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseDescription: courses.description,
+        courseThumbnailUrl: courses.thumbnailUrl,
+        courseIsActive: courses.isActive,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
+        totalChapters: sql<number>`cast(count(distinct ${chapters.id}) as int)`,
+        completedEnrollments: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.id} end) as int)`,
+        totalProgress: sql<number>`cast(count(distinct ${chapterProgress.id}) as int)`,
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(chapterProgress, eq(chapters.id, chapterProgress.chapterId))
+      .where(eq(courses.teacherId, teacherId))
+      .groupBy(
+        courses.id,
+        courses.title,
+        courses.description,
+        courses.thumbnailUrl,
+        courses.isActive,
+        domains.id,
+        domains.name,
+        domains.color
+      )
+      .orderBy(desc(courses.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+// Get teacher's students statistics
+export async function getTeacherStudentsStats(teacherId: number) {
+  try {
+    // Get all unique students enrolled in teacher's courses
+    const studentsResult = await db
+      .select({
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatarUrl: users.avatarUrl,
+        totalCourses: sql<number>`cast(count(distinct ${enrollments.courseId}) as int)`,
+        totalProgress: sql<number>`cast(count(distinct ${chapterProgress.id}) as int)`,
+        totalChapters: sql<number>`cast(count(distinct ${chapters.id}) as int)`,
+        completedCourses: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.id} end) as int)`,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(
+        chapterProgress,
+        and(
+          eq(chapterProgress.chapterId, chapters.id),
+          eq(chapterProgress.studentId, enrollments.studentId)
+        )
+      )
+      .where(eq(courses.teacherId, teacherId))
+      .groupBy(users.id, users.name, users.email, users.avatarUrl)
+      .orderBy(desc(sql`cast(count(distinct ${chapterProgress.id}) as int)`));
+
+    return { success: true, data: studentsResult };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+// Get recent activity for teacher's courses
+export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
+  try {
+    // Get recent quiz attempts
+    const quizActivity = await db
+      .select({
+        id: quizAttempts.id,
+        type: sql<string>`'quiz_completed'`,
+        studentId: users.id,
+        studentName: users.name,
+        courseTitle: courses.title,
+        chapterTitle: chapters.title,
+        score: quizAttempts.score,
+        timestamp: quizAttempts.attemptedAt,
+      })
+      .from(quizAttempts)
+      .innerJoin(users, eq(quizAttempts.studentId, users.id))
+      .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
+      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .where(eq(courses.teacherId, teacherId))
+      .orderBy(desc(quizAttempts.attemptedAt))
+      .limit(limit);
+
+    // Get recent chapter completions
+    const chapterActivity = await db
+      .select({
+        id: chapterProgress.id,
+        type: sql<string>`'chapter_completed'`,
+        studentId: users.id,
+        studentName: users.name,
+        courseTitle: courses.title,
+        chapterTitle: chapters.title,
+        score: sql<number>`null`,
+        timestamp: chapterProgress.completedAt,
+      })
+      .from(chapterProgress)
+      .innerJoin(users, eq(chapterProgress.studentId, users.id))
+      .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .where(eq(courses.teacherId, teacherId))
+      .orderBy(desc(chapterProgress.completedAt))
+      .limit(limit);
+
+    // Get recent enrollments
+    const enrollmentActivity = await db
+      .select({
+        id: enrollments.id,
+        type: sql<string>`'course_enrolled'`,
+        studentId: users.id,
+        studentName: users.name,
+        courseTitle: courses.title,
+        chapterTitle: sql<string>`null`,
+        score: sql<number>`null`,
+        timestamp: enrollments.createdAt,
+      })
+      .from(enrollments)
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .where(eq(courses.teacherId, teacherId))
+      .orderBy(desc(enrollments.createdAt))
+      .limit(limit);
+
+    // Combine and sort all activities
+    const allActivity = [
+      ...quizActivity,
+      ...chapterActivity,
+      ...enrollmentActivity,
+    ]
+      .filter((activity) => activity.timestamp !== null)
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp!).getTime() - new Date(a.timestamp!).getTime()
+      )
+      .slice(0, limit);
+
+    return { success: true, data: allActivity };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+// Get teacher's dashboard summary
+export async function getTeacherDashboardSummary(teacherId: number) {
+  try {
+    const coursesResult = await getTeacherCoursesWithStats(teacherId);
+    const studentsResult = await getTeacherStudentsStats(teacherId);
+    const activityResult = await getTeacherRecentActivity(teacherId);
+
+    if (
+      !coursesResult.success ||
+      !studentsResult.success ||
+      !activityResult.success
+    ) {
+      return { success: false, error: "Failed to fetch dashboard data" };
+    }
+
+    const courses = coursesResult.data;
+    const students = studentsResult.data;
+
+    // Calculate statistics
+    const totalCourses = courses.length;
+    const activeCourses = courses.filter((c) => c.courseIsActive).length;
+    const totalStudents = students.length;
+
+    // Get unique students active this month (based on recent activity)
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const activeStudents = activityResult.data
+      .filter((activity) => {
+        if (!activity.timestamp) return false;
+        return new Date(activity.timestamp) > oneMonthAgo;
+      })
+      .map((activity) => activity.studentId)
+      .filter((id, index, arr) => arr.indexOf(id) === index).length;
+
+    // Get top performing students (by progress percentage)
+    const topStudents = students
+      .map((student) => ({
+        ...student,
+        progressPercentage:
+          student.totalChapters > 0
+            ? Math.round((student.totalProgress / student.totalChapters) * 100)
+            : 0,
+      }))
+      .sort((a, b) => b.progressPercentage - a.progressPercentage)
+      .slice(0, 3);
+
+    return {
+      success: true,
+      data: {
+        stats: {
+          totalCourses,
+          activeCourses,
+          totalStudents,
+          activeStudents,
+        },
+        courses,
+        topStudents,
+        recentActivity: activityResult.data,
+      },
+    };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
