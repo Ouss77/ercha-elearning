@@ -1,18 +1,9 @@
-"use client";
-
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { BookOpen, Users, ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { getCoursesWithDetails } from "@/lib/db/queries";
+import { CourseCard } from "./course-card";
 
 interface Course {
   id: number;
@@ -28,61 +19,40 @@ interface Course {
  * Courses Section
  * Features:
  * - Display courses with rich information
- * - Progress tracking
- * - Status badges (completed/in progress)
  * - Domain categorization
  * - Teacher information
  * - Visual thumbnails
  * - Responsive grid layout
  */
-export function Courses() {
-  // Mock data - replace with real data from database
-  const [courses] = useState<Course[]>([
-    {
-      id: 1,
-      title: "Introduction à React",
-      description:
-        "Apprenez les bases de React et créez vos premières applications",
-      domain: "Informatique",
-      teacher: "Jean Martin",
-      thumbnail: "/react-course.png",
-      totalChapters: 8,
-    },
-    {
-      id: 2,
-      title: "Marketing Digital Avancé",
-      description: "Stratégies avancées de marketing digital et analytics",
-      domain: "Marketing",
-      teacher: "Jean Martin",
-      thumbnail: "/marketing-course-concept.png",
-      totalChapters: 12,
-    },
-    {
-      id: 3,
-      title: "Design UX/UI Moderne",
-      description: "Principes de design et création d'interfaces utilisateur",
-      domain: "Design",
-      teacher: "Jean Martin",
-      thumbnail: "/ux-ui-design-course.png",
-      totalChapters: 10,
-    },
-  ]);
+export async function Courses() {
+  // Fetch courses from database
+  const result = await getCoursesWithDetails();
+  const dbCourses = result.success ? result.data : [];
 
-  // Helper function to get domain color
-  const getDomainColor = (domain: string) => {
-    const colors: Record<string, string> = {
-      Informatique:
-        "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-900",
-      Marketing:
-        "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-900",
-      Design:
-        "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-900",
+  // Helper function to get domain-specific fallback thumbnail
+  const getDomainThumbnail = (domainName: string | null | undefined) => {
+    const thumbnails: Record<string, string> = {
+      "Développement Web": "/react-course.png",
+      "Design Graphique": "/ux-ui-design-course.png",
+      "Marketing Digital": "/marketing-course-concept.png",
+      // Fallback for old names
+      Informatique: "/react-course.png",
+      Design: "/ux-ui-design-course.png",
+      Marketing: "/marketing-course-concept.png",
     };
-    return (
-      colors[domain] ||
-      "bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-400 border-gray-200 dark:border-gray-900"
-    );
+    return thumbnails[domainName || ""] || "/placeholder.svg";
   };
+
+  // Transform database courses to match our interface
+  const courses: Course[] = dbCourses.map((course: any) => ({
+    id: course.id,
+    title: course.title,
+    description: course.description || "Description à venir",
+    domain: course.domain?.name || "Non spécifié",
+    teacher: course.teacher?.name || "Formateur",
+    thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
+    totalChapters: course.chapterCount || 0,
+  }));
 
   // Calculate statistics
   const stats = {
@@ -91,8 +61,8 @@ export function Courses() {
       (acc, course) => acc + course.totalChapters,
       0
     ),
-    totalStudents: "1250",
-    satisfactionRate: 98,
+    totalStudents: "60+",
+    satisfactionRate: 95,
   };
 
   return (
@@ -203,92 +173,13 @@ export function Courses() {
         {/* Courses Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {courses.map((course) => (
-            <Card
-              key={course.id}
-              className="group relative overflow-hidden border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700 transition-all duration-300 flex flex-col"
-            >
-              {/* Course Thumbnail */}
-              <div className="relative h-48 bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-950 dark:to-emerald-950 overflow-hidden">
-                {/* Actual Thumbnail Image */}
-                <Image
-                  src={course.thumbnail}
-                  alt={course.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                {/* Domain Badge - Positioned over image */}
-                <div className="absolute bottom-4 left-4 z-10">
-                  <Badge
-                    className={`${getDomainColor(
-                      course.domain
-                    )} backdrop-blur-sm`}
-                  >
-                    {course.domain}
-                  </Badge>
-                </div>
-              </div>
-
-              <CardHeader className="flex-grow">
-                <CardTitle className="text-xl group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                  {course.title}
-                </CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {course.description}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-4 pb-6">
-                {/* Course Stats Grid */}
-                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-950">
-                      <BookOpen className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Chapitres
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {course.totalChapters}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950">
-                      <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Professeur
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
-                        {course.teacher}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <Link href={`/student/course/${course.id}`} className="block">
-                  <Button className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white border-0 shadow-md hover:shadow-lg transition-all group">
-                    Voir le cours
-                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <CourseCard key={course.id} course={course} />
           ))}
         </div>
 
         {/* Browse All Courses Link */}
         <div className="text-center">
-          <Link href="/student">
+          <Link href="/cours">
             <Button
               variant="outline"
               size="lg"

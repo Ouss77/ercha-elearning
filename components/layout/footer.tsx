@@ -10,6 +10,7 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 /**
  * Footer Component
@@ -78,12 +79,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 mb-8">
           {/* Brand Column */}
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
-              <span className="text-xl font-bold text-white">EduPlatform</span>
-            </Link>
+            <Logo iconSize="md" variant="dark" className="mb-4" />
             <p className="text-sm text-gray-400 mb-6 leading-relaxed">
               Votre plateforme d'apprentissage en ligne pour développer vos
               compétences et atteindre vos objectifs professionnels.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/utils";
+import { Logo } from "@/components/ui/logo";
 import {
   Sheet,
   SheetContent,
@@ -17,7 +18,6 @@ import {
   Shield,
   Settings,
   UserCog,
-  GraduationCap,
   ClipboardList,
   FileText,
   Award,
@@ -78,10 +78,8 @@ export function MobileNav({ role, open, onOpenChange }: MobileNavProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-64 p-0">
         <SheetHeader className="border-b border-border p-4">
-          <div className="flex items-center space-x-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <SheetTitle className="text-lg font-bold">EduPlatform</SheetTitle>
-          </div>
+          <Logo iconSize="sm" showText={false} />
+          <SheetTitle className="text-lg font-bold">EduPlatform</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col space-y-1 p-4">
           {menuItems.map((item) => {
