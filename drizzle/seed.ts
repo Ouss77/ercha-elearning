@@ -19,38 +19,36 @@ async function seed() {
 
     // Create sample users for each role
     console.log("Creating users...")
+    const usersToInsert: (typeof schema.users.$inferInsert)[] = [
+      {
+        email: "admin@example.com",
+        password: hashedPassword,
+        name: "Admin User",
+        role: "ADMIN",
+      },
+      {
+        email: "subadmin@example.com",
+        password: hashedPassword,
+        name: "Sub Admin User",
+        role: "SUB_ADMIN",
+      },
+      {
+        email: "teacher@example.com",
+        password: hashedPassword,
+        name: "Teacher User",
+        role: "TRAINER",
+      },
+      {
+        email: "student@example.com",
+        password: hashedPassword,
+        name: "Student User",
+        role: "STUDENT",
+      },
+    ]
+
     const usersData = await db
       .insert(schema.users)
-      .values([
-        {
-          email: "admin@example.com",
-          password: hashedPassword,
-          name: "Admin User",
-          role: "ADMIN",
-          consentTimestamp: new Date(),
-        },
-        {
-          email: "subadmin@example.com",
-          password: hashedPassword,
-          name: "Sub Admin User",
-          role: "SUB_ADMIN",
-          consentTimestamp: new Date(),
-        },
-        {
-          email: "teacher@example.com",
-          password: hashedPassword,
-          name: "Teacher User",
-          role: "TRAINER",
-          consentTimestamp: new Date(),
-        },
-        {
-          email: "student@example.com",
-          password: hashedPassword,
-          name: "Student User",
-          role: "STUDENT",
-          consentTimestamp: new Date(),
-        },
-      ])
+      .values(usersToInsert)
       .returning()
 
     console.log(`✅ Created ${usersData.length} users`)

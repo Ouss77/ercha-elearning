@@ -22,8 +22,8 @@ interface Enrollment {
   id: number
   courseId: number
   course: Course
-  enrolledAt: string
-  completedAt?: string | null
+  enrolledAt: Date
+  completedAt?: Date | null
   progress?: number
 }
 

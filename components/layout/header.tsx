@@ -1,20 +1,22 @@
-"use client"
+"use client";
 
-import { GraduationCap, Menu } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { LogoutButton } from "@/components/auth/logout-button"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { GraduationCap, Link, Menu } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { getAvatarUrl, getUserInitials } from "@/lib/utils/utils";
+import { Logo } from "@/components/ui/logo";
 
 interface HeaderProps {
   user: {
-    name?: string | null
-    email?: string | null
-    image?: string | null
-    role?: "ADMIN" | "SUB_ADMIN" | "TRAINER" | "STUDENT"
-  }
-  onMenuClick?: () => void
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: "ADMIN" | "SUB_ADMIN" | "TRAINER" | "STUDENT";
+  };
+  onMenuClick?: () => void;
 }
 
 const roleLabels: Record<string, string> = {
@@ -22,36 +24,36 @@ const roleLabels: Record<string, string> = {
   SUB_ADMIN: "Sous-Admin",
   TRAINER: "Professeur",
   STUDENT: "Étudiant",
-}
+};
 
-const roleVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const roleVariants: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   ADMIN: "destructive",
   SUB_ADMIN: "secondary",
   TRAINER: "default",
   STUDENT: "outline",
-}
+};
 
 const getRoleBadgeClass = (role: string) => {
   switch (role) {
     case "ADMIN":
-      return "bg-destructive/10 text-destructive border-destructive/20"
+      return "bg-destructive/10 text-destructive border-destructive/20";
     case "SUB_ADMIN":
-      return "bg-chart-4/10 text-chart-4 border-chart-4/20"
+      return "bg-chart-4/10 text-chart-4 border-chart-4/20";
     case "TRAINER":
-      return "bg-primary/10 text-primary border-primary/20"
+      return "bg-primary/10 text-primary border-primary/20";
     case "STUDENT":
-      return "bg-chart-2/10 text-chart-2 border-chart-2/20"
+      return "bg-chart-2/10 text-chart-2 border-chart-2/20";
     default:
-      return "bg-muted text-muted-foreground"
+      return "bg-muted text-muted-foreground";
   }
-}
+};
 
 export function Header({ user, onMenuClick }: HeaderProps) {
-  const initials = user.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "U"
+  const avatarSrc = getAvatarUrl(user.image);
+  const initials = getUserInitials(user.name);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card/80 backdrop-blur-md shadow-sm">
@@ -69,12 +71,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
         {/* Logo - visible on mobile */}
         <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden flex-1 min-w-0">
-          <div className="h-7 w-7 sm:h-8 sm:w-8 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center flex-shrink-0">
-            <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-          </div>
-          <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
-            EduPlatform
-          </span>
+          <Logo iconSize="sm" />
         </div>
 
         {/* Spacer for desktop */}
@@ -82,10 +79,9 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
         {/* User profile section */}
         <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
-          <ThemeToggle />
           <div className="flex items-center gap-2 sm:gap-3">
             <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-primary/20 flex-shrink-0">
-              <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+              <AvatarImage src={avatarSrc} alt={user.name || "User"} />
               <AvatarFallback className="bg-gradient-to-br from-primary/20 to-chart-2/20 text-primary font-semibold text-xs sm:text-sm">
                 {initials}
               </AvatarFallback>
@@ -95,7 +91,11 @@ export function Header({ user, onMenuClick }: HeaderProps) {
                 {user.name || user.email}
               </span>
               {user.role && (
-                <Badge className={`text-xs border whitespace-nowrap ${getRoleBadgeClass(user.role)}`}>
+                <Badge
+                  className={`text-xs border whitespace-nowrap ${getRoleBadgeClass(
+                    user.role
+                  )}`}
+                >
                   {roleLabels[user.role]}
                 </Badge>
               )}
@@ -103,7 +103,8 @@ export function Header({ user, onMenuClick }: HeaderProps) {
           </div>
           <LogoutButton />
         </div>
+        <ThemeToggle />
       </div>
     </header>
-  )
+  );
 }

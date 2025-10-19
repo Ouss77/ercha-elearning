@@ -1,181 +1,510 @@
-import { eq, and, desc } from "drizzle-orm"
-import { db, handleDbError } from "./index"
-import { 
-  users, 
-  courses, 
-  enrollments, 
-  domains, 
-  chapters, 
-  chapterProgress, 
-  quizzes, 
-  quizAttempts, 
-  finalProjects, 
-  projectSubmissions 
-} from "@/drizzle/schema"
-import { mapUserFromDb, mapUserToDb, mapCourseFromDb, mapEnrollmentFromDb } from "./mappers"
-import type { User } from "@/types/user"
+import { eq, and, desc, sql, ne } from "drizzle-orm";
+import { hash } from "bcryptjs";
+import { db, handleDbError } from "./index";
+import {
+  users,
+  courses,
+  enrollments,
+  domains,
+  chapters,
+  chapterProgress,
+  quizzes,
+  quizAttempts,
+  finalProjects,
+  projectSubmissions,
+} from "@/drizzle/schema";
+import {
+  mapUserFromDb,
+  mapUserToDb,
+  mapCourseFromDb,
+  mapEnrollmentFromDb,
+} from "./mappers";
+import type { User } from "@/types/user";
+import { generateSlug, generateUniqueSlug } from "@/lib/utils/slug";
 
 // User query functions
 export async function getUserByEmail(email: string) {
   try {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1)
-    const mappedUser = mapUserFromDb(result[0])
-    return { success: true, data: mappedUser }
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    const mappedUser = mapUserFromDb(result[0]);
+    return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createUser(data: {
-  email: string
-  password: string
-  name: string
-  role?: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN"
-  photoUrl?: string | null
-  phone?: string | null
-  dateOfBirth?: Date | null
-  address?: string | null
-  city?: string | null
-  postalCode?: string | null
-  country?: string | null
-  bio?: string | null
-  isActive?: boolean
+  email: string;
+  password: string;
+  name: string;
+  role?: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN";
+  avatarUrl?: string | null;
+  phone?: string | null;
+  dateOfBirth?: Date | null;
+  address?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  bio?: string | null;
+  isActive?: boolean;
 }) {
   try {
-    // Map application data to database format
-    const dbData = mapUserToDb(data)
-    
+    // Hash the password before storing
+    const hashedPassword = await hash(data.password, 10);
+
     const insertData: any = {
       email: data.email,
-      password: data.password,
+      password: hashedPassword,
       name: data.name,
       role: data.role || "STUDENT",
-      avatarUrl: dbData.avatarUrl,
+      avatarUrl: data.avatarUrl,
       isActive: data.isActive ?? true,
       country: data.country || "Morocco",
-    }
+    };
 
     // Add optional fields if they exist
-    if (data.phone) insertData.phone = data.phone
-    if (data.dateOfBirth) insertData.dateOfBirth = data.dateOfBirth
-    if (data.address) insertData.address = data.address
-    if (data.city) insertData.city = data.city
-    if (data.postalCode) insertData.postalCode = data.postalCode
-    if (data.bio) insertData.bio = data.bio
-    
-    const result = await db
-      .insert(users)
-      .values(insertData)
-      .returning()
-    
-    const mappedUser = mapUserFromDb(result[0])
-    return { success: true as const, data: mappedUser }
+    if (data.phone) insertData.phone = data.phone;
+    if (data.dateOfBirth) insertData.dateOfBirth = data.dateOfBirth;
+    if (data.address) insertData.address = data.address;
+    if (data.city) insertData.city = data.city;
+    if (data.postalCode) insertData.postalCode = data.postalCode;
+    if (data.bio) insertData.bio = data.bio;
+
+    const result = await db.insert(users).values(insertData).returning();
+
+    const mappedUser = mapUserFromDb(result[0]);
+    return { success: true as const, data: mappedUser };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getUserById(id: number) {
   try {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1)
-    const mappedUser = mapUserFromDb(result[0])
-    return { success: true, data: mappedUser }
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    const mappedUser = mapUserFromDb(result[0]);
+    return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getAllUsers() {
   try {
-    const result = await db.select().from(users)
-    const mappedUsers = result.map(mapUserFromDb).filter((u): u is User => u !== null)
-    return { success: true as const, data: mappedUsers }
+    const usersResult = await db.select().from(users);
+
+    // Fetch all student enrollments in a single query
+    const allStudentEnrollments = await db
+      .select({
+        studentId: enrollments.studentId,
+        courseSlug: courses.slug,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id));
+
+    // Fetch all trainer courses in a single query
+    const allTrainerCourses = await db
+      .select({
+        teacherId: courses.teacherId,
+        courseSlug: courses.slug,
+      })
+      .from(courses)
+      .where(sql`${courses.teacherId} IS NOT NULL`);
+
+    // Create lookup maps for fast access
+    const studentEnrollmentMap = new Map<number, string[]>();
+    allStudentEnrollments.forEach(({ studentId, courseSlug }) => {
+      if (studentId) {
+        if (!studentEnrollmentMap.has(studentId)) {
+          studentEnrollmentMap.set(studentId, []);
+        }
+        studentEnrollmentMap.get(studentId)!.push(courseSlug);
+      }
+    });
+
+    const trainerCoursesMap = new Map<number, string[]>();
+    allTrainerCourses.forEach(({ teacherId, courseSlug }) => {
+      if (teacherId) {
+        if (!trainerCoursesMap.has(teacherId)) {
+          trainerCoursesMap.set(teacherId, []);
+        }
+        trainerCoursesMap.get(teacherId)!.push(courseSlug);
+      }
+    });
+
+    // Map users with their courses
+    const usersWithCourses = usersResult.map((user) => {
+      const mappedUser = mapUserFromDb(user);
+      if (!mappedUser) return null;
+
+      let enrolledCourses: string[] = [];
+      if (user.role === "STUDENT") {
+        enrolledCourses = studentEnrollmentMap.get(user.id) || [];
+      } else if (user.role === "TRAINER") {
+        enrolledCourses = trainerCoursesMap.get(user.id) || [];
+      }
+
+      return {
+        ...mappedUser,
+        enrolledCourses,
+      };
+    });
+
+    const filteredUsers = usersWithCourses.filter(
+      (u): u is User & { enrolledCourses: string[] } => u !== null
+    );
+    return { success: true as const, data: filteredUsers };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateUser(id: number, data: Partial<{
-  email: string
-  password: string
-  name: string
-  role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN"
-  photoUrl: string | null
-  isActive: boolean
-  phone: string | null
-  dateOfBirth: Date | null
-  address: string | null
-  city: string | null
-  postalCode: string | null
-  country: string | null
-  bio: string | null
-}>) {
+export async function updateUser(
+  id: number,
+  data: Partial<{
+    email: string;
+    password: string;
+    name: string;
+    role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN";
+    avatarUrl: string | null;
+    isActive: boolean;
+    phone: string | null;
+    dateOfBirth: Date | null;
+    address: string | null;
+    city: string | null;
+    postalCode: string | null;
+    country: string | null;
+    bio: string | null;
+  }>
+) {
   try {
-    // Map application data to database format
-    const dbData = mapUserToDb(data)
-    
+    // Hash password if it's being updated
+    let dataToUpdate = { ...data };
+    if (data.password && data.password.trim() !== "") {
+      dataToUpdate.password = await hash(data.password, 10);
+    }
+
     const result = await db
       .update(users)
-      .set(dbData)
+      .set(dataToUpdate)
       .where(eq(users.id, id))
-      .returning()
-    
-    const mappedUser = mapUserFromDb(result[0])
-    return { success: true, data: mappedUser }
+      .returning();
+
+    const mappedUser = mapUserFromDb(result[0]);
+    return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
+  }
+}
+
+export async function getTeachers() {
+  try {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, "TRAINER"));
+
+    const mappedUsers = result
+      .map(mapUserFromDb)
+      .filter((u): u is User => u !== null);
+    return { success: true, data: mappedUsers };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function validateTeacherAssignment(teacherId: number) {
+  try {
+    const result = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(and(eq(users.id, teacherId), eq(users.role, "TRAINER")))
+      .limit(1);
+
+    return { success: true, data: result.length > 0 };
+  } catch (error) {
+    return handleDbError(error);
   }
 }
 
 // Course query functions
+export async function createCourse(data: {
+  title: string;
+  description?: string | null;
+  domainId: number;
+  teacherId?: number | null;
+  thumbnailUrl?: string | null;
+  isActive?: boolean;
+}) {
+  try {
+    // Generate base slug from title
+    const baseSlug = generateSlug(data.title);
+
+    // Get existing slugs to ensure uniqueness
+    const existingCourses = await db
+      .select({ slug: courses.slug })
+      .from(courses);
+    const existingSlugs = existingCourses.map((c) => c.slug);
+
+    // Generate unique slug
+    const slug = generateUniqueSlug(baseSlug, existingSlugs);
+
+    const result = await db
+      .insert(courses)
+      .values({
+        title: data.title,
+        slug,
+        description: data.description,
+        domainId: data.domainId,
+        teacherId: data.teacherId,
+        thumbnailUrl: data.thumbnailUrl,
+        isActive: data.isActive ?? false, // Default to false for new courses
+      })
+      .returning();
+
+    const mappedCourse = mapCourseFromDb(result[0]);
+    return { success: true, data: mappedCourse };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function updateCourse(
+  id: number,
+  data: Partial<{
+    title: string;
+    description: string | null;
+    domainId: number;
+    teacherId: number | null;
+    thumbnailUrl: string | null;
+    isActive: boolean;
+  }>
+) {
+  try {
+    let updateData: any = { ...data, updatedAt: new Date() };
+
+    // If title is being updated, regenerate slug
+    if (data.title) {
+      const baseSlug = generateSlug(data.title);
+
+      // Get existing slugs (excluding current course)
+      const existingCourses = await db
+        .select({ slug: courses.slug })
+        .from(courses)
+        .where(ne(courses.id, id));
+      const existingSlugs = existingCourses.map((c) => c.slug);
+
+      // Generate unique slug
+      updateData.slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    const result = await db
+      .update(courses)
+      .set(updateData)
+      .where(eq(courses.id, id))
+      .returning();
+
+    const mappedCourse = mapCourseFromDb(result[0]);
+    return { success: true, data: mappedCourse };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function getCourseById(id: number) {
   try {
-    const result = await db.select().from(courses).where(eq(courses.id, id)).limit(1)
-    const mappedCourse = mapCourseFromDb(result[0])
-    return { success: true, data: mappedCourse }
+    const result = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.id, id))
+      .limit(1);
+    const mappedCourse = mapCourseFromDb(result[0]);
+    return { success: true, data: mappedCourse };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getAllCourses() {
   try {
-    const result = await db.select().from(courses)
-    const mappedCourses = result.map(mapCourseFromDb).filter(c => c !== null)
-    return { success: true, data: mappedCourses }
+    const result = await db.select().from(courses);
+    const mappedCourses = result.map(mapCourseFromDb).filter((c) => c !== null);
+    return { success: true, data: mappedCourses };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getCoursesByTeacherId(teacherId: number) {
   try {
-    const result = await db.select().from(courses).where(eq(courses.teacherId, teacherId))
-    const mappedCourses = result.map(mapCourseFromDb).filter(c => c !== null)
-    return { success: true, data: mappedCourses }
+    const result = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.teacherId, teacherId));
+    const mappedCourses = result.map(mapCourseFromDb).filter((c) => c !== null);
+    return { success: true, data: mappedCourses };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getCoursesByDomainId(domainId: number) {
   try {
-    const result = await db.select().from(courses).where(eq(courses.domainId, domainId))
-    const mappedCourses = result.map(mapCourseFromDb).filter(c => c !== null)
-    return { success: true, data: mappedCourses }
+    const result = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.domainId, domainId));
+    const mappedCourses = result.map(mapCourseFromDb).filter((c) => c !== null);
+    return { success: true, data: mappedCourses };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
+  }
+}
+
+export async function deleteCourse(id: number) {
+  try {
+    const result = await db
+      .delete(courses)
+      .where(eq(courses.id, id))
+      .returning();
+
+    const mappedCourse = mapCourseFromDb(result[0]);
+    return { success: true, data: mappedCourse };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getCoursesWithDetails() {
+  try {
+    const result = await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        description: courses.description,
+        domainId: courses.domainId,
+        teacherId: courses.teacherId,
+        thumbnailUrl: courses.thumbnailUrl,
+        isActive: courses.isActive,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        domain: {
+          id: domains.id,
+          name: domains.name,
+          color: domains.color,
+        },
+        teacher: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+        enrollmentCount: sql<number>`cast(count(distinct ${enrollments.id}) as int)`,
+        chapterCount: sql<number>`cast(count(distinct ${chapters.id}) as int)`,
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .groupBy(
+        courses.id,
+        domains.id,
+        domains.name,
+        domains.color,
+        users.id,
+        users.name,
+        users.email
+      )
+      .orderBy(desc(courses.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getCourseWithDetails(id: number) {
+  try {
+    const result = await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        description: courses.description,
+        domainId: courses.domainId,
+        teacherId: courses.teacherId,
+        thumbnailUrl: courses.thumbnailUrl,
+        isActive: courses.isActive,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        domain: {
+          id: domains.id,
+          name: domains.name,
+          color: domains.color,
+        },
+        teacher: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+        enrollmentCount: sql<number>`cast(count(distinct ${enrollments.id}) as int)`,
+        chapterCount: sql<number>`cast(count(distinct ${chapters.id}) as int)`,
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .where(eq(courses.id, id))
+      .groupBy(
+        courses.id,
+        domains.id,
+        domains.name,
+        domains.color,
+        users.id,
+        users.name,
+        users.email
+      )
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function courseHasEnrollments(courseId: number) {
+  try {
+    const result = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(enrollments)
+      .where(eq(enrollments.courseId, courseId));
+
+    return { success: true, data: result[0].count > 0 };
+  } catch (error) {
+    return handleDbError(error);
   }
 }
 
 // Enrollment query functions
 export async function getEnrollmentById(id: number) {
   try {
-    const result = await db.select().from(enrollments).where(eq(enrollments.id, id)).limit(1)
-    const mappedEnrollment = mapEnrollmentFromDb(result[0])
-    return { success: true, data: mappedEnrollment }
+    const result = await db
+      .select()
+      .from(enrollments)
+      .where(eq(enrollments.id, id))
+      .limit(1);
+    const mappedEnrollment = mapEnrollmentFromDb(result[0]);
+    return { success: true, data: mappedEnrollment };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -193,31 +522,36 @@ export async function getEnrollmentsByStudentId(studentId: number) {
           title: courses.title,
           description: courses.description,
           isActive: courses.isActive,
-        }
+        },
       })
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id))
-      .where(eq(enrollments.studentId, studentId))
-    
-    return { success: true, data: result }
+      .where(eq(enrollments.studentId, studentId));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getEnrollmentsByCourseId(courseId: number) {
   try {
-    const result = await db.select().from(enrollments).where(eq(enrollments.courseId, courseId))
-    const mappedEnrollments = result.map(mapEnrollmentFromDb).filter(e => e !== null)
-    return { success: true, data: mappedEnrollments }
+    const result = await db
+      .select()
+      .from(enrollments)
+      .where(eq(enrollments.courseId, courseId));
+    const mappedEnrollments = result
+      .map(mapEnrollmentFromDb)
+      .filter((e) => e !== null);
+    return { success: true, data: mappedEnrollments };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createEnrollment(data: {
-  studentId: number
-  courseId: number
+  studentId: number;
+  courseId: number;
 }) {
   try {
     const result = await db
@@ -226,38 +560,42 @@ export async function createEnrollment(data: {
         studentId: data.studentId,
         courseId: data.courseId,
       })
-      .returning()
-    
-    const mappedEnrollment = mapEnrollmentFromDb(result[0])
-    return { success: true, data: mappedEnrollment }
+      .returning();
+
+    const mappedEnrollment = mapEnrollmentFromDb(result[0]);
+    return { success: true, data: mappedEnrollment };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 // Domain query functions
 export async function getAllDomains() {
   try {
-    const result = await db.select().from(domains)
-    return { success: true, data: result }
+    const result = await db.select().from(domains);
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function getDomainById(id: number) {
   try {
-    const result = await db.select().from(domains).where(eq(domains.id, id)).limit(1)
-    return { success: true, data: result[0] || null }
+    const result = await db
+      .select()
+      .from(domains)
+      .where(eq(domains.id, id))
+      .limit(1);
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createDomain(data: {
-  name: string
-  description?: string | null
-  color?: string
+  name: string;
+  description?: string | null;
+  color?: string;
 }) {
   try {
     const result = await db
@@ -267,29 +605,32 @@ export async function createDomain(data: {
         description: data.description,
         color: data.color || "#6366f1",
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateDomain(id: number, data: Partial<{
-  name: string
-  description: string | null
-  color: string
-}>) {
+export async function updateDomain(
+  id: number,
+  data: Partial<{
+    name: string;
+    description: string | null;
+    color: string;
+  }>
+) {
   try {
     const result = await db
       .update(domains)
       .set(data)
       .where(eq(domains.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -298,21 +639,81 @@ export async function deleteDomain(id: number) {
     const result = await db
       .delete(domains)
       .where(eq(domains.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
+  }
+}
+
+export async function getDomainsWithCounts() {
+  try {
+    const result = await db
+      .select({
+        id: domains.id,
+        name: domains.name,
+        description: domains.description,
+        color: domains.color,
+        createdAt: domains.createdAt,
+        coursesCount: sql<number>`cast(count(${courses.id}) as int)`,
+      })
+      .from(domains)
+      .leftJoin(courses, eq(domains.id, courses.domainId))
+      .groupBy(domains.id)
+      .orderBy(desc(domains.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function domainNameExists(name: string, excludeId?: number) {
+  try {
+    let query = db
+      .select({ id: domains.id })
+      .from(domains)
+      .where(eq(domains.name, name));
+
+    if (excludeId !== undefined) {
+      query = db
+        .select({ id: domains.id })
+        .from(domains)
+        .where(and(eq(domains.name, name), ne(domains.id, excludeId)));
+    }
+
+    const result = await query.limit(1);
+    return { success: true, data: result.length > 0 };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function domainHasCourses(domainId: number) {
+  try {
+    const result = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(courses)
+      .where(eq(courses.domainId, domainId));
+
+    return { success: true, data: result[0].count > 0 };
+  } catch (error) {
+    return handleDbError(error);
   }
 }
 
 // Chapter query functions
 export async function getChapterById(id: number) {
   try {
-    const result = await db.select().from(chapters).where(eq(chapters.id, id)).limit(1)
-    return { success: true, data: result[0] || null }
+    const result = await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.id, id))
+      .limit(1);
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -322,21 +723,21 @@ export async function getChaptersByCourseId(courseId: number) {
       .select()
       .from(chapters)
       .where(eq(chapters.courseId, courseId))
-      .orderBy(chapters.orderIndex)
-    
-    return { success: true, data: result }
+      .orderBy(chapters.orderIndex);
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createChapter(data: {
-  courseId: number
-  title: string
-  description?: string | null
-  orderIndex: number
-  contentType: string
-  contentData: any
+  courseId: number;
+  title: string;
+  description?: string | null;
+  orderIndex: number;
+  contentType: string;
+  contentData: any;
 }) {
   try {
     const result = await db
@@ -349,31 +750,34 @@ export async function createChapter(data: {
         contentType: data.contentType,
         contentData: data.contentData,
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateChapter(id: number, data: Partial<{
-  title: string
-  description: string | null
-  orderIndex: number
-  contentType: string
-  contentData: any
-}>) {
+export async function updateChapter(
+  id: number,
+  data: Partial<{
+    title: string;
+    description: string | null;
+    orderIndex: number;
+    contentType: string;
+    contentData: any;
+  }>
+) {
   try {
     const result = await db
       .update(chapters)
       .set(data)
       .where(eq(chapters.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -382,11 +786,11 @@ export async function deleteChapter(id: number) {
     const result = await db
       .delete(chapters)
       .where(eq(chapters.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -398,13 +802,16 @@ export async function reorderChapters(courseId: number, chapterIds: number[]) {
         .update(chapters)
         .set({ orderIndex: index })
         .where(and(eq(chapters.id, chapterId), eq(chapters.courseId, courseId)))
-    )
-    
-    await Promise.all(updates)
-    
-    return { success: true, data: { message: "Chapters reordered successfully" } }
+    );
+
+    await Promise.all(updates);
+
+    return {
+      success: true,
+      data: { message: "Chapters reordered successfully" },
+    };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -414,19 +821,24 @@ export async function getChapterProgress(studentId: number, chapterId: number) {
     const result = await db
       .select()
       .from(chapterProgress)
-      .where(and(
-        eq(chapterProgress.studentId, studentId),
-        eq(chapterProgress.chapterId, chapterId)
-      ))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .where(
+        and(
+          eq(chapterProgress.studentId, studentId),
+          eq(chapterProgress.chapterId, chapterId)
+        )
+      )
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function getStudentProgressByCourse(studentId: number, courseId: number) {
+export async function getStudentProgressByCourse(
+  studentId: number,
+  courseId: number
+) {
   try {
     const result = await db
       .select({
@@ -439,34 +851,41 @@ export async function getStudentProgressByCourse(studentId: number, courseId: nu
       })
       .from(chapterProgress)
       .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
-      .where(and(
-        eq(chapterProgress.studentId, studentId),
-        eq(chapters.courseId, courseId)
-      ))
-      .orderBy(chapters.orderIndex)
-    
-    return { success: true, data: result }
+      .where(
+        and(
+          eq(chapterProgress.studentId, studentId),
+          eq(chapters.courseId, courseId)
+        )
+      )
+      .orderBy(chapters.orderIndex);
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function markChapterComplete(studentId: number, chapterId: number) {
+export async function markChapterComplete(
+  studentId: number,
+  chapterId: number
+) {
   try {
     // Check if already completed
     const existing = await db
       .select()
       .from(chapterProgress)
-      .where(and(
-        eq(chapterProgress.studentId, studentId),
-        eq(chapterProgress.chapterId, chapterId)
-      ))
-      .limit(1)
-    
+      .where(
+        and(
+          eq(chapterProgress.studentId, studentId),
+          eq(chapterProgress.chapterId, chapterId)
+        )
+      )
+      .limit(1);
+
     if (existing.length > 0) {
-      return { success: true, data: existing[0] }
+      return { success: true, data: existing[0] };
     }
-    
+
     // Create new progress record
     const result = await db
       .insert(chapterProgress)
@@ -474,27 +893,32 @@ export async function markChapterComplete(studentId: number, chapterId: number) 
         studentId,
         chapterId,
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function unmarkChapterComplete(studentId: number, chapterId: number) {
+export async function unmarkChapterComplete(
+  studentId: number,
+  chapterId: number
+) {
   try {
     const result = await db
       .delete(chapterProgress)
-      .where(and(
-        eq(chapterProgress.studentId, studentId),
-        eq(chapterProgress.chapterId, chapterId)
-      ))
-      .returning()
-    
-    return { success: true, data: result[0] || null }
+      .where(
+        and(
+          eq(chapterProgress.studentId, studentId),
+          eq(chapterProgress.chapterId, chapterId)
+        )
+      )
+      .returning();
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -505,11 +929,11 @@ export async function getQuizById(id: number) {
       .select()
       .from(quizzes)
       .where(eq(quizzes.id, id))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -518,19 +942,19 @@ export async function getQuizzesByChapter(chapterId: number) {
     const result = await db
       .select()
       .from(quizzes)
-      .where(eq(quizzes.chapterId, chapterId))
-    
-    return { success: true, data: result }
+      .where(eq(quizzes.chapterId, chapterId));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createQuiz(data: {
-  chapterId: number
-  title: string
-  questions: any
-  passingScore?: number
+  chapterId: number;
+  title: string;
+  questions: any;
+  passingScore?: number;
 }) {
   try {
     const result = await db
@@ -541,29 +965,32 @@ export async function createQuiz(data: {
         questions: data.questions,
         passingScore: data.passingScore || 70,
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateQuiz(id: number, data: Partial<{
-  title: string
-  questions: any
-  passingScore: number
-}>) {
+export async function updateQuiz(
+  id: number,
+  data: Partial<{
+    title: string;
+    questions: any;
+    passingScore: number;
+  }>
+) {
   try {
     const result = await db
       .update(quizzes)
       .set(data)
       .where(eq(quizzes.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -572,11 +999,11 @@ export async function deleteQuiz(id: number) {
     const result = await db
       .delete(quizzes)
       .where(eq(quizzes.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -587,28 +1014,33 @@ export async function getQuizAttemptById(id: number) {
       .select()
       .from(quizAttempts)
       .where(eq(quizAttempts.id, id))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function getQuizAttemptsByStudent(studentId: number, quizId: number) {
+export async function getQuizAttemptsByStudent(
+  studentId: number,
+  quizId: number
+) {
   try {
     const result = await db
       .select()
       .from(quizAttempts)
-      .where(and(
-        eq(quizAttempts.studentId, studentId),
-        eq(quizAttempts.quizId, quizId)
-      ))
-      .orderBy(desc(quizAttempts.attemptedAt))
-    
-    return { success: true, data: result }
+      .where(
+        and(
+          eq(quizAttempts.studentId, studentId),
+          eq(quizAttempts.quizId, quizId)
+        )
+      )
+      .orderBy(desc(quizAttempts.attemptedAt));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -618,20 +1050,20 @@ export async function getAllQuizAttemptsByStudent(studentId: number) {
       .select()
       .from(quizAttempts)
       .where(eq(quizAttempts.studentId, studentId))
-      .orderBy(desc(quizAttempts.attemptedAt))
-    
-    return { success: true, data: result }
+      .orderBy(desc(quizAttempts.attemptedAt));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createQuizAttempt(data: {
-  studentId: number
-  quizId: number
-  answers: any
-  score: number
-  passed: boolean
+  studentId: number;
+  quizId: number;
+  answers: any;
+  score: number;
+  passed: boolean;
 }) {
   try {
     const result = await db
@@ -643,11 +1075,11 @@ export async function createQuizAttempt(data: {
         score: data.score,
         passed: data.passed,
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -656,16 +1088,18 @@ export async function getBestQuizAttempt(studentId: number, quizId: number) {
     const result = await db
       .select()
       .from(quizAttempts)
-      .where(and(
-        eq(quizAttempts.studentId, studentId),
-        eq(quizAttempts.quizId, quizId)
-      ))
+      .where(
+        and(
+          eq(quizAttempts.studentId, studentId),
+          eq(quizAttempts.quizId, quizId)
+        )
+      )
       .orderBy(desc(quizAttempts.score))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -676,11 +1110,11 @@ export async function getFinalProjectById(id: number) {
       .select()
       .from(finalProjects)
       .where(eq(finalProjects.id, id))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -689,19 +1123,19 @@ export async function getFinalProjectsByCourse(courseId: number) {
     const result = await db
       .select()
       .from(finalProjects)
-      .where(eq(finalProjects.courseId, courseId))
-    
-    return { success: true, data: result }
+      .where(eq(finalProjects.courseId, courseId));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createFinalProject(data: {
-  courseId: number
-  title: string
-  description: string
-  requirements?: any
+  courseId: number;
+  title: string;
+  description: string;
+  requirements?: any;
 }) {
   try {
     const result = await db
@@ -712,29 +1146,32 @@ export async function createFinalProject(data: {
         description: data.description,
         requirements: data.requirements,
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateFinalProject(id: number, data: Partial<{
-  title: string
-  description: string
-  requirements: any
-}>) {
+export async function updateFinalProject(
+  id: number,
+  data: Partial<{
+    title: string;
+    description: string;
+    requirements: any;
+  }>
+) {
   try {
     const result = await db
       .update(finalProjects)
       .set(data)
       .where(eq(finalProjects.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -743,11 +1180,11 @@ export async function deleteFinalProject(id: number) {
     const result = await db
       .delete(finalProjects)
       .where(eq(finalProjects.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -758,11 +1195,11 @@ export async function getProjectSubmissionById(id: number) {
       .select()
       .from(projectSubmissions)
       .where(eq(projectSubmissions.id, id))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -772,11 +1209,11 @@ export async function getProjectSubmissionsByStudent(studentId: number) {
       .select()
       .from(projectSubmissions)
       .where(eq(projectSubmissions.studentId, studentId))
-      .orderBy(desc(projectSubmissions.submittedAt))
-    
-    return { success: true, data: result }
+      .orderBy(desc(projectSubmissions.submittedAt));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -786,37 +1223,42 @@ export async function getProjectSubmissionsByProject(finalProjectId: number) {
       .select()
       .from(projectSubmissions)
       .where(eq(projectSubmissions.finalProjectId, finalProjectId))
-      .orderBy(desc(projectSubmissions.submittedAt))
-    
-    return { success: true, data: result }
+      .orderBy(desc(projectSubmissions.submittedAt));
+
+    return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function getStudentSubmissionForProject(studentId: number, finalProjectId: number) {
+export async function getStudentSubmissionForProject(
+  studentId: number,
+  finalProjectId: number
+) {
   try {
     const result = await db
       .select()
       .from(projectSubmissions)
-      .where(and(
-        eq(projectSubmissions.studentId, studentId),
-        eq(projectSubmissions.finalProjectId, finalProjectId)
-      ))
+      .where(
+        and(
+          eq(projectSubmissions.studentId, studentId),
+          eq(projectSubmissions.finalProjectId, finalProjectId)
+        )
+      )
       .orderBy(desc(projectSubmissions.submittedAt))
-      .limit(1)
-    
-    return { success: true, data: result[0] || null }
+      .limit(1);
+
+    return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
 export async function createProjectSubmission(data: {
-  studentId: number
-  finalProjectId: number
-  submissionUrl?: string | null
-  description?: string | null
+  studentId: number;
+  finalProjectId: number;
+  submissionUrl?: string | null;
+  description?: string | null;
 }) {
   try {
     const result = await db
@@ -828,38 +1270,41 @@ export async function createProjectSubmission(data: {
         description: data.description,
         status: "submitted",
       })
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
-export async function updateProjectSubmission(id: number, data: Partial<{
-  submissionUrl: string | null
-  description: string | null
-  status: string
-  feedback: string | null
-  grade: number | null
-}>) {
+export async function updateProjectSubmission(
+  id: number,
+  data: Partial<{
+    submissionUrl: string | null;
+    description: string | null;
+    status: string;
+    feedback: string | null;
+    grade: number | null;
+  }>
+) {
   try {
-    const updateData: any = { ...data }
-    
+    const updateData: any = { ...data };
+
     // If status is being changed to reviewed, set reviewedAt
     if (data.status && data.status !== "submitted") {
-      updateData.reviewedAt = new Date()
+      updateData.reviewedAt = new Date();
     }
-    
+
     const result = await db
       .update(projectSubmissions)
       .set(updateData)
       .where(eq(projectSubmissions.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
   }
 }
 
@@ -868,10 +1313,97 @@ export async function deleteProjectSubmission(id: number) {
     const result = await db
       .delete(projectSubmissions)
       .where(eq(projectSubmissions.id, id))
-      .returning()
-    
-    return { success: true, data: result[0] }
+      .returning();
+
+    return { success: true, data: result[0] };
   } catch (error) {
-    return handleDbError(error)
+    return handleDbError(error);
+  }
+}
+
+// Get student enrolled courses with progress
+export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
+  try {
+    const result = await db
+      .select({
+        enrollmentId: enrollments.id,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseDescription: courses.description,
+        courseThumbnailUrl: courses.thumbnailUrl,
+        enrolledAt: enrollments.createdAt,
+        completedAt: enrollments.completedAt,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        teacherId: users.id,
+        teacherName: users.name,
+        totalChapters: sql<number>`cast(count(distinct ${chapters.id}) as int)`,
+        completedChapters: sql<number>`cast(count(distinct ${chapterProgress.id}) as int)`,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(
+        chapterProgress,
+        and(
+          eq(chapterProgress.chapterId, chapters.id),
+          eq(chapterProgress.studentId, studentId)
+        )
+      )
+      .where(eq(enrollments.studentId, studentId))
+      .groupBy(
+        enrollments.id,
+        courses.id,
+        courses.title,
+        courses.description,
+        courses.thumbnailUrl,
+        enrollments.createdAt,
+        enrollments.completedAt,
+        domains.id,
+        domains.name,
+        domains.color,
+        users.id,
+        users.name
+      )
+      .orderBy(desc(enrollments.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+// Get student quiz attempts with course and chapter details
+export async function getStudentQuizAttemptsWithDetails(studentId: number) {
+  try {
+    const result = await db
+      .select({
+        attemptId: quizAttempts.id,
+        quizId: quizzes.id,
+        quizTitle: quizzes.title,
+        score: quizAttempts.score,
+        maxScore: quizzes.passingScore,
+        passed: quizAttempts.passed,
+        attemptedAt: quizAttempts.attemptedAt,
+        chapterId: chapters.id,
+        chapterTitle: chapters.title,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        domainName: domains.name,
+      })
+      .from(quizAttempts)
+      .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
+      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(quizAttempts.studentId, studentId))
+      .orderBy(desc(quizAttempts.attemptedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
   }
 }

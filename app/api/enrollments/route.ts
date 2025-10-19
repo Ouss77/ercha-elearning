@@ -3,7 +3,8 @@ import { getCurrentUser } from "@/lib/auth/auth"
 import { 
   createEnrollment, 
   getEnrollmentsByStudentId,
-  getEnrollmentsByCourseId 
+  getEnrollmentsByCourseId,
+  getCourseById 
 } from "@/lib/db/queries"
 
 export async function GET(request: NextRequest) {
@@ -61,6 +62,15 @@ export async function POST(request: NextRequest) {
     if (courseIds && Array.isArray(courseIds)) {
       const enrollments = []
       for (const cId of courseIds) {
+        // Validate that the course is active
+        const courseResult = await getCourseById(Number(cId))
+        if (!courseResult.success || !courseResult.data) {
+          continue // Skip invalid courses
+        }
+        if (!courseResult.data.isActive) {
+          continue // Skip inactive courses
+        }
+        
         const result = await createEnrollment({
           studentId: Number(studentId),
           courseId: Number(cId),
@@ -74,6 +84,15 @@ export async function POST(request: NextRequest) {
 
     if (!studentId || !courseId) {
       return NextResponse.json({ error: "studentId et courseId requis" }, { status: 400 })
+    }
+
+    // Validate that the course is active
+    const courseResult = await getCourseById(Number(courseId))
+    if (!courseResult.success || !courseResult.data) {
+      return NextResponse.json({ error: "Cours introuvable" }, { status: 404 })
+    }
+    if (!courseResult.data.isActive) {
+      return NextResponse.json({ error: "Impossible d'inscrire à un cours inactif" }, { status: 400 })
     }
 
     const result = await createEnrollment({
