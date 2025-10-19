@@ -1375,3 +1375,35 @@ export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
     return handleDbError(error);
   }
 }
+
+// Get student quiz attempts with course and chapter details
+export async function getStudentQuizAttemptsWithDetails(studentId: number) {
+  try {
+    const result = await db
+      .select({
+        attemptId: quizAttempts.id,
+        quizId: quizzes.id,
+        quizTitle: quizzes.title,
+        score: quizAttempts.score,
+        maxScore: quizzes.passingScore,
+        passed: quizAttempts.passed,
+        attemptedAt: quizAttempts.attemptedAt,
+        chapterId: chapters.id,
+        chapterTitle: chapters.title,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        domainName: domains.name,
+      })
+      .from(quizAttempts)
+      .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
+      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(quizAttempts.studentId, studentId))
+      .orderBy(desc(quizAttempts.attemptedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}

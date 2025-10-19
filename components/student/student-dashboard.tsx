@@ -39,6 +39,7 @@ interface Course {
   title: string;
   description: string;
   domain: string;
+  domainColor?: string;
   teacher: string;
   thumbnail: string;
   progress: number;
@@ -78,6 +79,7 @@ export function StudentDashboard({
         description:
           enrollment.courseDescription || "Pas de description disponible",
         domain: enrollment.domainName || "Non classé",
+        domainColor: enrollment.domainColor || undefined,
         teacher: enrollment.teacherName || "Non assigné",
         thumbnail: enrollment.courseThumbnailUrl || "/placeholder.svg",
         progress,

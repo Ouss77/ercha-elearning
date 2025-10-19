@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -28,6 +28,36 @@ import type { User } from "@/lib/auth/auth";
 
 interface ProgressViewProps {
   user: User;
+  enrolledCourses: Array<{
+    enrollmentId: number;
+    courseId: number;
+    courseTitle: string;
+    courseDescription: string | null;
+    courseThumbnailUrl: string | null;
+    enrolledAt: Date;
+    completedAt: Date | null;
+    domainId: number | null;
+    domainName: string | null;
+    domainColor: string | null;
+    teacherId: number | null;
+    teacherName: string | null;
+    totalChapters: number;
+    completedChapters: number;
+  }>;
+  quizAttempts: Array<{
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    score: number;
+    maxScore: number | null;
+    passed: boolean;
+    attemptedAt: Date | null;
+    chapterId: number;
+    chapterTitle: string;
+    courseId: number;
+    courseTitle: string;
+    domainName: string | null;
+  }>;
 }
 
 interface CourseProgress {
@@ -60,112 +90,105 @@ interface Achievement {
   category: "course" | "quiz" | "streak" | "special";
 }
 
-export function ProgressView({ user }: ProgressViewProps) {
-  // Mock data
-  const [coursesProgress] = useState<CourseProgress[]>([
-    {
-      id: 1,
-      title: "Introduction à React",
-      domain: "Informatique",
-      progress: 65,
-      completedChapters: 5,
-      totalChapters: 8,
-      timeSpent: 12,
-      lastActivity: "2025-01-15",
-    },
-    {
-      id: 2,
-      title: "Marketing Digital Avancé",
-      domain: "Marketing",
-      progress: 100,
-      completedChapters: 12,
-      totalChapters: 12,
-      timeSpent: 24,
-      lastActivity: "2025-01-10",
-    },
-    {
-      id: 3,
-      title: "Design UX/UI Moderne",
-      domain: "Design",
-      progress: 25,
-      completedChapters: 2,
-      totalChapters: 10,
-      timeSpent: 6,
-      lastActivity: "2025-01-12",
-    },
-  ]);
+export function ProgressView({
+  user,
+  enrolledCourses: rawEnrolledCourses,
+  quizAttempts: rawQuizAttempts,
+}: ProgressViewProps) {
+  // Create domain color mapping from database
+  const domainColorMap = useMemo(() => {
+    const colorMap: Record<string, string> = {};
+    rawEnrolledCourses.forEach((enrollment) => {
+      if (enrollment.domainName && enrollment.domainColor) {
+        colorMap[enrollment.domainName] = enrollment.domainColor;
+      }
+    });
+    return colorMap;
+  }, [rawEnrolledCourses]);
 
-  const [quizResults] = useState<QuizResult[]>([
-    {
-      id: 1,
-      courseName: "Introduction à React",
-      chapterName: "Composants et Props",
-      score: 85,
-      maxScore: 100,
-      passed: true,
-      completedAt: "2025-01-15",
-    },
-    {
-      id: 2,
-      courseName: "Marketing Digital Avancé",
-      chapterName: "Analytics et KPIs",
-      score: 92,
-      maxScore: 100,
-      passed: true,
-      completedAt: "2025-01-10",
-    },
-    {
-      id: 3,
-      courseName: "Design UX/UI Moderne",
-      chapterName: "Principes de Design",
-      score: 78,
-      maxScore: 100,
-      passed: true,
-      completedAt: "2025-01-12",
-    },
-    {
-      id: 4,
-      courseName: "Introduction à React",
-      chapterName: "Hooks React",
-      score: 55,
-      maxScore: 100,
-      passed: false,
-      completedAt: "2025-01-08",
-    },
-  ]);
+  // Transform enrolled courses data
+  const coursesProgress: CourseProgress[] = useMemo(() => {
+    return rawEnrolledCourses.map((enrollment) => {
+      const progress =
+        enrollment.totalChapters > 0
+          ? Math.round(
+              (enrollment.completedChapters / enrollment.totalChapters) * 100
+            )
+          : 0;
 
-  const [achievements] = useState<Achievement[]>([
-    {
-      id: 1,
-      title: "Premier Cours Terminé",
-      description: "Félicitations pour avoir complété votre premier cours !",
-      icon: "🎓",
-      earnedAt: "2025-01-10",
-      category: "course",
-    },
-    {
-      id: 2,
-      title: "Quiz Master",
-      description: "Réussi 5 quiz d'affilée avec plus de 80%",
-      icon: "🏆",
-      earnedAt: "2025-01-15",
-      category: "quiz",
-    },
-    {
-      id: 3,
-      title: "Série de 7 Jours",
-      description: "Connecté et appris pendant 7 jours consécutifs",
-      icon: "🔥",
-      earnedAt: "2025-01-14",
-      category: "streak",
-    },
-  ]);
+      return {
+        id: enrollment.courseId,
+        title: enrollment.courseTitle,
+        domain: enrollment.domainName || "Non classé",
+        progress,
+        completedChapters: enrollment.completedChapters,
+        totalChapters: enrollment.totalChapters,
+        timeSpent: 0, // TODO: Implement time tracking in the database
+        lastActivity: enrollment.enrolledAt.toISOString().split("T")[0],
+      };
+    });
+  }, [rawEnrolledCourses]);
 
-  // Calculate stats
-  const totalProgress = Math.round(
-    coursesProgress.reduce((acc, course) => acc + course.progress, 0) /
-      coursesProgress.length
-  );
+  // Transform quiz attempts data
+  const quizResults: QuizResult[] = useMemo(() => {
+    return rawQuizAttempts.map((attempt) => ({
+      id: attempt.attemptId,
+      courseName: attempt.courseTitle,
+      chapterName: attempt.chapterTitle,
+      score: attempt.score,
+      maxScore: attempt.maxScore || 100,
+      passed: attempt.passed,
+      completedAt: attempt.attemptedAt
+        ? attempt.attemptedAt.toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+    }));
+  }, [rawQuizAttempts]);
+
+  // Calculate achievements based on real data
+  const achievements: Achievement[] = useMemo(() => {
+    const earnedAchievements: Achievement[] = [];
+
+    // Check for completed courses
+    const completedCoursesCount = coursesProgress.filter(
+      (c) => c.progress === 100
+    ).length;
+    if (completedCoursesCount > 0) {
+      earnedAchievements.push({
+        id: 1,
+        title: "Premier Cours Terminé",
+        description: "Félicitations pour avoir complété votre premier cours !",
+        icon: "🎓",
+        earnedAt: new Date().toISOString().split("T")[0],
+        category: "course",
+      });
+    }
+
+    // Check for quiz mastery (5 passed quizzes with > 80%)
+    const highScoreQuizzes = quizResults.filter(
+      (q) => q.passed && q.score >= 80
+    );
+    if (highScoreQuizzes.length >= 5) {
+      earnedAchievements.push({
+        id: 2,
+        title: "Quiz Master",
+        description: "Réussi 5 quiz d'affilée avec plus de 80%",
+        icon: "🏆",
+        earnedAt: new Date().toISOString().split("T")[0],
+        category: "quiz",
+      });
+    }
+
+    return earnedAchievements;
+  }, [coursesProgress, quizResults]);
+
+  // Calculate stats with proper handling for empty arrays
+  const totalProgress =
+    coursesProgress.length > 0
+      ? Math.round(
+          coursesProgress.reduce((acc, course) => acc + course.progress, 0) /
+            coursesProgress.length
+        )
+      : 0;
   const totalTimeSpent = coursesProgress.reduce(
     (acc, course) => acc + course.timeSpent,
     0
@@ -173,17 +196,41 @@ export function ProgressView({ user }: ProgressViewProps) {
   const completedCourses = coursesProgress.filter(
     (c) => c.progress === 100
   ).length;
-  const averageQuizScore = Math.round(
-    quizResults.reduce((acc, quiz) => acc + quiz.score, 0) / quizResults.length
-  );
+  const averageQuizScore =
+    quizResults.length > 0
+      ? Math.round(
+          quizResults.reduce((acc, quiz) => acc + quiz.score, 0) /
+            quizResults.length
+        )
+      : 0;
+
+  // Get unique domains from enrolled courses
+  const uniqueDomains = useMemo(() => {
+    const domains = new Set<string>();
+    coursesProgress.forEach((course) => {
+      if (course.domain) {
+        domains.add(course.domain);
+      }
+    });
+    return Array.from(domains);
+  }, [coursesProgress]);
 
   const getDomainColor = (domain: string) => {
-    const colors: Record<string, string> = {
+    // Use database domain colors or fallback to default colors
+    if (domainColorMap[domain]) {
+      return domainColorMap[domain];
+    }
+
+    // Fallback colors in case domain color is not in database
+    const fallbackColors: Record<string, string> = {
       Informatique: "bg-blue-500",
+      "Développement Web": "bg-blue-500",
       Marketing: "bg-green-500",
+      "Marketing Digital": "bg-green-500",
       Design: "bg-purple-500",
+      "Design Graphique": "bg-purple-500",
     };
-    return colors[domain] || "bg-gray-500";
+    return fallbackColors[domain] || "bg-gray-500";
   };
 
   return (
@@ -336,43 +383,50 @@ export function ProgressView({ user }: ProgressViewProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {["Informatique", "Marketing", "Design"].map((domain) => {
-                  const domainCourses = coursesProgress.filter(
-                    (c) => c.domain === domain
-                  );
-                  const domainProgress =
-                    domainCourses.length > 0
-                      ? Math.round(
-                          domainCourses.reduce(
-                            (acc, c) => acc + c.progress,
-                            0
-                          ) / domainCourses.length
-                        )
-                      : 0;
+                {uniqueDomains.length > 0 ? (
+                  uniqueDomains.map((domain) => {
+                    const domainCourses = coursesProgress.filter(
+                      (c) => c.domain === domain
+                    );
+                    const domainProgress =
+                      domainCourses.length > 0
+                        ? Math.round(
+                            domainCourses.reduce(
+                              (acc, c) => acc + c.progress,
+                              0
+                            ) / domainCourses.length
+                          )
+                        : 0;
 
-                  return (
-                    <div key={domain} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-3 h-3 rounded-full ${getDomainColor(
-                              domain
-                            )}`}
-                          />
-                          <span className="font-medium">{domain}</span>
-                          <span className="text-sm text-muted-foreground">
-                            ({domainCourses.length}{" "}
-                            {domainCourses.length > 1 ? "cours" : "cours"})
+                    return (
+                      <div key={domain} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full ${getDomainColor(
+                                domain
+                              )}`}
+                            />
+                            <span className="font-medium">{domain}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ({domainCourses.length}{" "}
+                              {domainCourses.length > 1 ? "cours" : "cours"})
+                            </span>
+                          </div>
+                          <span className="font-semibold text-primary">
+                            {domainProgress}%
                           </span>
                         </div>
-                        <span className="font-semibold text-primary">
-                          {domainProgress}%
-                        </span>
+                        <Progress value={domainProgress} className="h-2" />
                       </div>
-                      <Progress value={domainProgress} className="h-2" />
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    Aucun domaine disponible. Inscrivez-vous à un cours pour
+                    commencer.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

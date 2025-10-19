@@ -71,6 +71,17 @@ export function MyCoursesView({
     "all" | "in-progress" | "completed"
   >("all");
 
+  // Create domain color mapping from database
+  const domainColorMap = useMemo(() => {
+    const colorMap: Record<string, string> = {};
+    rawEnrolledCourses.forEach((enrollment) => {
+      if (enrollment.domainName && enrollment.domainColor) {
+        colorMap[enrollment.domainName] = enrollment.domainColor;
+      }
+    });
+    return colorMap;
+  }, [rawEnrolledCourses]);
+
   // Transform database data to match component's Course interface
   const courses: Course[] = useMemo(() => {
     return rawEnrolledCourses.map((enrollment) => {
@@ -116,16 +127,37 @@ export function MyCoursesView({
   });
 
   const getDomainColor = (domain: string) => {
-    const colors: Record<string, string> = {
+    // Use database domain colors or fallback to default colors
+    if (domainColorMap[domain]) {
+      // The domain color from DB is in format like "bg-blue-500"
+      // We need to convert it to badge-friendly classes
+      const baseColor = domainColorMap[domain].replace("bg-", "");
+      return `bg-${baseColor.replace("500", "100")} text-${baseColor.replace(
+        "500",
+        "700"
+      )} dark:bg-${baseColor.replace(
+        "500",
+        "950"
+      )} dark:text-${baseColor.replace("500", "400")}`;
+    }
+
+    // Fallback colors in case domain color is not in database
+    const fallbackColors: Record<string, string> = {
       Informatique:
+        "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+      "Développement Web":
         "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
       Marketing:
         "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      "Marketing Digital":
+        "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
       Design:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
+      "Design Graphique":
         "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
     };
     return (
-      colors[domain] ||
+      fallbackColors[domain] ||
       "bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-400"
     );
   };
