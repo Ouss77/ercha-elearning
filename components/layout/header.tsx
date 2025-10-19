@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { getAvatarUrl, getUserInitials } from '@/lib/utils/utils'
 
 interface HeaderProps {
   user: {
@@ -47,12 +48,8 @@ const getRoleBadgeClass = (role: string) => {
 }
 
 export function Header({ user, onMenuClick }: HeaderProps) {
-  const initials =
-    user.name
-      ?.split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase() || 'U'
+  const avatarSrc = getAvatarUrl(user.image)
+  const initials = getUserInitials(user.name)
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card/80 backdrop-blur-md shadow-sm">
@@ -81,7 +78,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
           <ThemeToggle />
           <div className="flex items-center gap-2 sm:gap-3">
             <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-primary/20 flex-shrink-0">
-              <AvatarImage src={user.image || undefined} alt={user.name || 'User'} />
+              <AvatarImage src={avatarSrc} alt={user.name || 'User'} />
               <AvatarFallback className="bg-gradient-to-br from-primary/20 to-chart-2/20 text-primary font-semibold text-xs sm:text-sm">{initials}</AvatarFallback>
             </Avatar>
             <div className="hidden md:flex md:flex-col md:items-start min-w-0">

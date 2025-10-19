@@ -6,6 +6,11 @@ export default withAuth(
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
+    // Check if user is inactive - redirect to login
+    if (token && (token as any).active === false) {
+      return NextResponse.redirect(new URL("/connexion?error=inactive", req.url))
+    }
+
     // Role-based route protection (DRY)
     const roleByPrefix = {
       "/admin": "ADMIN",

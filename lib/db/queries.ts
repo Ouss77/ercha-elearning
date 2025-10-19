@@ -1,4 +1,5 @@
 import { eq, and, desc, sql, ne } from "drizzle-orm";
+import { hash } from "bcryptjs";
 import { db, handleDbError } from "./index";
 import {
   users,
@@ -19,6 +20,7 @@ import {
   mapEnrollmentFromDb,
 } from "./mappers";
 import type { User } from "@/types/user";
+import { generateSlug, generateUniqueSlug } from "@/lib/utils/slug";
 
 // User query functions
 export async function getUserByEmail(email: string) {
@@ -40,7 +42,7 @@ export async function createUser(data: {
   password: string;
   name: string;
   role?: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN";
-  photoUrl?: string | null;
+  avatarUrl?: string | null;
   phone?: string | null;
   dateOfBirth?: Date | null;
   address?: string | null;
@@ -51,15 +53,15 @@ export async function createUser(data: {
   isActive?: boolean;
 }) {
   try {
-    // Map application data to database format
-    const dbData = mapUserToDb(data);
+    // Hash the password before storing
+    const hashedPassword = await hash(data.password, 10);
 
     const insertData: any = {
       email: data.email,
-      password: data.password,
+      password: hashedPassword,
       name: data.name,
       role: data.role || "STUDENT",
-      avatarUrl: dbData.avatarUrl,
+      avatarUrl: data.avatarUrl,
       isActive: data.isActive ?? true,
       country: data.country || "Morocco",
     };
@@ -97,11 +99,67 @@ export async function getUserById(id: number) {
 
 export async function getAllUsers() {
   try {
-    const result = await db.select().from(users);
-    const mappedUsers = result
-      .map(mapUserFromDb)
-      .filter((u): u is User => u !== null);
-    return { success: true as const, data: mappedUsers };
+    const usersResult = await db.select().from(users);
+    
+    // Fetch all student enrollments in a single query
+    const allStudentEnrollments = await db
+      .select({
+        studentId: enrollments.studentId,
+        courseSlug: courses.slug,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id));
+    
+    // Fetch all trainer courses in a single query
+    const allTrainerCourses = await db
+      .select({
+        teacherId: courses.teacherId,
+        courseSlug: courses.slug,
+      })
+      .from(courses)
+      .where(sql`${courses.teacherId} IS NOT NULL`);
+    
+    // Create lookup maps for fast access
+    const studentEnrollmentMap = new Map<number, string[]>();
+    allStudentEnrollments.forEach(({ studentId, courseSlug }) => {
+      if (studentId) {
+        if (!studentEnrollmentMap.has(studentId)) {
+          studentEnrollmentMap.set(studentId, []);
+        }
+        studentEnrollmentMap.get(studentId)!.push(courseSlug);
+      }
+    });
+    
+    const trainerCoursesMap = new Map<number, string[]>();
+    allTrainerCourses.forEach(({ teacherId, courseSlug }) => {
+      if (teacherId) {
+        if (!trainerCoursesMap.has(teacherId)) {
+          trainerCoursesMap.set(teacherId, []);
+        }
+        trainerCoursesMap.get(teacherId)!.push(courseSlug);
+      }
+    });
+    
+    // Map users with their courses
+    const usersWithCourses = usersResult.map((user) => {
+      const mappedUser = mapUserFromDb(user);
+      if (!mappedUser) return null;
+      
+      let enrolledCourses: string[] = [];
+      if (user.role === "STUDENT") {
+        enrolledCourses = studentEnrollmentMap.get(user.id) || [];
+      } else if (user.role === "TRAINER") {
+        enrolledCourses = trainerCoursesMap.get(user.id) || [];
+      }
+      
+      return {
+        ...mappedUser,
+        enrolledCourses
+      };
+    });
+    
+    const filteredUsers = usersWithCourses.filter((u): u is User & { enrolledCourses: string[] } => u !== null);
+    return { success: true as const, data: filteredUsers };
   } catch (error) {
     return handleDbError(error);
   }
@@ -114,7 +172,7 @@ export async function updateUser(
     password: string;
     name: string;
     role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN";
-    photoUrl: string | null;
+    avatarUrl: string | null;
     isActive: boolean;
     phone: string | null;
     dateOfBirth: Date | null;
@@ -126,12 +184,15 @@ export async function updateUser(
   }>
 ) {
   try {
-    // Map application data to database format
-    const dbData = mapUserToDb(data);
+    // Hash password if it's being updated
+    let dataToUpdate = { ...data };
+    if (data.password && data.password.trim() !== "") {
+      dataToUpdate.password = await hash(data.password, 10);
+    }
 
     const result = await db
       .update(users)
-      .set(dbData)
+      .set(dataToUpdate)
       .where(eq(users.id, id))
       .returning();
 
@@ -182,10 +243,21 @@ export async function createCourse(data: {
   isActive?: boolean;
 }) {
   try {
+    // Generate base slug from title
+    const baseSlug = generateSlug(data.title);
+    
+    // Get existing slugs to ensure uniqueness
+    const existingCourses = await db.select({ slug: courses.slug }).from(courses);
+    const existingSlugs = existingCourses.map(c => c.slug);
+    
+    // Generate unique slug
+    const slug = generateUniqueSlug(baseSlug, existingSlugs);
+    
     const result = await db
       .insert(courses)
       .values({
         title: data.title,
+        slug,
         description: data.description,
         domainId: data.domainId,
         teacherId: data.teacherId,
@@ -213,12 +285,26 @@ export async function updateCourse(
   }>
 ) {
   try {
+    let updateData: any = { ...data, updatedAt: new Date() };
+    
+    // If title is being updated, regenerate slug
+    if (data.title) {
+      const baseSlug = generateSlug(data.title);
+      
+      // Get existing slugs (excluding current course)
+      const existingCourses = await db
+        .select({ slug: courses.slug })
+        .from(courses)
+        .where(ne(courses.id, id));
+      const existingSlugs = existingCourses.map(c => c.slug);
+      
+      // Generate unique slug
+      updateData.slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+    
     const result = await db
       .update(courses)
-      .set({
-        ...data,
-        updatedAt: new Date(), // Update timestamp
-      })
+      .set(updateData)
       .where(eq(courses.id, id))
       .returning();
 

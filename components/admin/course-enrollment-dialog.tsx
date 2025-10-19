@@ -64,7 +64,9 @@ export function CourseEnrollmentDialog({
       const coursesData = await coursesResponse.json()
 
       if (coursesResponse.ok) {
-        setCourses(coursesData.courses || [])
+        // Filter to show only active courses
+        const activeCourses = (coursesData.courses || []).filter((course: Course) => course.isActive)
+        setCourses(activeCourses)
       } else {
         toast.error("Erreur lors du chargement des cours")
       }
@@ -177,7 +179,6 @@ export function CourseEnrollmentDialog({
                       id={`course-${course.id}`}
                       checked={selectedCourses.includes(course.id)}
                       onCheckedChange={() => handleToggleCourse(course.id)}
-                      disabled={!course.isActive}
                     />
                     <div className="flex-1 space-y-1">
                       <label
@@ -190,11 +191,6 @@ export function CourseEnrollmentDialog({
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {course.description}
                         </p>
-                      )}
-                      {!course.isActive && (
-                        <Badge variant="outline" className="text-xs">
-                          Inactif
-                        </Badge>
                       )}
                     </div>
                   </div>

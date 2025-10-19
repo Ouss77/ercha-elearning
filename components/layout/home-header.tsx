@@ -20,14 +20,14 @@ export function HomeHeader({ user }: HomeHeaderProps) {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-             <Link href="/">
-                <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
-                  <GraduationCap className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  EduPlatform
-                </h1>
-             </Link>
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="h-10 w-10 bg-gradient-to-br from-primary to-chart-2 rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent whitespace-nowrap">
+                EduPlatform
+              </h1>
+            </Link>
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
