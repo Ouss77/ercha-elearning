@@ -1632,3 +1632,124 @@ export async function getTeacherDashboardSummary(teacherId: number) {
     return handleDbError(error);
   }
 }
+
+// Get detailed course information for teacher view
+export async function getTeacherCourseDetails(
+  courseId: number,
+  teacherId: number
+) {
+  try {
+    // Get course basic info with teacher and domain
+    const courseResult = await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        slug: courses.slug,
+        description: courses.description,
+        thumbnailUrl: courses.thumbnailUrl,
+        isActive: courses.isActive,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        domainDescription: domains.description,
+        teacherId: users.id,
+        teacherName: users.name,
+        teacherEmail: users.email,
+        teacherAvatarUrl: users.avatarUrl,
+        teacherBio: users.bio,
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .where(and(eq(courses.id, courseId), eq(courses.teacherId, teacherId)))
+      .limit(1);
+
+    if (!courseResult[0]) {
+      return { success: false, error: "Course not found or access denied" };
+    }
+
+    const course = courseResult[0];
+
+    // Get chapters with their details
+    const chaptersResult = await db
+      .select({
+        id: chapters.id,
+        title: chapters.title,
+        description: chapters.description,
+        orderIndex: chapters.orderIndex,
+        contentType: chapters.contentType,
+        createdAt: chapters.createdAt,
+      })
+      .from(chapters)
+      .where(eq(chapters.courseId, courseId))
+      .orderBy(chapters.orderIndex);
+
+    // Get enrollment statistics
+    const enrollmentStats = await db
+      .select({
+        totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
+        completedStudents: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.studentId} end) as int)`,
+      })
+      .from(enrollments)
+      .where(eq(enrollments.courseId, courseId));
+
+    // Get progress statistics
+    const progressStats = await db
+      .select({
+        totalProgress: sql<number>`cast(count(distinct ${chapterProgress.id}) as int)`,
+      })
+      .from(chapterProgress)
+      .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
+      .where(eq(chapters.courseId, courseId));
+
+    // Get recent student enrollments
+    const recentEnrollments = await db
+      .select({
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatarUrl: users.avatarUrl,
+        enrolledAt: enrollments.createdAt,
+        completedAt: enrollments.completedAt,
+      })
+      .from(enrollments)
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .where(eq(enrollments.courseId, courseId))
+      .orderBy(desc(enrollments.createdAt))
+      .limit(10);
+
+    const stats = enrollmentStats[0];
+    const totalChapters = chaptersResult.length;
+    const totalStudents = stats.totalStudents;
+    const averageProgress =
+      totalChapters > 0 && totalStudents > 0
+        ? Math.round(
+            (progressStats[0].totalProgress / (totalChapters * totalStudents)) *
+              100
+          )
+        : 0;
+
+    return {
+      success: true,
+      data: {
+        course,
+        chapters: chaptersResult,
+        stats: {
+          totalStudents: stats.totalStudents,
+          completedStudents: stats.completedStudents,
+          totalChapters,
+          averageProgress,
+          completionRate:
+            totalStudents > 0
+              ? Math.round((stats.completedStudents / totalStudents) * 100)
+              : 0,
+        },
+        recentEnrollments,
+      },
+    };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
