@@ -25,7 +25,7 @@ export default async function HomePage() {
       <StatsSection />
 
       {/* Popular Courses Section */}
-      <Courses />
+      {await Courses()}
 
       {/* Features Section */}
       <Features />
