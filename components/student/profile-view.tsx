@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -26,55 +26,183 @@ import {
   Save,
   X,
   Shield,
-  Bell,
-  Palette,
   Globe,
   Lock,
   Eye,
   EyeOff,
+  Upload,
 } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
 import type { User as UserType } from "@/lib/auth/auth";
+import type { User as DbUser } from "@/types/user";
 
 interface ProfileViewProps {
   user: UserType;
+  userData: DbUser;
 }
 
-export function ProfileView({ user }: ProfileViewProps) {
+export function ProfileView({ user, userData }: ProfileViewProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    userData.avatarUrl || null
+  );
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state
+  // Form state - initialize with real database data
   const [formData, setFormData] = useState({
-    name: user.name || "",
-    email: user.email || "",
-    phone: "+213 XX XX XX XX",
-    location: "Alger, Algérie",
-    bio: "Étudiant passionné par le développement web et le design.",
-    birthDate: "1995-05-15",
+    name: userData.name || "",
+    email: userData.email || "",
+    phone: userData.phone || "",
+    location: userData.city
+      ? `${userData.city}${userData.country ? `, ${userData.country}` : ""}`
+      : userData.country || "Alger, Algérie",
+    bio: userData.bio || "",
+    birthDate: userData.dateOfBirth
+      ? new Date(userData.dateOfBirth).toISOString().split("T")[0]
+      : "",
+    address: userData.address || "",
+    city: userData.city || "",
+    postalCode: userData.postalCode || "",
+    country: userData.country || "Morocco",
     website: "",
     linkedin: "",
     github: "",
   });
 
-  // Settings state
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    courseUpdates: true,
-    weeklyDigest: false,
-    marketingEmails: false,
-    language: "fr",
-    theme: "system",
-  });
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
 
-  const handleSave = () => {
-    // Implement save logic
-    console.log("Saving profile:", formData);
-    setIsEditing(false);
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Erreur", {
+        description: "Veuillez sélectionner une image valide",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Erreur", {
+        description: "La taille de l'image ne doit pas dépasser 5MB",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Create FormData to send file
+      const formData = new FormData();
+      formData.append("avatar", file);
+      formData.append("userId", user.id);
+
+      // Upload to server
+      const response = await fetch("/api/user/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Échec du téléchargement de l'avatar");
+      }
+
+      const data = await response.json();
+
+      // Update avatar URL with the new image
+      if (data.avatarUrl) {
+        setAvatarUrl(data.avatarUrl);
+        toast.success("Avatar mis à jour", {
+          description: "Votre photo de profil a été modifiée avec succès.",
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Erreur", {
+        description: "Erreur lors du téléchargement de l'avatar",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          dateOfBirth: formData.birthDate || null,
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          bio: formData.bio,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsEditing(false);
+        toast.success("Profil mis à jour avec succès", {
+          description: "Vos modifications ont été enregistrées.",
+        });
+        window.location.reload();
+      } else {
+        toast.error("Erreur", {
+          description: data.message || "Erreur lors de la mise à jour",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Erreur", {
+        description: "Erreur lors de la mise à jour du profil",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form data
+    // Reset form data to original database values
+    setFormData({
+      name: userData.name || "",
+      email: userData.email || "",
+      phone: userData.phone || "",
+      location: userData.city
+        ? `${userData.city}${userData.country ? `, ${userData.country}` : ""}`
+        : userData.country || "Alger, Algérie",
+      bio: userData.bio || "",
+      birthDate: userData.dateOfBirth
+        ? new Date(userData.dateOfBirth).toISOString().split("T")[0]
+        : "",
+      address: userData.address || "",
+      city: userData.city || "",
+      postalCode: userData.postalCode || "",
+      country: userData.country || "Morocco",
+      website: "",
+      linkedin: "",
+      github: "",
+    });
   };
 
   const getInitials = (name: string) => {
@@ -102,7 +230,17 @@ export function ProfileView({ user }: ProfileViewProps) {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
             <div className="relative">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
               <Avatar className="h-24 w-24 bg-gradient-to-br from-primary to-primary/70">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={user.name || "User"} />
+                ) : null}
                 <AvatarFallback className="text-2xl text-white font-semibold">
                   {getInitials(user.name || "User")}
                 </AvatarFallback>
@@ -111,8 +249,14 @@ export function ProfileView({ user }: ProfileViewProps) {
                 size="icon"
                 variant="outline"
                 className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
               >
-                <Edit className="h-3 w-3" />
+                {isUploadingAvatar ? (
+                  <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Upload className="h-3 w-3" />
+                )}
               </Button>
             </div>
 
@@ -160,7 +304,7 @@ export function ProfileView({ user }: ProfileViewProps) {
 
       {/* Tabs */}
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="personal">
             <User className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Personnel</span>
@@ -168,14 +312,6 @@ export function ProfileView({ user }: ProfileViewProps) {
           <TabsTrigger value="security">
             <Shield className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Sécurité</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="preferences">
-            <Palette className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Préférences</span>
           </TabsTrigger>
         </TabsList>
 
@@ -314,11 +450,15 @@ export function ProfileView({ user }: ProfileViewProps) {
 
               {isEditing && (
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={handleSave}>
+                  <Button onClick={handleSave} disabled={isSaving}>
                     <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
+                    {isSaving ? "Enregistrement..." : "Enregistrer"}
                   </Button>
-                  <Button variant="outline" onClick={handleCancel}>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
                     <X className="h-4 w-4 mr-2" />
                     Annuler
                   </Button>
@@ -343,19 +483,21 @@ export function ProfileView({ user }: ProfileViewProps) {
                 <div className="relative">
                   <Input
                     id="currentPassword"
-                    type={showPassword ? "text" : "password"}
+                    type={showCurrentPassword ? "text" : "password"}
                     placeholder="••••••••"
+                    className="pr-10"
                   />
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-0 top-0 h-full"
-                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
@@ -363,22 +505,54 @@ export function ProfileView({ user }: ProfileViewProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                <Input
-                  id="newPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">
                   Confirmer le mot de passe
                 </Label>
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <Button>
@@ -416,192 +590,6 @@ export function ProfileView({ user }: ProfileViewProps) {
                     Active
                   </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle>Préférences de Notification</CardTitle>
-              <CardDescription>
-                Choisissez comment vous souhaitez être notifié
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications par Email</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevez des notifications importantes par email
-                  </p>
-                </div>
-                <Button
-                  variant={settings.emailNotifications ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      emailNotifications: !settings.emailNotifications,
-                    })
-                  }
-                >
-                  {settings.emailNotifications ? "Activé" : "Désactivé"}
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Mises à jour des cours</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Nouveaux chapitres et contenus disponibles
-                  </p>
-                </div>
-                <Button
-                  variant={settings.courseUpdates ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      courseUpdates: !settings.courseUpdates,
-                    })
-                  }
-                >
-                  {settings.courseUpdates ? "Activé" : "Désactivé"}
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Résumé hebdomadaire</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevez un résumé de votre progression chaque semaine
-                  </p>
-                </div>
-                <Button
-                  variant={settings.weeklyDigest ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      weeklyDigest: !settings.weeklyDigest,
-                    })
-                  }
-                >
-                  {settings.weeklyDigest ? "Activé" : "Désactivé"}
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Emails marketing</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Offres spéciales et nouveautés
-                  </p>
-                </div>
-                <Button
-                  variant={settings.marketingEmails ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setSettings({
-                      ...settings,
-                      marketingEmails: !settings.marketingEmails,
-                    })
-                  }
-                >
-                  {settings.marketingEmails ? "Activé" : "Désactivé"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Preferences Tab */}
-        <TabsContent value="preferences" className="space-y-6">
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle>Préférences d'Affichage</CardTitle>
-              <CardDescription>
-                Personnalisez l'apparence de votre interface
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Langue</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant={settings.language === "fr" ? "default" : "outline"}
-                    onClick={() => setSettings({ ...settings, language: "fr" })}
-                  >
-                    Français
-                  </Button>
-                  <Button
-                    variant={settings.language === "en" ? "default" : "outline"}
-                    onClick={() => setSettings({ ...settings, language: "en" })}
-                  >
-                    English
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>Thème</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant={settings.theme === "light" ? "default" : "outline"}
-                    onClick={() => setSettings({ ...settings, theme: "light" })}
-                  >
-                    Clair
-                  </Button>
-                  <Button
-                    variant={settings.theme === "dark" ? "default" : "outline"}
-                    onClick={() => setSettings({ ...settings, theme: "dark" })}
-                  >
-                    Sombre
-                  </Button>
-                  <Button
-                    variant={
-                      settings.theme === "system" ? "default" : "outline"
-                    }
-                    onClick={() =>
-                      setSettings({ ...settings, theme: "system" })
-                    }
-                  >
-                    Système
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-destructive/50 bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="text-destructive">Zone de Danger</CardTitle>
-              <CardDescription>
-                Actions irréversibles sur votre compte
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-destructive">
-                    Supprimer mon compte
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Cette action est définitive et supprimera toutes vos données
-                  </p>
-                </div>
-                <Button variant="destructive">Supprimer</Button>
               </div>
             </CardContent>
           </Card>
