@@ -33,6 +33,7 @@ import {
   Upload,
 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 import type { User as UserType } from "@/lib/auth/auth";
 import type { User as DbUser } from "@/types/user";
 
@@ -84,13 +85,17 @@ export function ProfileView({ user, userData }: ProfileViewProps) {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Veuillez sélectionner une image valide");
+      toast.error("Erreur", {
+        description: "Veuillez sélectionner une image valide",
+      });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("La taille de l'image ne doit pas dépasser 5MB");
+      toast.error("Erreur", {
+        description: "La taille de l'image ne doit pas dépasser 5MB",
+      });
       return;
     }
 
@@ -117,10 +122,15 @@ export function ProfileView({ user, userData }: ProfileViewProps) {
       // Update avatar URL with the new image
       if (data.avatarUrl) {
         setAvatarUrl(data.avatarUrl);
+        toast.success("Avatar mis à jour", {
+          description: "Votre photo de profil a été modifiée avec succès.",
+        });
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      alert("Erreur lors du téléchargement de l'avatar");
+      toast.error("Erreur", {
+        description: "Erreur lors du téléchargement de l'avatar",
+      });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -152,14 +162,20 @@ export function ProfileView({ user, userData }: ProfileViewProps) {
 
       if (data.success) {
         setIsEditing(false);
-        alert("Profil mis à jour avec succès");
+        toast.success("Profil mis à jour avec succès", {
+          description: "Vos modifications ont été enregistrées.",
+        });
         window.location.reload();
       } else {
-        alert(data.message || "Erreur lors de la mise à jour");
+        toast.error("Erreur", {
+          description: data.message || "Erreur lors de la mise à jour",
+        });
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Erreur lors de la mise à jour du profil");
+      toast.error("Erreur", {
+        description: "Erreur lors de la mise à jour du profil",
+      });
     } finally {
       setIsSaving(false);
     }
