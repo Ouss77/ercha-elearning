@@ -17,11 +17,9 @@ export type DbUser = typeof users.$inferSelect
 /**
  * Application User type
  * This is the main user type used throughout the application.
- * It includes all database fields with the photoUrl alias for avatarUrl.
+ * Uses avatarUrl consistently with database schema.
  */
-export type User = Omit<DbUser, 'avatarUrl'> & {
-  photoUrl?: string | null
-}
+export type User = DbUser
 
 /**
  * Authentication User type
@@ -46,7 +44,9 @@ export type UserListItem = {
   role: Role
   isActive: boolean
   createdAt: string | Date
-  photoUrl?: string | null
+  avatarUrl?: string | null
+  password?: string
+  enrolledCourses?: string[]
 }
 
 /**
@@ -58,7 +58,7 @@ export type UserProfile = {
   email: string
   name: string
   role: Role
-  photoUrl?: string | null
+  avatarUrl?: string | null
   isActive: boolean
   phone?: string | null
   dateOfBirth?: Date | null

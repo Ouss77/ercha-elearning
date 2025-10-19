@@ -29,6 +29,13 @@
       "when": 1760662935601,
       "tag": "0005_chunky_risque",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1760839113063,
+      "tag": "0006_heavy_fixer",
+      "breakpoints": true
     }
   ]
 }

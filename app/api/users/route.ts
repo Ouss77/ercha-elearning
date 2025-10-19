@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (postalCode) userData.postalCode = postalCode
     if (country) userData.country = country
     if (bio) userData.bio = bio
-    if (avatarUrl) userData.photoUrl = avatarUrl
+    if (avatarUrl) userData.avatarUrl = avatarUrl
     if (isActive !== undefined) userData.isActive = isActive
 
     const result = await createUser(userData)

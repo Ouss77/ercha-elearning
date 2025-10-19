@@ -30,28 +30,19 @@ export type AppEnrollment = DbEnrollment & {
 
 /**
  * Map database user record to application user record
- * Converts avatar_url (DB) to photoUrl (App)
+ * Returns user as-is since we're now using avatarUrl consistently
  */
 export function mapUserFromDb(dbUser: DbUser | null | undefined): User | null {
   if (!dbUser) return null
-  
-  const { avatarUrl, ...rest } = dbUser
-  return {
-    ...rest,
-    photoUrl: avatarUrl
-  }
+  return dbUser
 }
 
 /**
  * Map application user data to database user data
- * Converts photoUrl (App) to avatar_url (DB)
+ * Returns data as-is since we're now using avatarUrl consistently
  */
 export function mapUserToDb(appUser: Partial<User>): Partial<Omit<DbUser, 'id' | 'createdAt' | 'updatedAt'>> {
-  const { photoUrl, ...rest } = appUser
-  return {
-    ...rest,
-    avatarUrl: photoUrl
-  }
+  return appUser
 }
 
 /**
