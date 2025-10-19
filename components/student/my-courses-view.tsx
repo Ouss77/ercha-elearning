@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -29,6 +29,22 @@ import type { User } from "@/lib/auth/auth";
 
 interface MyCoursesViewProps {
   user: User;
+  enrolledCourses: Array<{
+    enrollmentId: number;
+    courseId: number;
+    courseTitle: string;
+    courseDescription: string | null;
+    courseThumbnailUrl: string | null;
+    enrolledAt: Date;
+    completedAt: Date | null;
+    domainId: number | null;
+    domainName: string | null;
+    domainColor: string | null;
+    teacherId: number | null;
+    teacherName: string | null;
+    totalChapters: number;
+    completedChapters: number;
+  }>;
 }
 
 interface Course {
@@ -45,56 +61,53 @@ interface Course {
   isCompleted: boolean;
 }
 
-export function MyCoursesView({ user }: MyCoursesViewProps) {
+export function MyCoursesView({
+  user,
+  enrolledCourses: rawEnrolledCourses,
+}: MyCoursesViewProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "in-progress" | "completed"
   >("all");
 
-  // Mock data - replace with real data from database
-  const [courses] = useState<Course[]>([
-    {
-      id: 1,
-      title: "Introduction à React",
-      description:
-        "Apprenez les bases de React et créez vos premières applications",
-      domain: "Informatique",
-      teacher: "Jean Martin",
-      thumbnail: "/react-course.png",
-      progress: 65,
-      totalChapters: 8,
-      completedChapters: 5,
-      lastAccessed: "2025-01-15",
-      isCompleted: false,
-    },
-    {
-      id: 2,
-      title: "Marketing Digital Avancé",
-      description: "Stratégies avancées de marketing digital et analytics",
-      domain: "Marketing",
-      teacher: "Jean Martin",
-      thumbnail: "/marketing-course-concept.png",
-      progress: 100,
-      totalChapters: 12,
-      completedChapters: 12,
-      lastAccessed: "2025-01-10",
-      isCompleted: true,
-    },
-    {
-      id: 3,
-      title: "Design UX/UI Moderne",
-      description: "Principes de design et création d'interfaces utilisateur",
-      domain: "Design",
-      teacher: "Jean Martin",
-      thumbnail: "/ux-ui-design-course.png",
-      progress: 25,
-      totalChapters: 10,
-      completedChapters: 2,
-      lastAccessed: "2025-01-12",
-      isCompleted: false,
-    },
-  ]);
+  // Create domain color mapping from database
+  const domainColorMap = useMemo(() => {
+    const colorMap: Record<string, string> = {};
+    rawEnrolledCourses.forEach((enrollment) => {
+      if (enrollment.domainName && enrollment.domainColor) {
+        colorMap[enrollment.domainName] = enrollment.domainColor;
+      }
+    });
+    return colorMap;
+  }, [rawEnrolledCourses]);
+
+  // Transform database data to match component's Course interface
+  const courses: Course[] = useMemo(() => {
+    return rawEnrolledCourses.map((enrollment) => {
+      const progress =
+        enrollment.totalChapters > 0
+          ? Math.round(
+              (enrollment.completedChapters / enrollment.totalChapters) * 100
+            )
+          : 0;
+
+      return {
+        id: enrollment.courseId,
+        title: enrollment.courseTitle,
+        description:
+          enrollment.courseDescription || "Pas de description disponible",
+        domain: enrollment.domainName || "Non classé",
+        teacher: enrollment.teacherName || "Non assigné",
+        thumbnail: enrollment.courseThumbnailUrl || "/placeholder.svg",
+        progress,
+        totalChapters: enrollment.totalChapters,
+        completedChapters: enrollment.completedChapters,
+        lastAccessed: enrollment.enrolledAt.toISOString().split("T")[0],
+        isCompleted: enrollment.completedAt !== null,
+      };
+    });
+  }, [rawEnrolledCourses]);
 
   // Filter courses
   const filteredCourses = courses.filter((course) => {
@@ -114,16 +127,37 @@ export function MyCoursesView({ user }: MyCoursesViewProps) {
   });
 
   const getDomainColor = (domain: string) => {
-    const colors: Record<string, string> = {
+    // Use database domain colors or fallback to default colors
+    if (domainColorMap[domain]) {
+      // The domain color from DB is in format like "bg-blue-500"
+      // We need to convert it to badge-friendly classes
+      const baseColor = domainColorMap[domain].replace("bg-", "");
+      return `bg-${baseColor.replace("500", "100")} text-${baseColor.replace(
+        "500",
+        "700"
+      )} dark:bg-${baseColor.replace(
+        "500",
+        "950"
+      )} dark:text-${baseColor.replace("500", "400")}`;
+    }
+
+    // Fallback colors in case domain color is not in database
+    const fallbackColors: Record<string, string> = {
       Informatique:
+        "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+      "Développement Web":
         "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
       Marketing:
         "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      "Marketing Digital":
+        "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
       Design:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
+      "Design Graphique":
         "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
     };
     return (
-      colors[domain] ||
+      fallbackColors[domain] ||
       "bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-400"
     );
   };
