@@ -179,7 +179,7 @@ export async function Courses() {
 
         {/* Browse All Courses Link */}
         <div className="text-center">
-          <Link href="/student">
+          <Link href="/cours">
             <Button
               variant="outline"
               size="lg"

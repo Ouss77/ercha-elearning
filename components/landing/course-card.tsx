@@ -85,6 +85,20 @@ export function CourseCard({ course }: CourseCardProps) {
     ? getDomainThumbnail(course.domain)
     : course.thumbnail;
 
+  // Map domain to static course URL
+  const getCourseUrl = (domain: string) => {
+    const urls: Record<string, string> = {
+      "Développement Web": "/cours/developpement-web",
+      "Design Graphique": "/cours/design-graphique",
+      "Marketing Digital": "/cours/marketing-digital",
+      // Fallback for old names
+      Informatique: "/cours/developpement-web",
+      Design: "/cours/design-graphique",
+      Marketing: "/cours/marketing-digital",
+    };
+    return urls[domain] || "/cours";
+  };
+
   return (
     <Card
       className={`group relative overflow-hidden border-gray-200 dark:border-gray-800 ${getDomainBgColor(
@@ -163,7 +177,7 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
 
         {/* CTA Button */}
-        <Link href={`/student/course/${course.id}`} className="block">
+        <Link href={getCourseUrl(course.domain)} className="block">
           <Button className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white border-0 shadow-md hover:shadow-lg transition-all group">
             Voir le cours
             <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
