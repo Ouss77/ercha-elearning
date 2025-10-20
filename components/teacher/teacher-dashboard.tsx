@@ -91,8 +91,8 @@ export function TeacherDashboard({
     });
   }, [courses]);
 
-  // Get domain statistics
-  const domainStats = useMemo(() => {
+  // Get main domain (the one with most courses)
+  const mainDomain = useMemo(() => {
     const domainMap = new Map<string, { count: number; color: string }>();
     courses.forEach((course) => {
       if (course.domainName) {
@@ -106,97 +106,123 @@ export function TeacherDashboard({
         });
       }
     });
-    return Array.from(domainMap.entries()).map(([name, data]) => ({
-      name,
-      count: data.count,
-      color: data.color,
-    }));
+
+    // Get domain with most courses
+    let mainDomainData = { name: "", count: 0, color: "#6366f1" };
+    domainMap.forEach((data, name) => {
+      if (data.count > mainDomainData.count) {
+        mainDomainData = { name, count: data.count, color: data.color };
+      }
+    });
+
+    return mainDomainData.name ? mainDomainData : null;
   }, [courses]);
 
   return (
     <div className="space-y-6">
-      {/* Domain Focus Section */}
-      {domainStats.length > 0 && (
-        <Card className="border-border bg-card">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Mes Domaines d'Enseignement
-            </CardTitle>
-            <CardDescription>
-              Spécialités et répartition des cours
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {domainStats.map((domain) => (
-                <Badge
-                  key={domain.name}
-                  className="text-sm px-4 py-2"
-                  style={{
-                    backgroundColor: `${domain.color}20`,
-                    color: domain.color,
-                    borderColor: `${domain.color}40`,
-                  }}
+      {/* Teacher Profile Card */}
+      <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-6">
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                {user.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)}
+              </div>
+              {mainDomain && (
+                <div
+                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-gray-900"
+                  style={{ backgroundColor: mainDomain.color }}
                 >
-                  {domain.name} ({domain.count} cours)
-                </Badge>
-              ))}
+                  <BookOpen className="h-4 w-4 text-white" />
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mes Cours</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCourses}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeCourses} actifs
-            </p>
-          </CardContent>
-        </Card>
+            {/* Teacher Info */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-foreground mb-1">
+                {user.name}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-3">{user.email}</p>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Étudiants</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeStudents} actifs ce mois
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+              {mainDomain && (
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className="text-sm px-4 py-1.5 font-medium"
+                    style={{
+                      backgroundColor: `${mainDomain.color}20`,
+                      color: mainDomain.color,
+                      borderColor: `${mainDomain.color}40`,
+                    }}
+                  >
+                    Spécialité: {mainDomain.name}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {mainDomain.count} cours
+                  </span>
+                </div>
+              )}
+            </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Course Performance Overview */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle>Performance des Cours</CardTitle>
-              <CardDescription>
-                Aperçu de la progression dans vos cours
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {coursesWithProgress.length > 0 ? (
-                <div className="space-y-4">
-                  {coursesWithProgress.map((course) => (
-                    <div
-                      key={course.courseId}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{course.courseTitle}</p>
+            {/* Quick Stats */}
+            <div className="hidden md:flex flex-col gap-3 text-right">
+              <div>
+                <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                  {stats.totalCourses}
+                </div>
+                <div className="text-xs text-muted-foreground">Cours</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {stats.totalStudents}
+                </div>
+                <div className="text-xs text-muted-foreground">Étudiants</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Course List */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle>Mes Cours</CardTitle>
+          <CardDescription>Liste de tous vos cours disponibles</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {courses.length > 0 ? (
+            <div className="space-y-3">
+              {courses.map((course) => (
+                <div
+                  key={course.courseId}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
+                        style={{
+                          backgroundColor: `${
+                            course.domainColor || "#6366f1"
+                          }20`,
+                        }}
+                      >
+                        <BookOpen
+                          className="h-5 w-5"
+                          style={{ color: course.domainColor || "#6366f1" }}
+                        />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {course.courseTitle}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
                           {course.domainName && (
                             <Badge
                               variant="outline"
@@ -212,128 +238,40 @@ export function TeacherDashboard({
                               {course.domainName}
                             </Badge>
                           )}
+                          <span className="text-xs text-muted-foreground">
+                            {course.totalChapters} chapitre
+                            {course.totalChapters > 1 ? "s" : ""}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            •
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {course.totalStudents} étudiant
+                            {course.totalStudents > 1 ? "s" : ""}
+                          </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {course.totalStudents} étudiant
-                          {course.totalStudents > 1 ? "s" : ""} inscrit
-                          {course.totalStudents > 1 ? "s" : ""}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {course.averageProgress}%
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          progression moyenne
-                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Aucun cours assigné pour le moment
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Recent Activity */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Activité Récente</CardTitle>
-              <CardDescription>
-                Dernières actions de vos étudiants
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentActivity.length > 0 ? (
-                <div className="space-y-4">
-                  {recentActivity.map((activity) => (
-                    <div
-                      key={`${activity.type}-${activity.id}`}
-                      className="flex items-start space-x-3"
-                    >
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
-                          {activity.studentName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.type === "quiz_completed" &&
-                            `Quiz terminé - ${activity.chapterTitle} (${activity.score}%)`}
-                          {activity.type === "chapter_completed" &&
-                            `Chapitre terminé - ${activity.chapterTitle}`}
-                          {activity.type === "course_enrolled" &&
-                            `Inscrit au cours ${activity.courseTitle}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.timestamp
-                            ? new Date(activity.timestamp).toLocaleDateString(
-                                "fr-FR"
-                              )
-                            : "Date inconnue"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucune activité récente
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Top Performers */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Meilleurs Étudiants</CardTitle>
-              <CardDescription>Top performers ce mois</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {topStudents.length > 0 ? (
-                <div className="space-y-3">
-                  {topStudents.map((student, index) => (
-                    <div
-                      key={student.studentId}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                            index === 0
-                              ? "bg-yellow-500"
-                              : index === 1
-                              ? "bg-gray-400"
-                              : "bg-orange-500"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
-                        <span className="text-sm font-medium truncate max-w-[120px]">
-                          {student.studentName}
-                        </span>
-                      </div>
-                      <Badge variant="secondary">
-                        {student.progressPercentage}%
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {course.courseIsActive ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                        Actif
                       </Badge>
-                    </div>
-                  ))}
+                    ) : (
+                      <Badge variant="secondary">Inactif</Badge>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun étudiant inscrit
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Aucun cours assigné pour le moment
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
