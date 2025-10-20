@@ -1,104 +1,174 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Users, BookOpen, BarChart3, Settings, Eye } from "lucide-react"
-import Image from "next/image"
+import { useState, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Search,
+  Users,
+  BookOpen,
+  BarChart3,
+  Settings,
+  Eye,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
-interface Course {
-  id: number
-  title: string
-  description: string
-  domain: string
-  thumbnail: string
-  studentsCount: number
-  chaptersCount: number
-  averageProgress: number
-  averageQuizScore: number
-  isActive: boolean
-  createdAt: string
+interface CourseWithStats {
+  courseId: number;
+  courseTitle: string;
+  courseDescription: string | null;
+  courseThumbnailUrl: string | null;
+  courseIsActive: boolean | null;
+  domainId: number | null;
+  domainName: string | null;
+  domainColor: string | null;
+  totalStudents: number;
+  totalChapters: number;
+  completedEnrollments: number;
+  totalProgress: number;
 }
 
-export function MyCourses() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+interface MyCoursesProps {
+  courses: CourseWithStats[];
+}
 
-  // Mock courses data
-  const [courses] = useState<Course[]>([
-    {
-      id: 1,
-      title: "Introduction à React",
-      description: "Apprenez les bases de React et créez vos premières applications",
-      domain: "Informatique",
-      thumbnail: "/react-course.png",
-      studentsCount: 45,
-      chaptersCount: 8,
-      averageProgress: 68,
-      averageQuizScore: 82,
-      isActive: true,
-      createdAt: "2025-01-01",
-    },
-    {
-      id: 2,
-      title: "Marketing Digital Avancé",
-      description: "Stratégies avancées de marketing digital et analytics",
-      domain: "Marketing",
-      thumbnail: "/marketing-course-concept.png",
-      studentsCount: 32,
-      chaptersCount: 12,
-      averageProgress: 85,
-      averageQuizScore: 89,
-      isActive: true,
-      createdAt: "2025-01-05",
-    },
-    {
-      id: 3,
-      title: "Design UX/UI Moderne",
-      description: "Principes de design et création d'interfaces utilisateur",
-      domain: "Design",
-      thumbnail: "/ux-ui-design-course.png",
-      studentsCount: 28,
-      chaptersCount: 10,
-      averageProgress: 42,
-      averageQuizScore: 76,
-      isActive: false,
-      createdAt: "2025-01-10",
-    },
-  ])
+export function MyCourses({ courses }: MyCoursesProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
-  const filteredCourses = courses.filter((course) => {
+  // Transform database courses to include calculated fields
+  const transformedCourses = useMemo(() => {
+    return courses.map((course) => {
+      const averageProgress =
+        course.totalChapters > 0 && course.totalStudents > 0
+          ? Math.round(
+              (course.totalProgress /
+                (course.totalChapters * course.totalStudents)) *
+                100
+            )
+          : 0;
+
+      return {
+        id: course.courseId,
+        title: course.courseTitle,
+        description: course.courseDescription || "",
+        domain: course.domainName || "Non catégorisé",
+        domainColor: course.domainColor || "#6366f1",
+        thumbnail: course.courseThumbnailUrl || "/placeholder.svg",
+        studentsCount: course.totalStudents,
+        chaptersCount: course.totalChapters,
+        averageProgress,
+        isActive: course.courseIsActive ?? true,
+      };
+    });
+  }, [courses]);
+
+  const filteredCourses = transformedCourses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchTerm.toLowerCase())
+      course.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab =
       activeTab === "all" ||
       (activeTab === "active" && course.isActive) ||
-      (activeTab === "inactive" && !course.isActive)
-    return matchesSearch && matchesTab
-  })
+      (activeTab === "inactive" && !course.isActive) ||
+      (activeTab === "enrolled" && course.studentsCount > 0) ||
+      (activeTab === "not-enrolled" && course.studentsCount === 0);
+    return matchesSearch && matchesTab;
+  });
 
-  const getDomainColor = (domain: string) => {
-    switch (domain) {
-      case "Informatique":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-      case "Marketing":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-      case "Design":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
-      case "Gestion":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-    }
-  }
+  // Calculate stats for tabs
+  const stats = useMemo(() => {
+    return {
+      all: transformedCourses.length,
+      active: transformedCourses.filter((c) => c.isActive).length,
+      inactive: transformedCourses.filter((c) => !c.isActive).length,
+      enrolled: transformedCourses.filter((c) => c.studentsCount > 0).length,
+      notEnrolled: transformedCourses.filter((c) => c.studentsCount === 0)
+        .length,
+    };
+  }, [transformedCourses]);
 
   return (
     <div className="space-y-6">
+      {/* Statistics Summary */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-border bg-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Cours
+                </p>
+                <p className="text-2xl font-bold">{stats.all}</p>
+              </div>
+              <BookOpen className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Avec Étudiants
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.enrolled}
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Sans Étudiants
+                </p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.notEnrolled}
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Taux d'Inscription
+                </p>
+                <p className="text-2xl font-bold">
+                  {stats.all > 0
+                    ? Math.round((stats.enrolled / stats.all) * 100)
+                    : 0}
+                  %
+                </p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle>Mes Cours</CardTitle>
@@ -106,7 +176,7 @@ export function MyCourses() {
         </CardHeader>
         <CardContent>
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -118,19 +188,40 @@ export function MyCourses() {
                 />
               </div>
             </div>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="all">Tous</TabsTrigger>
-                <TabsTrigger value="active">Actifs</TabsTrigger>
-                <TabsTrigger value="inactive">Inactifs</TabsTrigger>
-              </TabsList>
-            </Tabs>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+                  <TabsTrigger value="all">Tous ({stats.all})</TabsTrigger>
+                  <TabsTrigger value="enrolled">
+                    Avec étudiants ({stats.enrolled})
+                  </TabsTrigger>
+                  <TabsTrigger value="not-enrolled">
+                    Sans étudiants ({stats.notEnrolled})
+                  </TabsTrigger>
+                  <TabsTrigger value="active">
+                    Actifs ({stats.active})
+                  </TabsTrigger>
+                  <TabsTrigger value="inactive">
+                    Inactifs ({stats.inactive})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* Courses Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredCourses.map((course) => (
-              <Card key={course.id} className="border-border bg-card hover:bg-accent/50 transition-colors">
+              <Card
+                key={course.id}
+                className="border-border bg-card hover:bg-accent/50 transition-colors"
+              >
                 <div className="relative">
                   <Image
                     src={course.thumbnail || "/placeholder.svg"}
@@ -139,20 +230,42 @@ export function MyCourses() {
                     height={200}
                     className="w-full h-32 object-cover rounded-t-lg"
                   />
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex gap-2">
                     <Badge variant={course.isActive ? "default" : "secondary"}>
                       {course.isActive ? "Actif" : "Inactif"}
                     </Badge>
+                    {course.studentsCount === 0 && (
+                      <Badge
+                        variant="outline"
+                        className="bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300"
+                      >
+                        Aucun étudiant
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <Badge className={getDomainColor(course.domain)}>{course.domain}</Badge>
-                    <span className="text-xs text-muted-foreground">{course.chaptersCount} chapitres</span>
+                    <Badge
+                      style={{
+                        backgroundColor: `${course.domainColor}20`,
+                        color: course.domainColor,
+                        borderColor: `${course.domainColor}40`,
+                      }}
+                    >
+                      {course.domain}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {course.chaptersCount} chapitres
+                    </span>
                   </div>
-                  <CardTitle className="text-lg line-clamp-1">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+                  <CardTitle className="text-lg line-clamp-1">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {course.description}
+                  </CardDescription>
                 </CardHeader>
 
                 <CardContent className="pt-0">
@@ -162,16 +275,24 @@ export function MyCourses() {
                       <div>
                         <div className="flex items-center justify-center space-x-1">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">{course.studentsCount}</span>
+                          <span className="text-sm font-medium">
+                            {course.studentsCount}
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">étudiants</p>
+                        <p className="text-xs text-muted-foreground">
+                          étudiants
+                        </p>
                       </div>
                       <div>
                         <div className="flex items-center justify-center space-x-1">
                           <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">{course.averageQuizScore}%</span>
+                          <span className="text-sm font-medium">
+                            {course.averageProgress}%
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">score moyen</p>
+                        <p className="text-xs text-muted-foreground">
+                          progression
+                        </p>
                       </div>
                     </div>
 
@@ -181,15 +302,23 @@ export function MyCourses() {
                         <span>Progression moyenne</span>
                         <span>{course.averageProgress}%</span>
                       </div>
-                      <Progress value={course.averageProgress} className="h-2" />
+                      <Progress
+                        value={course.averageProgress}
+                        className="h-2"
+                      />
                     </div>
 
                     {/* Actions */}
                     <div className="flex space-x-2">
-                      <Button size="sm" className="flex-1">
-                        <Eye className="w-4 h-4 mr-2" />
-                        Voir
-                      </Button>
+                      <Link
+                        href={`/formateur/cours/${course.id}`}
+                        className="flex-1"
+                      >
+                        <Button size="sm" className="w-full">
+                          <Eye className="w-4 h-4 mr-2" />
+                          Voir
+                        </Button>
+                      </Link>
                       <Button variant="outline" size="sm">
                         <Settings className="w-4 h-4" />
                       </Button>
@@ -203,11 +332,24 @@ export function MyCourses() {
           {filteredCourses.length === 0 && (
             <div className="text-center py-8">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Aucun cours trouvé</p>
+              <p className="text-muted-foreground font-medium">
+                {activeTab === "all" && "Aucun cours trouvé"}
+                {activeTab === "enrolled" &&
+                  "Aucun cours avec des étudiants inscrits"}
+                {activeTab === "not-enrolled" &&
+                  "Tous vos cours ont des étudiants inscrits"}
+                {activeTab === "active" && "Aucun cours actif"}
+                {activeTab === "inactive" && "Aucun cours inactif"}
+              </p>
+              {searchTerm && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Essayez de modifier vos critères de recherche
+                </p>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

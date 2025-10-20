@@ -139,4 +139,29 @@ export const projectSubmissions = pgTable("project_submissions", {
   reviewedAt: timestamp("reviewed_at")
 })
 
+// Classes table (for grouping students by teacher)
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  teacherId: integer("teacher_id")
+    .references(() => users.id)
+    .notNull(),
+  domainId: integer("domain_id").references(() => domains.id),
+  isActive: boolean("is_active").default(true),
+  maxStudents: integer("max_students"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
+// Class Enrollments table (students enrolled in a class)
+export const classEnrollments = pgTable("class_enrollments", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id")
+    .references(() => classes.id)
+    .notNull(),
+  studentId: integer("student_id")
+    .references(() => users.id)
+    .notNull(),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+});
