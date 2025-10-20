@@ -1,6 +1,5 @@
 import { HomeHeader } from "@/components/layout/home-header";
 import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export default async function DeveloppementWebPage() {
-  const user = await getCurrentUser();
+export default function DeveloppementWebPage() {
 
   const courseModules = [
     "Introduction au développement web",
@@ -56,7 +54,7 @@ export default async function DeveloppementWebPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
+      <HomeHeader />
 
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 dark:from-blue-950/30 dark:via-gray-900 dark:to-blue-950/30">

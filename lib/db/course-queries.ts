@@ -2,6 +2,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { db, handleDbError } from "./index";
 import { courses, domains, users, enrollments, chapters } from "@/drizzle/schema";
 import { mapCourseFromDb } from "./mappers";
+import { generateSlug, generateUniqueSlug } from "@/lib/utils/slug";
 
 // Course query functions
 export async function createCourse(data: {
@@ -13,14 +14,21 @@ export async function createCourse(data: {
   isActive?: boolean;
 }) {
   try {
+    // Generate a unique slug
+    const baseSlug = generateSlug(data.title);
+    const existingCourses = await db.select({ slug: courses.slug }).from(courses);
+    const existingSlugs = existingCourses.map(c => c.slug);
+    const uniqueSlug = generateUniqueSlug(baseSlug, existingSlugs);
+
     const result = await db
       .insert(courses)
       .values({
         title: data.title,
-        description: data.description,
+        slug: uniqueSlug,
+        description: data.description ?? null,
         domainId: data.domainId,
-        teacherId: data.teacherId,
-        thumbnailUrl: data.thumbnailUrl,
+        teacherId: data.teacherId ?? null,
+        thumbnailUrl: data.thumbnailUrl ?? null,
         isActive: data.isActive ?? false,
       })
       .returning();

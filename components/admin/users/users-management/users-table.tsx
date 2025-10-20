@@ -21,14 +21,14 @@ export function UsersTable({ users, loading, onToggleStatus, onDelete, onManageC
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[150px]">Utilisateur</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[200px]">Email</TableHead>
-              <TableHead className="min-w-[120px]">Rôle</TableHead>
-              <TableHead className="hidden lg:table-cell min-w-[100px]">Cours</TableHead>
-              <TableHead className="hidden lg:table-cell min-w-[200px]">Cours inscrits</TableHead>
-              <TableHead className="hidden sm:table-cell min-w-[120px]">Statut</TableHead>
-              <TableHead className="hidden xl:table-cell min-w-[120px]">Date d'inscription</TableHead>
-              <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+              <TableHead className="w-[180px]">Utilisateur</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="w-[140px]">Rôle</TableHead>
+              <TableHead className="hidden lg:table-cell w-[100px]">Cours</TableHead>
+              <TableHead className="hidden lg:table-cell">Cours inscrits</TableHead>
+              <TableHead className="hidden sm:table-cell w-[140px]">Statut</TableHead>
+              <TableHead className="hidden xl:table-cell w-[130px]">Date d'inscription</TableHead>
+              <TableHead className="text-right w-[120px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

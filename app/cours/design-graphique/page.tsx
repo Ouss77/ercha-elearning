@@ -1,6 +1,5 @@
 import { HomeHeader } from "@/components/layout/home-header";
 import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export default async function DesignGraphiquePage() {
-  const user = await getCurrentUser();
+export default function DesignGraphiquePage() {
 
   const courseModules = [
     "Introduction au design graphique",
@@ -53,7 +51,7 @@ export default async function DesignGraphiquePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
+      <HomeHeader />
 
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-purple-950/30 dark:via-gray-900 dark:to-purple-950/30">

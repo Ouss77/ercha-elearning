@@ -12,13 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
-import { useDomains } from "./domains/use-domains"
-import { DomainForm } from "./domains/domain-form"
-import { DomainCard } from "./domains/domain-card"
-import { DomainLoadingSkeleton } from "./domains/domain-loading-skeleton"
-import { DomainEmptyState } from "./domains/domain-empty-state"
-import { DeleteDomainDialog } from "./domains/delete-domain-dialog"
-import type { Domain } from "./domains/types"
+import { useDomains } from "./use-domains"
+import { DomainForm } from "./domain-form"
+import { DomainCard } from "./domain-card"
+import { DomainLoadingSkeleton } from "./domain-loading-skeleton"
+import { DomainEmptyState } from "./domain-empty-state"
+import { DeleteDomainDialog } from "./delete-domain-dialog"
+import type { Domain } from "./types"
 
 export function DomainsManagement() {
   const {

@@ -85,12 +85,17 @@ export function UsersTableRow({ user, onToggleStatus, onDelete, onManageCourses 
       </TableCell>
       <TableCell className="hidden lg:table-cell">
         {user.enrolledCourses && user.enrolledCourses.length > 0 ? (
-          <div className="flex flex-wrap gap-1 max-w-[200px]">
-            {user.enrolledCourses.map((slug, index) => (
+          <div className="flex flex-wrap gap-1 max-w-[180px]">
+            {user.enrolledCourses.slice(0, 3).map((slug, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
                 {slug.toUpperCase()}
               </Badge>
             ))}
+            {user.enrolledCourses.length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{user.enrolledCourses.length - 3}
+              </Badge>
+            )}
           </div>
         ) : (
           <span className="text-muted-foreground text-sm">

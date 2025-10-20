@@ -195,6 +195,20 @@ export async function createChapter(
   data: CreateChapterInput
 ) {
   try {
+    // Verify that the course exists before creating a chapter
+    const courseExists = await db
+      .select({ id: courses.id })
+      .from(courses)
+      .where(eq(courses.id, courseId))
+      .limit(1);
+
+    if (courseExists.length === 0) {
+      return {
+        success: false as const,
+        error: `Le cours avec l'ID ${courseId} n'existe pas`,
+      };
+    }
+
     // Get the next order index
     const maxOrderResult = await db
       .select({ maxOrder: sql<number>`COALESCE(MAX(${chapters.orderIndex}), -1)` })
@@ -202,6 +216,13 @@ export async function createChapter(
       .where(eq(chapters.courseId, courseId));
 
     const nextOrderIndex = data.orderIndex ?? (maxOrderResult[0].maxOrder + 1);
+
+    console.log("[createChapter] Creating chapter with data:", {
+      courseId,
+      title: data.title,
+      description: data.description,
+      orderIndex: nextOrderIndex,
+    });
 
     const result = await db
       .insert(chapters)
@@ -213,8 +234,11 @@ export async function createChapter(
       })
       .returning();
 
+    console.log("[createChapter] Successfully created chapter:", result[0]);
+
     return { success: true as const, data: result[0] };
   } catch (error) {
+    console.error("[createChapter] Error creating chapter:", error);
     return handleDbError(error);
   }
 }
@@ -337,6 +361,12 @@ export async function createContentItem(
   data: CreateContentItemInput
 ) {
   try {
+    console.log("[createContentItem] Creating content item:", {
+      chapterId,
+      title: data.title,
+      contentType: data.contentType,
+    });
+
     // Get the next order index
     const maxOrderResult = await db
       .select({ maxOrder: sql<number>`COALESCE(MAX(${contentItems.orderIndex}), -1)` })
@@ -356,8 +386,11 @@ export async function createContentItem(
       })
       .returning();
 
+    console.log("[createContentItem] Successfully created content item:", result[0].id);
+
     return { success: true as const, data: result[0] };
   } catch (error) {
+    console.error("[createContentItem] Error creating content item:", error);
     return handleDbError(error);
   }
 }
@@ -370,6 +403,12 @@ export async function updateContentItem(
   data: UpdateContentItemInput
 ) {
   try {
+    console.log("[updateContentItem] Updating content item:", {
+      id,
+      title: data.title,
+      hasContentData: !!data.contentData,
+    });
+
     const updateData: any = {
       ...data,
       updatedAt: new Date(),
@@ -387,11 +426,15 @@ export async function updateContentItem(
       .returning();
 
     if (result.length === 0) {
+      console.error("[updateContentItem] Content item not found:", id);
       return { success: false as const, error: "Content item not found" };
     }
 
+    console.log("[updateContentItem] Successfully updated content item:", result[0].id);
+
     return { success: true as const, data: result[0] };
   } catch (error) {
+    console.error("[updateContentItem] Error updating content item:", error);
     return handleDbError(error);
   }
 }

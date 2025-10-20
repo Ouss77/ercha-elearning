@@ -6,7 +6,6 @@ import { ArrowLeft, Mail, Phone, MapPin, Calendar, User, BookOpen, Edit } from "
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { Role } from "@/lib/schemas/user"
-import { requireAuth } from "@/lib/auth/auth"
 import { getUserById } from "@/lib/db/db"
 import { getEnrollmentsByStudentId } from "@/lib/db/queries"
 import { notFound } from "next/navigation"
@@ -46,8 +45,6 @@ async function fetchEnrollments(userId: string) {
 }
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
-  await requireAuth(["ADMIN"])
-  
   const userId = parseInt(params.id)
   if (isNaN(userId)) {
     notFound()
@@ -134,7 +131,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user.photoUrl || undefined} alt={user.name} />
+              <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
               <AvatarFallback className="text-2xl">{getInitials(user.name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-2">

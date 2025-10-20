@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { requireAuth } from "@/lib/auth/auth"
+import { getCurrentUser } from "@/lib/auth/auth"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 
 export default async function TeacherLayout({
@@ -7,8 +7,8 @@ export default async function TeacherLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Verify user is authenticated and has TRAINER role
-  const user = await requireAuth(["TRAINER"])
+  // Access control is enforced by middleware; fetch the current user for UI
+  const user = await getCurrentUser()
 
   if (!user) {
     redirect("/connexion")

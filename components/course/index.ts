@@ -1,24 +1,16 @@
-export { ChapterCard } from "./chapter-card"
-export { ContentItemCard } from "./content-item-card"
-export { ContentItemList } from "./content-item-list"
-export { ChapterList } from "./chapter-list"
-export { ChapterManager } from "./chapter-manager"
-export { ChapterManagementPage } from "./chapter-management-page"
-export { ChapterErrorBoundary } from "./chapter-error-boundary"
-export { QuizBuilder } from "./quiz-builder"
-export { ChapterForm } from "./chapter-form"
-export { ContentTypeSelector } from "./content-type-selector"
-export { ChapterEditor } from "./chapter-editor"
-export { TextEditor } from "./text-editor"
-export { VideoEditor } from "./video-editor"
-export { QuizEditor } from "./quiz-editor"
-export { TestEditor } from "./test-editor"
-export { ExamEditor } from "./exam-editor"
-export { ChapterPreview } from "./chapter-preview"
-export {
-  TextContentRenderer,
-  VideoContentRenderer,
-  QuizContentRenderer,
-  TestContentRenderer,
-  ExamContentRenderer,
-} from "./content-renderers"
+/**
+ * Student-Facing Course Components
+ * 
+ * This folder is reserved for student-facing course components such as:
+ * - Course viewer/player
+ * - Chapter navigation for students
+ * - Content consumption components
+ * - Progress tracking UI
+ * - Quiz/test taking interfaces
+ * 
+ * Note: Admin/management components have been moved to components/admin/chapters/
+ * For chapter management and editing, see: components/admin/chapters/
+ */
+
+// Currently no student-facing components implemented
+// Future exports will go here

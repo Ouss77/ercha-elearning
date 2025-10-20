@@ -57,15 +57,15 @@ export function ContentItemCard({ contentItem, onEdit, onDelete }: ContentItemCa
     <div ref={setNodeRef} style={style}>
       <Card
         className={`
-          ${isDragging ? "shadow-md ring-2 ring-primary/50" : ""}
-          transition-all duration-200 hover:shadow-sm
+          ${isDragging ? "shadow-lg ring-2 ring-primary scale-[1.01]" : "hover:shadow-sm hover:border-primary/30"}
+          transition-all duration-200 bg-card/50 backdrop-blur-sm
         `}
       >
-        <CardContent className="p-3">
+        <CardContent className="p-3.5">
           <div className="flex items-center gap-3">
             {/* Drag Handle */}
             <button
-              className="cursor-grab active:cursor-grabbing touch-none"
+              className="cursor-grab active:cursor-grabbing touch-none hover:bg-muted/50 rounded p-1 -m-1 transition-colors"
               {...attributes}
               {...listeners}
             >
@@ -73,17 +73,19 @@ export function ContentItemCard({ contentItem, onEdit, onDelete }: ContentItemCa
             </button>
 
             {/* Content Type Icon */}
-            <div className={`p-2 rounded-md ${config.color}`}>
+            <div className={`p-2.5 rounded-lg ${config.color} shadow-sm`}>
               <Icon className="h-4 w-4" />
             </div>
 
             {/* Content Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="font-medium text-sm truncate">{contentItem.title}</p>
-                <Badge variant="outline" className="text-xs shrink-0">
+                <Badge variant="secondary" className="text-xs shrink-0 font-semibold">
                   {config.label}
                 </Badge>
+                <span className="text-xs font-medium text-muted-foreground">
+                  #{contentItem.orderIndex + 1}
+                </span>
               </div>
             </div>
 
@@ -92,18 +94,21 @@ export function ContentItemCard({ contentItem, onEdit, onDelete }: ContentItemCa
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-8 hover:bg-green-500/10 hover:text-green-600"
                 onClick={() => onEdit(contentItem.id)}
-                title="Edit"
+                title="Modifier"
               >
                 <Edit className="h-3.5 w-3.5" />
+                <span className="ml-1.5 text-xs font-medium">Modifier</span>
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onDelete(contentItem.id)}
-                title="Delete"
+                title="Supprimer"
               >
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

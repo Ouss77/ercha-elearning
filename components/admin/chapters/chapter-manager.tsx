@@ -20,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { QuizBuilder } from "./quiz-builder"
 import { Plus, FileText, Video, ImageIcon, LinkIcon, Edit, Trash2, GripVertical, HelpCircle } from "lucide-react"
 
 interface Chapter {
@@ -431,10 +430,9 @@ function ChapterForm({ initialData, onSubmit, onCancel }: ChapterFormProps) {
             </Button>
 
             {showQuizBuilder && (
-              <QuizBuilder
-                initialData={formData.quizData}
-                onChange={(quizData) => setFormData({ ...formData, quizData })}
-              />
+              <div className="p-4 border rounded-md bg-muted/50">
+                <p className="text-sm text-muted-foreground">Quiz builder coming soon...</p>
+              </div>
             )}
           </div>
         )}

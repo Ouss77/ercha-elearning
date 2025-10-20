@@ -74,6 +74,8 @@ export async function POST(
       return NextResponse.json({ error: "Invalid course ID" }, { status: 400 })
     }
 
+    console.log(`[POST /api/courses/${courseId}/chapters] User:`, user.id, user.role)
+
     // Authorization check - verify user can manage chapters for this course
     const hasAccess = await canManageChapter(parseInt(user.id), user.role as any, courseId)
     if (!hasAccess) {
@@ -85,27 +87,32 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json()
+    console.log(`[POST /api/courses/${courseId}/chapters] Request body:`, body)
+    
     const validatedData = createChapterSchema.parse(body)
+    console.log(`[POST /api/courses/${courseId}/chapters] Validated data:`, validatedData)
 
     // Create chapter
     const result = await createChapter(courseId, validatedData)
 
     if (!result.success) {
-      console.error("[API] Failed to create chapter:", result.error)
-      return NextResponse.json({ error: result.error }, { status: 500 })
+      console.error(`[POST /api/courses/${courseId}/chapters] Failed to create chapter:`, result.error)
+      return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
+    console.log(`[POST /api/courses/${courseId}/chapters] Successfully created chapter:`, result.data.id)
     return NextResponse.json({ chapter: result.data }, { status: 201 })
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error("[POST /api/courses/[id]/chapters] Validation error:", error.errors)
       return NextResponse.json(
         { error: "Validation failed", details: error.errors },
         { status: 400 }
       )
     }
-    console.error("[API] Error creating chapter:", error)
+    console.error("[POST /api/courses/[id]/chapters] Error creating chapter:", error)
     if (error instanceof Error) {
-      console.error("[API] Error stack:", error.stack)
+      console.error("[POST /api/courses/[id]/chapters] Error stack:", error.stack)
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

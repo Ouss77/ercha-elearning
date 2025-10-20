@@ -1,3 +1,4 @@
+export { DomainsManagement } from "./domains-management"
 export { DomainForm } from "./domain-form"
 export { DomainCard } from "./domain-card"
 export { DomainLoadingSkeleton } from "./domain-loading-skeleton"

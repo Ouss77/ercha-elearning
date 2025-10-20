@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, handleDbError } from "./index";
-import { users } from "@/drizzle/schema";
+import { users, enrollments, courses } from "@/drizzle/schema";
 import { mapUserFromDb, mapUserToDb } from "./mappers";
 import type { User } from "@/types/user";
 
@@ -81,15 +81,49 @@ export async function getUserById(id: number) {
 
 export async function getAllUsers(roleFilter?: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN") {
   try {
+    // First get all users
     const query = roleFilter
       ? db.select().from(users).where(eq(users.role, roleFilter))
       : db.select().from(users);
 
     const result = await query;
-    const mappedUsers = result
-      .map(mapUserFromDb)
-      .filter((u): u is User => u !== null);
-    return { success: true as const, data: mappedUsers };
+    
+    // For each user, get their enrolled courses and teaching courses
+    const usersWithCourses = await Promise.all(
+      result.map(async (user) => {
+        const courseSlugs: string[] = [];
+
+        // Get courses the user is enrolled in (as a student)
+        if (user.role === "STUDENT" || user.role === "TRAINER") {
+          const enrolledCourses = await db
+            .select({ slug: courses.slug })
+            .from(enrollments)
+            .innerJoin(courses, eq(enrollments.courseId, courses.id))
+            .where(eq(enrollments.studentId, user.id));
+          
+          courseSlugs.push(...enrolledCourses.map(c => c.slug));
+        }
+
+        // Get courses the user is teaching (as a trainer)
+        if (user.role === "TRAINER") {
+          const teachingCourses = await db
+            .select({ slug: courses.slug })
+            .from(courses)
+            .where(eq(courses.teacherId, user.id));
+          
+          courseSlugs.push(...teachingCourses.map(c => c.slug));
+        }
+
+        // Remove duplicates
+        const uniqueSlugs = [...new Set(courseSlugs)];
+
+        const mappedUser = mapUserFromDb(user);
+        return mappedUser ? { ...mappedUser, enrolledCourses: uniqueSlugs } : null;
+      })
+    );
+
+    const filteredUsers = usersWithCourses.filter((u): u is User & { enrolledCourses: string[] } => u !== null);
+    return { success: true as const, data: filteredUsers };
   } catch (error) {
     return handleDbError(error);
   }

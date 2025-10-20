@@ -1,6 +1,5 @@
 import { HomeHeader } from "@/components/layout/home-header";
 import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
 import Link from "next/link";
 import {
   Card,
@@ -22,8 +21,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-export default async function CoursesPage() {
-  const user = await getCurrentUser();
+export default function CoursesPage() {
 
   const courses = [
     {
@@ -116,7 +114,7 @@ export default async function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
+      <HomeHeader />
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">

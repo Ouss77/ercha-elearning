@@ -18,6 +18,7 @@ interface ChapterCardProps {
   onContentReorder: (chapterId: number, contentItemIds: number[]) => void
   onContentEdit: (contentItemId: number) => void
   onContentDelete: (contentItemId: number) => void
+  onContentAdd: (chapterId: number) => void
   isReorderingContent?: boolean
 }
 
@@ -29,6 +30,7 @@ export function ChapterCard({
   onContentReorder,
   onContentEdit,
   onContentDelete,
+  onContentAdd,
   isReorderingContent = false,
 }: ChapterCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -52,15 +54,17 @@ export function ChapterCard({
     <div ref={setNodeRef} style={style}>
       <Card
         className={`
-          ${isDragging ? "shadow-lg ring-2 ring-primary" : ""}
-          transition-all duration-200
+          ${isDragging ? "shadow-xl ring-2 ring-primary scale-[1.02]" : "hover:shadow-md"}
+          transition-all duration-200 border-l-4 ${
+            isExpanded ? "border-l-primary" : "border-l-transparent"
+          }
         `}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
+        <CardHeader className="pb-3 bg-gradient-to-r from-muted/30 to-transparent">
+          <div className="flex items-start gap-3 w-full">
             {/* Drag Handle */}
             <button
-              className="mt-1 cursor-grab active:cursor-grabbing touch-none"
+              className="mt-1 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 hover:bg-muted/50 rounded p-1 -m-1 transition-colors"
               {...attributes}
               {...listeners}
             >
@@ -69,26 +73,32 @@ export function ChapterCard({
 
             {/* Chapter Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <CardTitle className="text-lg truncate">{chapter.title}</CardTitle>
-                <Badge variant="outline" className="shrink-0">
-                  {chapter.contentItems.length} item{chapter.contentItems.length !== 1 ? "s" : ""}
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <CardTitle className="text-lg font-semibold truncate">
+                  {chapter.title}
+                </CardTitle>
+                <Badge 
+                  variant={chapter.contentItems.length > 0 ? "default" : "secondary"} 
+                  className="shrink-0 text-xs"
+                >
+                  {chapter.contentItems.length} contenu{chapter.contentItems.length !== 1 ? "s" : ""}
                 </Badge>
               </div>
               {chapter.description && (
-                <CardDescription className="line-clamp-2">
+                <CardDescription className="line-clamp-2 text-sm">
                   {chapter.description}
                 </CardDescription>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-9 w-9 hover:bg-primary/10"
                 onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? "Collapse" : "Expand"}
+                title={isExpanded ? "Masquer le contenu" : "Afficher le contenu"}
               >
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4" />
@@ -99,26 +109,29 @@ export function ChapterCard({
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-9 w-9 hover:bg-blue-500/10 hover:text-blue-600"
                 onClick={() => onPreview(chapter)}
-                title="Preview"
+                title="Aperçu"
               >
                 <Eye className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-9 w-9 hover:bg-green-500/10 hover:text-green-600"
                 onClick={() => onEdit(chapter)}
-                title="Edit"
+                title="Modifier"
               >
                 <Edit className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onDelete(chapter.id)}
-                title="Delete"
+                title="Supprimer"
               >
-                <Trash2 className="h-4 w-4 text-destructive" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -126,14 +139,15 @@ export function ChapterCard({
 
         {/* Expanded Content Items */}
         {isExpanded && (
-          <CardContent className="pt-0">
-            <div className="border-t pt-4">
+          <CardContent className="pt-0 pb-4">
+            <div className="border-t pt-4 bg-muted/20 -mx-6 px-6 pb-2">
               <ContentItemList
                 chapterId={chapter.id}
                 contentItems={chapter.contentItems}
                 onReorder={(contentItemIds) => onContentReorder(chapter.id, contentItemIds)}
                 onEdit={onContentEdit}
                 onDelete={onContentDelete}
+                onAddContent={onContentAdd}
                 isReordering={isReorderingContent}
               />
             </div>

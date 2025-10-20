@@ -29,6 +29,7 @@ interface ChapterListProps {
   onContentReorder: (chapterId: number, contentItemIds: number[]) => void
   onContentEdit: (contentItemId: number) => void
   onContentDelete: (contentItemId: number) => void
+  onContentAdd: (chapterId: number) => void
   isReordering?: boolean
   reorderingContentChapterId?: number | null
 }
@@ -42,6 +43,7 @@ export function ChapterList({
   onContentReorder,
   onContentEdit,
   onContentDelete,
+  onContentAdd,
   isReordering = false,
   reorderingContentChapterId = null,
 }: ChapterListProps) {
@@ -91,16 +93,20 @@ export function ChapterList({
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p className="text-lg font-medium">No chapters yet</p>
-        <p className="text-sm">Create your first chapter to get started</p>
+      <div className="text-center py-16 px-4">
+        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <BookOpen className="h-12 w-12 text-primary" />
+        </div>
+        <p className="text-xl font-semibold mb-2">Aucun chapitre pour l'instant</p>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          Créez votre premier chapitre pour commencer à structurer votre cours
+        </p>
       </div>
     )
   }
 
   return (
-    <div className={isDragging || isReordering ? "opacity-70 pointer-events-none" : ""}>
+    <div className={isDragging || isReordering ? "opacity-60 pointer-events-none" : ""}>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -123,6 +129,7 @@ export function ChapterList({
                 onContentReorder={onContentReorder}
                 onContentEdit={onContentEdit}
                 onContentDelete={onContentDelete}
+                onContentAdd={onContentAdd}
                 isReorderingContent={reorderingContentChapterId === chapter.id}
               />
             ))}
@@ -130,8 +137,8 @@ export function ChapterList({
         </SortableContext>
       </DndContext>
       {isReordering && (
-        <div className="flex items-center justify-center mt-2 text-sm text-muted-foreground">
-          <span className="animate-pulse">Mise à jour de l'ordre...</span>
+        <div className="flex items-center justify-center mt-4 text-sm text-muted-foreground bg-muted/50 py-3 rounded-lg">
+          <span className="animate-pulse font-medium">Mise à jour de l'ordre des chapitres...</span>
         </div>
       )}
     </div>
