@@ -22,10 +22,6 @@ export default async function TeacherCoursesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mes Cours</h1>
-        <p className="text-muted-foreground mt-2">Gérez et créez vos cours</p>
-      </div>
       <MyCourses courses={coursesResult.data} />
     </div>
   );

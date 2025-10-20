@@ -91,6 +91,11 @@ export function TeacherDashboard({
     });
   }, [courses]);
 
+  // Calculate total students across all courses
+  const totalStudents = useMemo(() => {
+    return courses.reduce((sum, course) => sum + course.totalStudents, 0);
+  }, [courses]);
+
   // Get main domain (the one with most courses)
   const mainDomain = useMemo(() => {
     const domainMap = new Map<string, { count: number; color: string }>();
@@ -170,7 +175,7 @@ export function TeacherDashboard({
               )}
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats - Desktop */}
             <div className="hidden md:flex flex-col gap-3 text-right">
               <div>
                 <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
@@ -180,10 +185,26 @@ export function TeacherDashboard({
               </div>
               <div>
                 <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {stats.totalStudents}
+                  {totalStudents}
                 </div>
                 <div className="text-xs text-muted-foreground">Étudiants</div>
               </div>
+            </div>
+          </div>
+
+          {/* Quick Stats - Mobile */}
+          <div className="flex md:hidden gap-4 pt-4 mt-4 border-t border-border">
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                {stats.totalCourses}
+              </div>
+              <div className="text-xs text-muted-foreground">Cours</div>
+            </div>
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {totalStudents}
+              </div>
+              <div className="text-xs text-muted-foreground">Étudiants</div>
             </div>
           </div>
         </CardContent>
