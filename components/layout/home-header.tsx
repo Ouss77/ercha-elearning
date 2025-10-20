@@ -77,7 +77,7 @@ export function HomeHeader({ user }: HomeHeaderProps) {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link
-                        href="/cours/developpement-web"
+                        href="/cours?domain=Développement Web"
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-950">
@@ -88,7 +88,7 @@ export function HomeHeader({ user }: HomeHeaderProps) {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link
-                        href="/cours/design-graphique"
+                        href="/cours?domain=Design Graphique"
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-950">
@@ -99,7 +99,7 @@ export function HomeHeader({ user }: HomeHeaderProps) {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link
-                        href="/cours/marketing-digital"
+                        href="/cours?domain=Marketing Digital"
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <div className="p-1.5 rounded bg-green-100 dark:bg-green-950">
