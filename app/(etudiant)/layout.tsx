@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth/auth"
-import { LayoutWrapper } from "@/components/layout/layout-wrapper"
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/auth";
+import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { getUserById } from "@/lib/db/queries";
 
 export default async function StudentLayout({
