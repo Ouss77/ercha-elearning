@@ -25,7 +25,7 @@ export const users = pgTable("users", {
 
   // Additional info
   bio: text("bio"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
