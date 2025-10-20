@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/auth";
 import { HomeHeader } from "@/components/layout/home-header";
 import { Hero } from "@/components/landing/hero";
@@ -12,6 +13,23 @@ import { Footer } from "@/components/layout/footer";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
+
+  // Redirect authenticated users to their respective dashboards
+  if (user) {
+    switch (user.role) {
+      case "ADMIN":
+        redirect("/admin");
+      case "TRAINER":
+        redirect("/formateur");
+      case "STUDENT":
+        redirect("/etudiant");
+      case "SUB_ADMIN":
+        redirect("/sous-admin");
+      default:
+        // If role is unknown, redirect to unauthorized page
+        redirect("/non-autorise");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
