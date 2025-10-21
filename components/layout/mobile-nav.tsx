@@ -23,6 +23,7 @@ import {
   Award,
   User,
   Activity,
+  Target,
 } from "lucide-react";
 
 interface MenuItem {
@@ -64,8 +65,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   STUDENT: [
     { title: "Tableau de bord", href: "/etudiant", icon: LayoutDashboard },
     { title: "Mes Cours", href: "/etudiant/cours", icon: BookOpen },
-    { title: "Ma Progression", href: "/etudiant/progres", icon: BarChart3 },
-    { title: "Mes Certificats", href: "/etudiant/certifications", icon: Award },
+    { title: "Mes Jalons", href: "/etudiant/jalons", icon: Target },
     { title: "Mon Profil", href: "/etudiant/profil", icon: User },
   ],
 };

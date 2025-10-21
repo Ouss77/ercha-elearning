@@ -90,6 +90,7 @@ export {
 export {
   getQuizById,
   getQuizzesByChapter,
+  getQuizzesByCourseWithAttempts,
   createQuiz,
   updateQuiz,
   deleteQuiz,
