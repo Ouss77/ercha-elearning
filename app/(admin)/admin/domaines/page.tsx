@@ -1,8 +1,5 @@
-import { requireAuth } from "@/lib/auth/auth";
-import { DomainsManagement } from "@/components/admin/domains-management";
+import { DomainsManagement } from "@/components/admin/domains";
 
 export default async function DomainesPage() {
-  await requireAuth(["admin"]);
-
   return <DomainsManagement />;
 }

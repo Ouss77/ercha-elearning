@@ -24,8 +24,10 @@ export const db = drizzle(pool, { schema })
 // Helper function to handle database errors
 export function handleDbError(error: unknown) {
   console.error("Database error:", error)
-
+  
   if (error instanceof Error) {
+    console.error("Error stack:", error.stack)
+    console.error("Error details:", JSON.stringify(error, null, 2))
     return {
       success: false as const,
       error: error.message,

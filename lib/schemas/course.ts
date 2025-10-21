@@ -14,7 +14,7 @@ export const createCourseSchema = z.object({
   domainId: z
     .number()
     .int("Domain ID must be an integer")
-    .positive("Domain ID must be positive"),
+    .nonnegative("Domain ID must be non-negative"),
   teacherId: z
     .number()
     .int("Teacher ID must be an integer")

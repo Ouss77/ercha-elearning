@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const result = await getAllUsers()
+    // Get role filter from query parameters
+    const { searchParams } = new URL(request.url)
+    const roleFilter = searchParams.get("role") as "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN" | null
+
+    const result = await getAllUsers(roleFilter || undefined)
 
     if (result.success === false) {
       return NextResponse.json({ error: result.error }, { status: 500 })
