@@ -43,16 +43,18 @@ export async function Courses() {
     return thumbnails[domainName || ""] || "/placeholder.svg";
   };
 
-  // Transform database courses to match our interface
-  const courses: Course[] = dbCourses.map((course: any) => ({
-    id: course.id,
-    title: course.title,
-    description: course.description || "Description à venir",
-    domain: course.domain?.name || "Non spécifié",
-    teacher: course.teacher?.name || "Formateur",
-    thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
-    totalChapters: course.chapterCount || 0,
-  }));
+  // Transform database courses to match our interface and filter only first 3 courses
+  const courses: Course[] = dbCourses
+    .filter((course: any) => [0, 1, 2].includes(course.id)) // Filter courses with IDs 1, 2, 3
+    .map((course: any) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description || "Description à venir",
+      domain: course.domain?.name || "Non spécifié",
+      teacher: course.teacher?.name || "Formateur",
+      thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
+      totalChapters: course.chapterCount || 0,
+    }));
 
   // Calculate statistics
   const stats = {

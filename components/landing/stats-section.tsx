@@ -11,24 +11,32 @@ export function StatsSection() {
       value: "15+",
       label: "Cours disponibles",
       color: "text-teal-600 dark:text-teal-400",
+      bgGradient:
+        "bg-gradient-to-br from-teal-100 to-teal-50 dark:from-teal-950 dark:to-teal-900",
     },
     {
       icon: Users,
       value: "60+",
       label: "Étudiants actifs",
       color: "text-emerald-600 dark:text-emerald-400",
+      bgGradient:
+        "bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950 dark:to-emerald-900",
     },
     {
       icon: Award,
       value: "3",
       label: "Formateurs experts",
       color: "text-cyan-600 dark:text-cyan-400",
+      bgGradient:
+        "bg-gradient-to-br from-cyan-100 to-cyan-50 dark:from-cyan-950 dark:to-cyan-900",
     },
     {
       icon: TrendingUp,
       value: "3",
       label: "Domaines clés",
-      color: "text-green-600 dark:text-green-400",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgGradient:
+        "bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950 dark:to-emerald-900",
     },
   ];
 
@@ -45,13 +53,7 @@ export function StatsSection() {
               >
                 <div className="flex justify-center mb-3">
                   <div
-                    className={`h-12 w-12 rounded-lg bg-gradient-to-br from-${
-                      stat.color.split("-")[1]
-                    }-100 to-${stat.color.split("-")[1]}-50 dark:from-${
-                      stat.color.split("-")[1]
-                    }-950 dark:to-${
-                      stat.color.split("-")[1]
-                    }-900 flex items-center justify-center`}
+                    className={`h-12 w-12 rounded-lg flex items-center justify-center ${stat.bgGradient}`}
                   >
                     <Icon className={`h-6 w-6 ${stat.color}`} />
                   </div>

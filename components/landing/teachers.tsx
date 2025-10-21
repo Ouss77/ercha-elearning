@@ -2,22 +2,13 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Code, Palette, TrendingUp, Users, Shield } from "lucide-react";
+import { Code, Palette, TrendingUp, Users } from "lucide-react";
 
 /**
  * Teachers Section
  * Displays the platform's instructors and their specializations
  */
 export function Teachers() {
-  const manager = {
-    name: "Oussama Sassour",
-    role: "Responsable des Formateurs",
-    description:
-      "Supervise et coordonne l'équipe pédagogique pour garantir l'excellence de l'enseignement dans tous les domaines.",
-    initials: "OS",
-    color: "bg-gradient-to-br from-teal-600 to-emerald-600",
-  };
-
   const teachers = [
     {
       name: "Walid Draa",
@@ -26,8 +17,14 @@ export function Teachers() {
       description:
         "Expert en développement web moderne, spécialisé dans React, Next.js et les technologies front-end avancées.",
       initials: "WD",
-      color: "bg-teal-500",
+      color: "bg-blue-500",
       icon: Code,
+      iconBg:
+        "bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950 dark:to-indigo-950",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      cardBorder: "border-blue-200 dark:border-blue-800",
+      cardBg:
+        "bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20",
     },
     {
       name: "Adam Khairi",
@@ -36,8 +33,14 @@ export function Teachers() {
       description:
         "Designer créatif avec une expertise en UI/UX, branding et design visuel pour le web et les médias numériques.",
       initials: "AK",
-      color: "bg-purple-500",
+      color: "bg-violet-500",
       icon: Palette,
+      iconBg:
+        "bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-950 dark:to-purple-950",
+      iconColor: "text-violet-600 dark:text-violet-400",
+      cardBorder: "border-violet-200 dark:border-violet-800",
+      cardBg:
+        "bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20",
     },
     {
       name: "Anas ElGhamraoui",
@@ -48,6 +51,12 @@ export function Teachers() {
       initials: "AE",
       color: "bg-emerald-500",
       icon: TrendingUp,
+      iconBg:
+        "bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-950 dark:to-green-950",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      cardBorder: "border-emerald-200 dark:border-emerald-800",
+      cardBg:
+        "bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20",
     },
   ];
 
@@ -77,61 +86,15 @@ export function Teachers() {
           </p>
         </div>
 
-        {/* Teachers Grid */}
-        <div className="max-w-6xl mx-auto space-y-12">
-          {/* Manager Card - Featured */}
-          <div className="flex justify-center">
-            <Card className="w-full max-w-2xl bg-white dark:bg-gray-900 border-2 border-teal-300 dark:border-teal-700 shadow-xl">
-              <CardContent className="pt-8 pb-6 px-8">
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  {/* Avatar with Badge */}
-                  <div className="relative">
-                    <Avatar
-                      className={`${manager.color} h-24 w-24 ring-4 ring-white dark:ring-gray-900`}
-                    >
-                      <AvatarFallback className="text-white font-bold text-2xl">
-                        {manager.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-2 -right-2 p-2 rounded-full bg-teal-600 dark:bg-teal-500 ring-4 ring-white dark:ring-gray-900">
-                      <Shield className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                      {manager.name}
-                    </h3>
-                    <p className="text-base font-semibold text-teal-600 dark:text-teal-400 mb-3">
-                      {manager.role}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                      {manager.description}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Connection Lines Indicator */}
-          <div className="flex justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-8 w-0.5 bg-gradient-to-b from-teal-300 to-transparent dark:from-teal-700"></div>
-              <Users className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-              <div className="h-8 w-0.5 bg-gradient-to-b from-transparent to-teal-300 dark:to-teal-700"></div>
-            </div>
-          </div>
-
-          {/* Instructors Grid */}
+        {/* Instructors Grid */}
+        <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
             {teachers.map((teacher, index) => {
               const IconComponent = teacher.icon;
               return (
                 <Card
                   key={index}
-                  className="group bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700 transition-all duration-300 hover:-translate-y-2"
+                  className={`group ${teacher.cardBg} border-2 ${teacher.cardBorder} hover:shadow-xl transition-all duration-300 hover:-translate-y-2`}
                 >
                   <CardContent className="pt-8 pb-6 px-6 text-center space-y-4">
                     {/* Avatar */}
@@ -143,8 +106,10 @@ export function Teachers() {
                       </Avatar>
 
                       {/* Specialty Icon */}
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-950 dark:to-emerald-950">
-                        <IconComponent className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                      <div className={`p-2 rounded-lg ${teacher.iconBg}`}>
+                        <IconComponent
+                          className={`h-5 w-5 ${teacher.iconColor}`}
+                        />
                       </div>
                     </div>
 
@@ -153,7 +118,9 @@ export function Teachers() {
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
                         {teacher.name}
                       </h3>
-                      <p className="text-sm font-medium text-teal-600 dark:text-teal-400 mb-3">
+                      <p
+                        className={`text-sm font-medium mb-3 ${teacher.iconColor}`}
+                      >
                         {teacher.specialty}
                       </p>
                     </div>
