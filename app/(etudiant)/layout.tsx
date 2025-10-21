@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth/auth";
+import { getCurrentUser } from "@/lib/auth/auth";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { getUserById } from "@/lib/db/queries";
 
@@ -8,8 +8,8 @@ export default async function StudentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Verify user is authenticated and has STUDENT role
-  const user = await requireAuth(["STUDENT"]);
+  // Access control is enforced by middleware; fetch the current user for UI
+  const user = await getCurrentUser()
 
   if (!user) {
     redirect("/connexion");

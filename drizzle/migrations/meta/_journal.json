@@ -33,8 +33,8 @@
     {
       "idx": 6,
       "version": "7",
-      "when": 1760839113063,
-      "tag": "0006_heavy_fixer",
+      "when": 1760760066425,
+      "tag": "0006_migrate_chapter_content",
       "breakpoints": true
     }
   ]

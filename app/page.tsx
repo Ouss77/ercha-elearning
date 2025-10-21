@@ -9,7 +9,6 @@ import { Teachers } from "@/components/landing/teachers";
 import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/layout/footer";
 
-//TODO : Rename Route Groups to French
 
 export default async function HomePage() {
   const user = await getCurrentUser();
