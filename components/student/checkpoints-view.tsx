@@ -34,6 +34,15 @@ interface CheckpointsViewProps {
     totalChapters: number;
     completedChapters: number;
   }>;
+  passedQuizzes: Array<{
+    id: number;
+    quizId: number | null;
+    score: number;
+    passed: boolean;
+    attemptedAt: Date | null;
+    quizTitle: string;
+    quizType: string;
+  }>;
 }
 
 interface Checkpoint {
@@ -54,6 +63,7 @@ interface Checkpoint {
 export function CheckpointsView({
   user,
   enrolledCourses,
+  passedQuizzes,
 }: CheckpointsViewProps) {
   // Generate checkpoints from enrolled courses
   const checkpoints: Checkpoint[] = useMemo(() => {
@@ -262,6 +272,87 @@ export function CheckpointsView({
           </CardContent>
         </Card>
       </div>
+
+      {/* Quiz Achievements Section */}
+      {passedQuizzes.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-yellow-600" />
+              Réussites aux Quiz
+            </h2>
+            <p className="text-muted-foreground">
+              Tous vos quiz, tests et examens réussis
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {passedQuizzes.map((quiz) => {
+              const typeColor =
+                quiz.quizType === "quiz"
+                  ? "from-teal-600 to-emerald-600"
+                  : quiz.quizType === "test"
+                  ? "from-orange-600 to-amber-600"
+                  : "from-red-600 to-rose-600";
+
+              const typeLabel =
+                quiz.quizType === "quiz"
+                  ? "Quiz"
+                  : quiz.quizType === "test"
+                  ? "Test"
+                  : "Examen";
+
+              return (
+                <Card
+                  key={quiz.id}
+                  className="border-2 hover:shadow-lg transition-all duration-300"
+                >
+                  <CardContent className="p-6">
+                    <div
+                      className={`w-12 h-12 rounded-full bg-gradient-to-r ${typeColor} flex items-center justify-center mb-4`}
+                    >
+                      <Trophy className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="mb-2 border-emerald-600 text-emerald-600"
+                    >
+                      {typeLabel}
+                    </Badge>
+                    <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
+                      {quiz.quizTitle}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Réussi
+                      </span>
+                      <span className="font-bold text-green-600">
+                        {quiz.score}%
+                      </span>
+                    </div>
+                    {quiz.attemptedAt && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(quiz.attemptedAt).toLocaleDateString(
+                            "fr-FR",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div>

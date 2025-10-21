@@ -1,13 +1,83 @@
-import { requireAuth } from "@/lib/auth/auth"
-import { CourseViewer } from "@/components/student/course-viewer"
+import { requireAuth } from "@/lib/auth/auth";
+import { CourseContentView } from "@/components/student/course-content-view";
+import {
+  getCourseById,
+  getChaptersWithContent,
+  getUserById,
+  getDomainById,
+} from "@/lib/db/queries";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { chapterProgress } from "@/drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 interface CoursePageProps {
-  params: { id: string }
+  params: { id: string };
 }
 
 export default async function CoursePage({ params }: CoursePageProps) {
-  const user = await requireAuth(["student"])
-  const { id } = params
+  const user = await requireAuth(["student"]);
+  const courseId = parseInt(params.id);
 
-  return <CourseViewer courseId={Number.parseInt(id)} user={user} />
+  if (isNaN(courseId)) {
+    notFound();
+  }
+
+  // Fetch course details
+  const courseResult = await getCourseById(courseId);
+  if (!courseResult.success || !courseResult.data) {
+    notFound();
+  }
+
+  const course = courseResult.data;
+
+  // Fetch chapters with content
+  const chaptersResult = await getChaptersWithContent(courseId);
+  const chapters = chaptersResult.success ? chaptersResult.data : [];
+
+  // Fetch domain
+  let domain = null;
+  if (course.domainId) {
+    const domainResult = await getDomainById(course.domainId);
+    if (domainResult.success && domainResult.data) {
+      domain = domainResult.data;
+    }
+  }
+
+  // Fetch teacher
+  let teacher = null;
+  if (course.teacherId) {
+    const teacherResult = await getUserById(course.teacherId);
+    if (teacherResult.success && teacherResult.data) {
+      teacher = teacherResult.data;
+    }
+  }
+
+  // Fetch completed chapters for this student
+  const studentId = parseInt(user.id);
+  const completedChaptersData = await db
+    .select({ chapterId: chapterProgress.chapterId })
+    .from(chapterProgress)
+    .where(
+      and(
+        eq(chapterProgress.studentId, studentId),
+        eq(chapterProgress.chapterId, chapters.map((ch) => ch.id)[0] ?? 0)
+      )
+    );
+
+  const completedChapters = completedChaptersData
+    .map((cp) => cp.chapterId)
+    .filter((id): id is number => id !== null);
+
+  return (
+    <CourseContentView
+      user={user}
+      course={course}
+      domain={domain}
+      teacher={teacher}
+      chapters={chapters}
+      completedChapters={completedChapters}
+      totalChapters={chapters.length}
+    />
+  );
 }

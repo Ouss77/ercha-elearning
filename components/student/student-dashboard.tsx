@@ -122,11 +122,11 @@ export function StudentDashboard({
   return (
     <div className="space-y-6">
       {/* Student Profile Card */}
-      <Card className="border-border bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20">
+      <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20">
         <CardContent className="pt-6">
           <div className="flex items-start gap-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
               {user.name
                 ?.split(" ")
                 .map((n) => n[0])
@@ -164,13 +164,13 @@ export function StudentDashboard({
             {/* Quick Stats - Desktop */}
             <div className="hidden md:flex flex-col gap-3 text-right">
               <div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                   {stats.totalCourses}
                 </div>
                 <div className="text-xs text-muted-foreground">Cours</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.completedChapters}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -183,13 +183,13 @@ export function StudentDashboard({
           {/* Quick Stats - Mobile */}
           <div className="flex md:hidden gap-4 pt-4 mt-4 border-t border-border">
             <div className="flex-1 text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                 {stats.totalCourses}
               </div>
               <div className="text-xs text-muted-foreground">Cours</div>
             </div>
             <div className="flex-1 text-center">
-              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {stats.completedChapters}
               </div>
               <div className="text-xs text-muted-foreground">
