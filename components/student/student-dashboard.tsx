@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -10,12 +11,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CourseCard } from "./course-card";
-import { BookOpen, Trophy, Clock, TrendingUp, Play } from "lucide-react";
-import type { User } from "@/lib/auth/auth";
+import { BookOpen, Play, User, CheckCircle } from "lucide-react";
+import type { User as UserType } from "@/lib/auth/auth";
 
 interface StudentDashboardProps {
-  user: User;
+  user: UserType;
   enrolledCourses: Array<{
     enrollmentId: number;
     courseId: number;
@@ -47,16 +47,6 @@ interface Course {
   completedChapters: number;
   lastAccessed?: string;
   isCompleted: boolean;
-}
-
-interface QuizResult {
-  id: number;
-  courseName: string;
-  chapterName: string;
-  score: number;
-  maxScore: number;
-  passed: boolean;
-  completedAt: string;
 }
 
 export function StudentDashboard({
@@ -91,229 +81,327 @@ export function StudentDashboard({
     });
   }, [rawEnrolledCourses]);
 
-  const [recentQuizResults] = useState<QuizResult[]>([
-    {
-      id: 1,
-      courseName: "Introduction à React",
-      chapterName: "Composants et Props",
-      score: 85,
-      maxScore: 100,
-      passed: true,
-      completedAt: "2025-01-15",
-    },
-    {
-      id: 2,
-      courseName: "Marketing Digital Avancé",
-      chapterName: "Analytics et KPIs",
-      score: 92,
-      maxScore: 100,
-      passed: true,
-      completedAt: "2025-01-10",
-    },
-  ]);
-
   const stats = {
     totalCourses: enrolledCourses.length,
-    completedCourses: enrolledCourses.filter((c) => c.isCompleted).length,
-    averageProgress:
-      enrolledCourses.length > 0
-        ? Math.round(
-            enrolledCourses.reduce((acc, course) => acc + course.progress, 0) /
-              enrolledCourses.length
-          )
-        : 0,
-    totalChapters: enrolledCourses.reduce(
-      (acc, course) => acc + course.totalChapters,
-      0
-    ),
     completedChapters: enrolledCourses.reduce(
       (acc, course) => acc + course.completedChapters,
       0
     ),
   };
 
+  // Get all unique domains
+  const allDomains = useMemo(() => {
+    const domainMap = new Map<
+      string,
+      { count: number; color: string | undefined }
+    >();
+    enrolledCourses.forEach((course) => {
+      if (course.domain && course.domain !== "Non classé") {
+        const existing = domainMap.get(course.domain) || {
+          count: 0,
+          color: course.domainColor,
+        };
+        domainMap.set(course.domain, {
+          count: existing.count + 1,
+          color: course.domainColor,
+        });
+      }
+    });
+
+    return Array.from(domainMap.entries()).map(([name, data]) => ({
+      name,
+      count: data.count,
+      color: data.color || "#3b82f6",
+    }));
+  }, [enrolledCourses]);
+
   const inProgressCourses = enrolledCourses.filter(
     (course) => !course.isCompleted && course.progress > 0
-  );
-  const completedCourses = enrolledCourses.filter(
-    (course) => course.isCompleted
   );
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Cours Inscrits
-            </CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCourses}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completedCourses} terminés
-            </p>
-          </CardContent>
-        </Card>
+      {/* Student Profile Card */}
+      <Card className="border-border bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-6">
+            {/* Avatar */}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              {user.name
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
+            </div>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Progression Moyenne
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.averageProgress}%</div>
-            <Progress value={stats.averageProgress} className="mt-2" />
-          </CardContent>
-        </Card>
+            {/* Student Info */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-foreground mb-1">
+                {user.name}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-3">{user.email}</p>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Chapitres Complétés
-            </CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedChapters}</div>
-            <p className="text-xs text-muted-foreground">
-              sur {stats.totalChapters} chapitres
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Temps d'étude</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24h</div>
-            <p className="text-xs text-muted-foreground">cette semaine</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Continue Learning */}
-          {inProgressCourses.length > 0 && (
-            <Card className="border-border bg-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Play className="h-5 w-5 text-primary" />
-                  <span>Continuer l'apprentissage</span>
-                </CardTitle>
-                <CardDescription>
-                  Reprenez là où vous vous êtes arrêté
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {inProgressCourses.slice(0, 2).map((course) => (
-                    <CourseCard key={course.id} course={course} />
+              {allDomains.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {allDomains.map((domain) => (
+                    <Badge
+                      key={domain.name}
+                      className="text-xs px-3 py-1 font-medium"
+                      style={{
+                        backgroundColor: `${domain.color}20`,
+                        color: domain.color,
+                        borderColor: `${domain.color}40`,
+                      }}
+                    >
+                      {domain.name} ({domain.count})
+                    </Badge>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </div>
 
-          {/* All Courses */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle>Mes Cours</CardTitle>
-              <CardDescription>Tous vos cours inscrits</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {enrolledCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
-                ))}
+            {/* Quick Stats - Desktop */}
+            <div className="hidden md:flex flex-col gap-3 text-right">
+              <div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.totalCourses}
+                </div>
+                <div className="text-xs text-muted-foreground">Cours</div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Recent Quiz Results */}
-          <Card className="border-border bg-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Résultats Récents</CardTitle>
-              <CardDescription>Vos derniers quiz</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentQuizResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                  >
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {result.chapterName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {result.courseName}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge
-                        variant={result.passed ? "default" : "destructive"}
-                      >
-                        {result.score}/{result.maxScore}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(result.completedAt).toLocaleDateString(
-                          "fr-FR"
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div>
+                <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                  {stats.completedChapters}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Chapitres complétés
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Achievements */}
+          {/* Quick Stats - Mobile */}
+          <div className="flex md:hidden gap-4 pt-4 mt-4 border-t border-border">
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {stats.totalCourses}
+              </div>
+              <div className="text-xs text-muted-foreground">Cours</div>
+            </div>
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                {stats.completedChapters}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Chapitres complétés
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-8">
+        {/* Continue Learning */}
+        {inProgressCourses.length > 0 && (
           <Card className="border-border bg-card">
             <CardHeader>
-              <CardTitle className="text-lg">Réalisations</CardTitle>
-              <CardDescription>Vos accomplissements</CardDescription>
+              <CardTitle className="flex items-center space-x-2">
+                <Play className="h-5 w-5 text-primary" />
+                <span>Continuer l'apprentissage</span>
+              </CardTitle>
+              <CardDescription>
+                Reprenez là où vous vous êtes arrêté
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Trophy className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Premier cours terminé</p>
-                    <p className="text-xs text-muted-foreground">
-                      Marketing Digital Avancé
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-chart-2/10 rounded-full flex items-center justify-center">
-                    <BookOpen className="h-4 w-4 text-chart-2" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">5 chapitres complétés</p>
-                    <p className="text-xs text-muted-foreground">
-                      Introduction à React
-                    </p>
-                  </div>
-                </div>
+                {inProgressCourses.slice(0, 3).map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/etudiant/cours/${course.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-start gap-4 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-accent/50 transition-all">
+                      {/* Course Thumbnail */}
+                      <div
+                        className="w-20 h-20 rounded-lg bg-cover bg-center flex-shrink-0"
+                        style={{
+                          backgroundImage: `url(${course.thumbnail})`,
+                          backgroundColor: course.domainColor || "#3b82f6",
+                        }}
+                      />
+
+                      {/* Course Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-base line-clamp-1">
+                            {course.title}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className="text-xs flex-shrink-0"
+                            style={{
+                              borderColor: course.domainColor || "#3b82f6",
+                              color: course.domainColor || "#3b82f6",
+                              backgroundColor: course.domainColor
+                                ? `${course.domainColor}10`
+                                : "#3b82f610",
+                            }}
+                          >
+                            {course.domain}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
+                          {course.description}
+                        </p>
+
+                        {/* Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              Progression
+                            </span>
+                            <span className="font-medium">
+                              {course.progress}%
+                            </span>
+                          </div>
+                          <Progress value={course.progress} className="h-2" />
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {course.teacher}
+                            </span>
+                            <span>
+                              {course.completedChapters}/{course.totalChapters}{" "}
+                              chapitres
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* All Courses */}
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle>Mes Cours</CardTitle>
+            <CardDescription>Tous vos cours inscrits</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {enrolledCourses.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Vous n'êtes inscrit à aucun cours pour le moment
+                </div>
+              ) : (
+                enrolledCourses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/etudiant/cours/${course.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-start gap-4 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-accent/50 transition-all">
+                      {/* Course Thumbnail */}
+                      <div
+                        className="w-20 h-20 rounded-lg bg-cover bg-center flex-shrink-0 relative"
+                        style={{
+                          backgroundImage: `url(${course.thumbnail})`,
+                          backgroundColor: course.domainColor || "#3b82f6",
+                        }}
+                      >
+                        {course.isCompleted && (
+                          <div className="absolute inset-0 bg-emerald-500/90 rounded-lg flex items-center justify-center">
+                            <CheckCircle className="h-8 w-8 text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Course Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base line-clamp-1">
+                              {course.title}
+                            </h3>
+                            {course.isCompleted && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs mt-1 bg-emerald-50 text-emerald-700 border-emerald-200"
+                              >
+                                Terminé
+                              </Badge>
+                            )}
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="text-xs flex-shrink-0"
+                            style={{
+                              borderColor: course.domainColor || "#3b82f6",
+                              color: course.domainColor || "#3b82f6",
+                              backgroundColor: course.domainColor
+                                ? `${course.domainColor}10`
+                                : "#3b82f610",
+                            }}
+                          >
+                            {course.domain}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {course.description}
+                        </p>
+
+                        {/* Progress Bar */}
+                        {!course.isCompleted && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                Progression
+                              </span>
+                              <span className="font-medium">
+                                {course.progress}%
+                              </span>
+                            </div>
+                            <Progress value={course.progress} className="h-2" />
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {course.teacher}
+                              </span>
+                              <span>
+                                {course.completedChapters}/
+                                {course.totalChapters} chapitres
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {course.isCompleted && (
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {course.teacher}
+                            </span>
+                            <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                              <CheckCircle className="h-3 w-3" />
+                              {course.totalChapters} chapitres complétés
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
