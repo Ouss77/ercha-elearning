@@ -1323,6 +1323,58 @@ export async function deleteProjectSubmission(id: number) {
   }
 }
 
+// Get all project submissions for a teacher's courses
+export async function getTeacherProjectSubmissions(teacherId: number) {
+  try {
+    const result = await db
+      .select({
+        submissionId: projectSubmissions.id,
+        submissionUrl: projectSubmissions.submissionUrl,
+        description: projectSubmissions.description,
+        status: projectSubmissions.status,
+        feedback: projectSubmissions.feedback,
+        grade: projectSubmissions.grade,
+        submittedAt: projectSubmissions.submittedAt,
+        reviewedAt: projectSubmissions.reviewedAt,
+
+        // Student info
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatar: users.avatarUrl,
+
+        // Project info
+        projectId: finalProjects.id,
+        projectTitle: finalProjects.title,
+        projectDescription: finalProjects.description,
+
+        // Course info
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseThumbnail: courses.thumbnailUrl,
+
+        // Domain info
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(projectSubmissions.studentId, users.id))
+      .innerJoin(
+        finalProjects,
+        eq(projectSubmissions.finalProjectId, finalProjects.id)
+      )
+      .innerJoin(courses, eq(finalProjects.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(courses.teacherId, teacherId))
+      .orderBy(desc(projectSubmissions.submittedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 // Get student enrolled courses with progress
 export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
   try {
