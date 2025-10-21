@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -27,30 +28,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Eye,
   Users,
-  Plus,
-  Settings,
+  Eye,
+  Activity,
+  BookOpen,
+  ClipboardCheck,
+  Calendar,
+  Mail,
+  TrendingUp,
 } from "lucide-react";
-import { toast } from "sonner";
+import Link from "next/link";
 
 interface StudentData {
   studentId: number;
@@ -73,77 +61,87 @@ interface StudentData {
   progress: number;
   averageQuizScore: number;
   quizzesCompleted: number;
+  totalQuizzes?: number;
+  testsCompleted?: number;
+  totalTests?: number;
   status: "active" | "inactive" | "struggling";
-}
-
-interface ClassData {
-  id: number;
-  name: string;
-  description: string | null;
-  domainId: number | null;
-  domainName: string | null;
-  domainColor: string | null;
-  isActive: boolean | null;
-  maxStudents: number | null;
-  createdAt: Date | null;
-  studentCount: number;
 }
 
 interface StudentProgressProps {
   students: StudentData[];
-  classes: ClassData[];
   teacherId: number;
 }
 
-export function StudentProgress({
-  students,
-  classes,
-  teacherId,
-}: StudentProgressProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
-  const [newClassName, setNewClassName] = useState("");
-  const [newClassDescription, setNewClassDescription] = useState("");
-  const [newClassMaxStudents, setNewClassMaxStudents] = useState("");
-
-  const uniqueCourses = Array.from(
-    new Map(
-      students.map((s) => [
-        s.courseId,
-        { id: s.courseId, title: s.courseTitle },
-      ])
-    ).values()
+export function StudentProgress({ students, teacherId }: StudentProgressProps) {
+  const [selectedDomain, setSelectedDomain] = useState<string>("all");
+  const [selectedCourse, setSelectedCourse] = useState<string>("all");
+  const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(
+    null
   );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCourse =
-      selectedCourse === "all" || student.courseId === parseInt(selectedCourse);
-
-    const matchesStatus =
-      selectedStatus === "all" || student.status === selectedStatus;
-
-    return matchesSearch && matchesCourse && matchesStatus;
-  });
-
-  const stats = {
-    total: students.length,
-    active: students.filter((s) => s.status === "active").length,
-    struggling: students.filter((s) => s.status === "struggling").length,
-    inactive: students.filter((s) => s.status === "inactive").length,
-    avgProgress:
-      students.length > 0
-        ? Math.round(
-            students.reduce((sum, s) => sum + s.progress, 0) / students.length
-          )
-        : 0,
+  const handleViewStudent = (student: StudentData) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedStudent(null);
+  };
+
+  // Get unique courses
+  const uniqueCourses = useMemo(() => {
+    const courseMap = new Map<number, { id: number; title: string }>();
+    students.forEach((s) => {
+      if (!courseMap.has(s.courseId)) {
+        courseMap.set(s.courseId, { id: s.courseId, title: s.courseTitle });
+      }
+    });
+    return Array.from(courseMap.values());
+  }, [students]);
+
+  // Get unique domains
+  const uniqueDomains = useMemo(() => {
+    const domainMap = new Map<
+      number,
+      { id: number; name: string; color: string }
+    >();
+    students.forEach((s) => {
+      if (s.domainId && !domainMap.has(s.domainId)) {
+        domainMap.set(s.domainId, {
+          id: s.domainId,
+          name: s.domainName || "Non classé",
+          color: s.domainColor || "#6366f1",
+        });
+      }
+    });
+    return Array.from(domainMap.values());
+  }, [students]);
+
+  // Filter students based on selected domain and course
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      // Domain filter: show all when "all" selected, otherwise match specific domain
+      const matchesDomain =
+        selectedDomain === "all" ||
+        student.domainId?.toString() === selectedDomain;
+
+      // Course filter: show all when "all" selected, otherwise match specific course
+      const matchesCourse =
+        selectedCourse === "all" ||
+        student.courseId.toString() === selectedCourse;
+
+      return matchesDomain && matchesCourse;
+    });
+  }, [students, selectedDomain, selectedCourse]);
+
+  // Calculate total unique students (from all enrollments, not filtered)
+  const totalStudents = useMemo(() => {
+    if (!students || students.length === 0) return 0;
+    const uniqueStudentIds = new Set(students.map((s) => s.studentId));
+    return uniqueStudentIds.size;
+  }, [students]);
 
   const getInitials = (name: string | null) => {
     if (!name) return "?";
@@ -155,26 +153,6 @@ export function StudentProgress({
       .slice(0, 2);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500">Actif</Badge>;
-      case "struggling":
-        return <Badge className="bg-yellow-500">En difficulté</Badge>;
-      case "inactive":
-        return <Badge variant="secondary">Inactif</Badge>;
-      default:
-        return null;
-    }
-  };
-
-  const getTrendIcon = (progress: number) => {
-    if (progress >= 70)
-      return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (progress >= 40) return <Minus className="h-4 w-4 text-yellow-600" />;
-    return <TrendingDown className="h-4 w-4 text-red-600" />;
-  };
-
   const formatDate = (date: Date | null) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("fr-FR", {
@@ -184,447 +162,464 @@ export function StudentProgress({
     });
   };
 
-  const handleCreateClass = async () => {
-    if (!newClassName.trim()) {
-      toast.error("Le nom de la classe est requis");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/teacher/classes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newClassName,
-          description: newClassDescription,
-          maxStudents: newClassMaxStudents
-            ? parseInt(newClassMaxStudents)
-            : null,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Classe créée avec succès");
-        setIsCreateClassOpen(false);
-        setNewClassName("");
-        setNewClassDescription("");
-        setNewClassMaxStudents("");
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Erreur lors de la création");
-      }
-    } catch (error) {
-      toast.error("Erreur de connexion");
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Étudiants
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Actifs</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {stats.active}
+    <div className="space-y-8">
+      {/* Statistics Card */}
+      <Card className="border-border bg-gradient-to-br from-emerald-50/50 to-cyan-50/50 dark:from-emerald-950/20 dark:to-cyan-950/20 hover:shadow-lg transition-shadow duration-300">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+                Total Étudiants
+              </p>
+              <p className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+                {totalStudents}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Inscrits à vos cours
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En difficulté</CardTitle>
-            <TrendingDown className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.struggling}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
+              <Users className="h-8 w-8 text-white" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactifs</CardTitle>
-            <Minus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">
-              {stats.inactive}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Students Table */}
+      <div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground">Mes Étudiants</h2>
+          <p className="text-muted-foreground">
+            Liste de tous les étudiants inscrits à vos cours avec leurs
+            statistiques
+          </p>
+        </div>
+
+        <Card className="border-border bg-card">
+          <CardContent className="p-6">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Tous les domaines" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les domaines</SelectItem>
+                  {uniqueDomains.map((domain) => (
+                    <SelectItem key={domain.id} value={domain.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: domain.color }}
+                        />
+                        {domain.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger className="w-full sm:w-[250px]">
+                  <SelectValue placeholder="Tous les cours" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les cours</SelectItem>
+                  {uniqueCourses.map((course) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="flex-1 flex items-center justify-end text-sm text-muted-foreground">
+                {filteredStudents.length} résultat
+                {filteredStudents.length > 1 ? "s" : ""}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Progrès Moyen</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.avgProgress}%</div>
+
+            {/* Table */}
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Étudiant</TableHead>
+                    <TableHead>Cours</TableHead>
+                    <TableHead>Domaine</TableHead>
+                    <TableHead>Quiz</TableHead>
+                    <TableHead>Tests</TableHead>
+                    <TableHead>Activité</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudents.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        Aucun étudiant trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredStudents.map((student) => (
+                      <TableRow
+                        key={`${student.studentId}-${student.courseId}`}
+                      >
+                        {/* Student Info */}
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage
+                                src={student.studentAvatarUrl || ""}
+                                alt={student.studentName || ""}
+                              />
+                              <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                                {getInitials(student.studentName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                {student.studentName}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {student.studentEmail}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Course */}
+                        <TableCell>
+                          <div className="max-w-[200px]">
+                            <p className="font-medium text-sm line-clamp-1">
+                              {student.courseTitle}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        {/* Domain */}
+                        <TableCell>
+                          {student.domainName && (
+                            <Badge
+                              variant="outline"
+                              style={{
+                                borderColor: student.domainColor || "#6366f1",
+                                color: student.domainColor || "#6366f1",
+                                backgroundColor: `${
+                                  student.domainColor || "#6366f1"
+                                }10`,
+                              }}
+                            >
+                              {student.domainName}
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        {/* Quiz Stats */}
+                        <TableCell>
+                          <div className="space-y-1 min-w-[100px]">
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+                              <span className="text-sm font-medium">
+                                {student.quizzesCompleted}/
+                                {student.totalQuizzes || 0}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Moy: {student.averageQuizScore}%
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        {/* Test Stats */}
+                        <TableCell>
+                          <div className="space-y-1 min-w-[100px]">
+                            <div className="flex items-center gap-1.5">
+                              <ClipboardCheck className="h-3.5 w-3.5 text-purple-600" />
+                              <span className="text-sm font-medium">
+                                {student.testsCompleted || 0}/
+                                {student.totalTests || 0}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Tests complétés
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        {/* Activity */}
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <Activity className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(student.lastActivityDate)}
+                              </span>
+                            </div>
+                            {student.enrolledAt && (
+                              <p className="text-xs text-muted-foreground">
+                                Inscrit: {formatDate(student.enrolledAt)}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                            onClick={() => handleViewStudent(student)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="students" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="students">
-            <Users className="h-4 w-4 mr-2" />
-            Étudiants ({students.length})
-          </TabsTrigger>
-          <TabsTrigger value="classes">
-            <Users className="h-4 w-4 mr-2" />
-            Classes ({classes.length})
-          </TabsTrigger>
-        </TabsList>
+      {/* Student Detail Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedStudent && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-emerald-500/20">
+                    <div
+                      className="w-full h-full flex items-center justify-center text-white font-semibold text-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${
+                          selectedStudent.domainColor || "#3b82f6"
+                        } 0%, ${
+                          selectedStudent.domainColor
+                            ? `${selectedStudent.domainColor}dd`
+                            : "#2563eb"
+                        } 100%)`,
+                      }}
+                    >
+                      {getInitials(selectedStudent.studentName)}
+                    </div>
+                  </Avatar>
+                  <div>
+                    <div className="text-xl font-bold">
+                      {selectedStudent.studentName}
+                    </div>
+                    <div className="text-sm text-muted-foreground font-normal flex items-center gap-2">
+                      <Mail className="h-3 w-3" />
+                      {selectedStudent.studentEmail}
+                    </div>
+                  </div>
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Statistiques détaillées de l&apos;étudiant
+                </DialogDescription>
+              </DialogHeader>
 
-        <TabsContent value="students" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle>Liste des Étudiants</CardTitle>
-                  <CardDescription>
-                    Tous les étudiants inscrits à vos cours
-                  </CardDescription>
+              <div className="space-y-6 mt-6">
+                {/* Course Info */}
+                <div className="rounded-lg border p-4 space-y-3">
+                  <h3 className="font-semibold text-base flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-emerald-600" />
+                    Cours
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Titre
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedStudent.courseTitle}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Domaine
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-xs"
+                        style={{
+                          borderColor: selectedStudent.domainColor || "#3b82f6",
+                          color: selectedStudent.domainColor || "#3b82f6",
+                          backgroundColor: selectedStudent.domainColor
+                            ? `${selectedStudent.domainColor}10`
+                            : "#3b82f610",
+                        }}
+                      >
+                        {selectedStudent.domainName || "Aucun domaine"}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher par nom, email ou cours..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Select
-                  value={selectedCourse}
-                  onValueChange={setSelectedCourse}
-                >
-                  <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Tous les cours" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les cours</SelectItem>
-                    {uniqueCourses.map((course) => (
-                      <SelectItem key={course.id} value={course.id.toString()}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedStatus}
-                  onValueChange={setSelectedStatus}
-                >
-                  <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Tous les statuts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="active">Actifs</SelectItem>
-                    <SelectItem value="struggling">En difficulté</SelectItem>
-                    <SelectItem value="inactive">Inactifs</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Étudiant</TableHead>
-                      <TableHead>Cours</TableHead>
-                      <TableHead>Progression</TableHead>
-                      <TableHead>Quiz</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Dernière activité</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStudents.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          Aucun étudiant trouvé
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredStudents.map((student) => (
-                        <TableRow
-                          key={`${student.studentId}-${student.courseId}`}
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar>
-                                <AvatarImage
-                                  src={student.studentAvatarUrl || ""}
-                                  alt={student.studentName || ""}
-                                />
-                                <AvatarFallback>
-                                  {getInitials(student.studentName)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">
-                                  {student.studentName}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {student.studentEmail}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <p className="font-medium text-sm">
-                                {student.courseTitle}
-                              </p>
-                              {student.domainName && (
-                                <Badge
-                                  variant="outline"
-                                  style={{
-                                    borderColor:
-                                      student.domainColor || "#6366f1",
-                                    color: student.domainColor || "#6366f1",
-                                  }}
-                                  className="text-xs"
-                                >
-                                  {student.domainName}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                {getTrendIcon(student.progress)}
-                                <span className="text-sm font-medium">
-                                  {student.progress}%
-                                </span>
-                              </div>
-                              <Progress
-                                value={student.progress}
-                                className="h-2"
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                {student.chaptersCompleted}/
-                                {student.totalChapters} chapitres
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <p className="text-sm font-medium">
-                                {student.averageQuizScore}%
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {student.quizzesCompleted} quiz
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(student.status)}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatDate(student.lastActivityDate)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="classes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle>Gestion des Classes</CardTitle>
-                  <CardDescription>
-                    Créez et gérez vos classes d'étudiants
-                  </CardDescription>
-                </div>
-                <Dialog
-                  open={isCreateClassOpen}
-                  onOpenChange={setIsCreateClassOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Créer une classe
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Créer une nouvelle classe</DialogTitle>
-                      <DialogDescription>
-                        Créez une classe pour regrouper vos étudiants
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nom de la classe *</Label>
-                        <Input
-                          id="name"
-                          placeholder="Ex: Promotion 2025 - React"
-                          value={newClassName}
-                          onChange={(e) => setNewClassName(e.target.value)}
-                        />
+                {/* Progress Stats */}
+                <div className="rounded-lg border p-4 space-y-3">
+                  <h3 className="font-semibold text-base flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    Progression
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">
+                          Chapitres complétés
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedStudent.chaptersCompleted}/
+                          {selectedStudent.totalChapters}
+                        </span>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="Description de la classe..."
-                          value={newClassDescription}
-                          onChange={(e) =>
-                            setNewClassDescription(e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="maxStudents">
-                          Nombre maximum d'étudiants
-                        </Label>
-                        <Input
-                          id="maxStudents"
-                          type="number"
-                          placeholder="Ex: 30"
-                          value={newClassMaxStudents}
-                          onChange={(e) =>
-                            setNewClassMaxStudents(e.target.value)
-                          }
-                        />
+                      <Progress
+                        value={selectedStudent.progress}
+                        className="h-2"
+                      />
+                      <div className="text-right text-xs text-muted-foreground mt-1">
+                        {selectedStudent.progress.toFixed(0)}%
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsCreateClassOpen(false)}
-                      >
-                        Annuler
-                      </Button>
-                      <Button onClick={handleCreateClass}>Créer</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {classes.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    Aucune classe créée
+
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <BookOpen className="h-4 w-4" />
+                          Quiz
+                        </div>
+                        <div className="text-lg font-semibold">
+                          {selectedStudent.quizzesCompleted}/
+                          {selectedStudent.totalQuizzes}
+                        </div>
+                        {selectedStudent.averageQuizScore !== null &&
+                          selectedStudent.averageQuizScore !== undefined && (
+                            <div className="text-xs text-muted-foreground">
+                              Moyenne:{" "}
+                              {selectedStudent.averageQuizScore.toFixed(1)}%
+                            </div>
+                          )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <ClipboardCheck className="h-4 w-4" />
+                          Tests
+                        </div>
+                        <div className="text-lg font-semibold">
+                          {selectedStudent.testsCompleted}/
+                          {selectedStudent.totalTests}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          À venir
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Timeline */}
+                <div className="rounded-lg border p-4 space-y-3">
+                  <h3 className="font-semibold text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-emerald-600" />
+                    Activité
                   </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Créez votre première classe pour organiser vos étudiants
-                  </p>
-                  <Button onClick={() => setIsCreateClassOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Créer une classe
-                  </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Inscrit le
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedStudent.enrolledAt
+                          ? new Date(
+                              selectedStudent.enrolledAt
+                            ).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Dernière activité
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedStudent.lastActivityDate
+                          ? new Date(
+                              selectedStudent.lastActivityDate
+                            ).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "Aucune activité"}
+                      </span>
+                    </div>
+                    {selectedStudent.completedAt && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Cours terminé le
+                        </span>
+                        <span className="text-sm font-medium text-emerald-600">
+                          {new Date(
+                            selectedStudent.completedAt
+                          ).toLocaleDateString("fr-FR", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {classes.map((classItem) => (
-                    <Card key={classItem.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <CardTitle className="text-lg">
-                              {classItem.name}
-                            </CardTitle>
-                            {classItem.domainName && (
-                              <Badge
-                                style={{
-                                  backgroundColor:
-                                    classItem.domainColor || "#6366f1",
-                                  color: "white",
-                                }}
-                                className="text-xs"
-                              >
-                                {classItem.domainName}
-                              </Badge>
-                            )}
-                          </div>
-                          <Badge
-                            variant={
-                              classItem.isActive ? "default" : "secondary"
-                            }
-                          >
-                            {classItem.isActive ? "Active" : "Inactive"}
-                          </Badge>
+
+                {/* Additional Info */}
+                {(selectedStudent.studentPhone ||
+                  selectedStudent.studentCity) && (
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <h3 className="font-semibold text-base">
+                      Informations complémentaires
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedStudent.studentPhone && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Téléphone
+                          </span>
+                          <span className="text-sm font-medium">
+                            {selectedStudent.studentPhone}
+                          </span>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {classItem.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {classItem.description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              {classItem.studentCount}
-                              {classItem.maxStudents
-                                ? ` / ${classItem.maxStudents}`
-                                : ""}{" "}
-                              étudiants
-                            </span>
-                          </div>
+                      )}
+                      {selectedStudent.studentCity && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Ville
+                          </span>
+                          <span className="text-sm font-medium">
+                            {selectedStudent.studentCity}
+                          </span>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Voir
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -115,6 +115,58 @@ export {
   deleteProjectSubmission,
 } from "./project-queries";
 
+// Get all project submissions for a teacher's courses
+export async function getTeacherProjectSubmissions(teacherId: number) {
+  try {
+    const result = await db
+      .select({
+        submissionId: projectSubmissions.id,
+        submissionUrl: projectSubmissions.submissionUrl,
+        description: projectSubmissions.description,
+        status: projectSubmissions.status,
+        feedback: projectSubmissions.feedback,
+        grade: projectSubmissions.grade,
+        submittedAt: projectSubmissions.submittedAt,
+        reviewedAt: projectSubmissions.reviewedAt,
+
+        // Student info
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatar: users.avatarUrl,
+
+        // Project info
+        projectId: finalProjects.id,
+        projectTitle: finalProjects.title,
+        projectDescription: finalProjects.description,
+
+        // Course info
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseThumbnail: courses.thumbnailUrl,
+
+        // Domain info
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(projectSubmissions.studentId, users.id))
+      .innerJoin(
+        finalProjects,
+        eq(projectSubmissions.finalProjectId, finalProjects.id)
+      )
+      .innerJoin(courses, eq(finalProjects.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(courses.teacherId, teacherId))
+      .orderBy(desc(projectSubmissions.submittedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 // Get student enrolled courses with progress
 export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
   try {
@@ -613,6 +665,22 @@ export async function getTeacherStudents(teacherId: number) {
       courseChapters.map((c) => [c.courseId, c.totalChapters])
     );
 
+    // Get total quizzes for each course
+    const courseQuizzes = await db
+      .select({
+        courseId: courses.id,
+        totalQuizzes: sql<number>`cast(count(distinct ${quizzes.id}) as int)`,
+      })
+      .from(quizzes)
+      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .where(eq(courses.teacherId, teacherId))
+      .groupBy(courses.id);
+
+    const quizTotalMap = new Map(
+      courseQuizzes.map((q) => [q.courseId, q.totalQuizzes])
+    );
+
     // Get quiz statistics for each student
     const quizStats = await db
       .select({
@@ -632,6 +700,13 @@ export async function getTeacherStudents(teacherId: number) {
       quizStats.map((q) => [`${q.studentId}-${q.courseId}`, q])
     );
 
+    // Get total tests for each course (assuming tests are a separate entity)
+    // For now, we'll set it to 0 as the schema might not have tests yet
+    // TODO: Update when test entity is added to schema
+
+    // Get test statistics for each student
+    // TODO: Implement when test entity is added to schema
+
     // Combine data
     const enrichedStudents = studentsResult.map((student) => {
       const totalChapters = chapterMap.get(student.courseId) || 0;
@@ -640,8 +715,11 @@ export async function getTeacherStudents(teacherId: number) {
           ? Math.round((student.chaptersCompleted / totalChapters) * 100)
           : 0;
 
-      const quizData =
-        quizStatsMap.get(`${student.studentId}-${student.courseId}`) || {};
+      const quizData = quizStatsMap.get(
+        `${student.studentId}-${student.courseId}`
+      );
+
+      const totalQuizzes = quizTotalMap.get(student.courseId) || 0;
 
       // Determine status based on activity and progress
       const daysSinceActivity = student.lastActivityDate
@@ -664,8 +742,11 @@ export async function getTeacherStudents(teacherId: number) {
         ...student,
         totalChapters,
         progress,
-        averageQuizScore: quizData.averageScore || 0,
-        quizzesCompleted: quizData.quizzesCompleted || 0,
+        averageQuizScore: quizData?.averageScore || 0,
+        quizzesCompleted: quizData?.quizzesCompleted || 0,
+        totalQuizzes,
+        testsCompleted: 0, // TODO: Implement when test entity is added
+        totalTests: 0, // TODO: Implement when test entity is added
         status,
       };
     });
@@ -708,6 +789,8 @@ export async function createClass(data: {
 // Get all classes for a teacher
 export async function getTeacherClasses(teacherId: number) {
   try {
+    // Get classes where students are enrolled in the teacher's courses
+    // OR classes directly assigned to the teacher
     const result = await db
       .select({
         id: classes.id,
@@ -724,7 +807,13 @@ export async function getTeacherClasses(teacherId: number) {
       .from(classes)
       .leftJoin(domains, eq(classes.domainId, domains.id))
       .leftJoin(classEnrollments, eq(classEnrollments.classId, classes.id))
-      .where(eq(classes.teacherId, teacherId))
+      .where(
+        sql`${classes.teacherId} = ${teacherId} OR ${classes.domainId} IN (
+          SELECT DISTINCT ${courses.domainId} 
+          FROM ${courses} 
+          WHERE ${courses.teacherId} = ${teacherId}
+        )`
+      )
       .groupBy(
         classes.id,
         classes.name,

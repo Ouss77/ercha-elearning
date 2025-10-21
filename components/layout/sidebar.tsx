@@ -50,7 +50,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { title: "Tableau de bord", href: "/formateur", icon: LayoutDashboard },
     { title: "Mes Cours", href: "/formateur/cours", icon: BookOpen },
     { title: "Étudiants", href: "/formateur/etudiants", icon: Users },
-    { title: "Analyses", href: "/formateur/analyses", icon: BarChart3 },
+    { title: "Projets", href: "/formateur/projets", icon: FileText },
     { title: "Mon Profil", href: "/formateur/profil", icon: User },
   ],
   STUDENT: [
