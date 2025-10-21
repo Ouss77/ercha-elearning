@@ -3,18 +3,18 @@
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, handleDbError } from "./index";
 import {
-    users,
-    courses,
-    enrollments,
-    domains,
-    chapters,
-    chapterProgress,
-    quizzes,
-    quizAttempts,
-    finalProjects,
-    projectSubmissions,
-    classes,
-    classEnrollments,
+  users,
+  courses,
+  enrollments,
+  domains,
+  chapters,
+  chapterProgress,
+  quizzes,
+  quizAttempts,
+  finalProjects,
+  projectSubmissions,
+  classes,
+  classEnrollments,
 } from "@/drizzle/schema";
 
 // User queries
@@ -66,6 +66,7 @@ export {
 export {
   canManageChapter,
   canViewChapter,
+  getChaptersByCourseId,
   getChaptersWithContent,
   createContentItem,
   updateContentItem,
