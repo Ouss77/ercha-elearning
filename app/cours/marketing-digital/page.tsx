@@ -1,6 +1,5 @@
 import { HomeHeader } from "@/components/layout/home-header";
 import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
   Laptop,
 } from "lucide-react";
 import Image from "next/image";
+import { getCurrentUser } from "@/lib/auth/auth";
 
 export default async function MarketingDigitalPage() {
   const user = await getCurrentUser();
@@ -51,6 +51,7 @@ export default async function MarketingDigitalPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      Todo : Fix Use client Error
       <HomeHeader user={user} />
 
       {/* Hero Section */}

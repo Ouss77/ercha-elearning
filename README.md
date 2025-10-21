@@ -228,3 +228,22 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment documentation.
 ## License
 
 MIT
+
+## Auth and RBAC Pattern
+
+This project enforces authentication and role-based access primarily via NextAuth middleware for protected route prefixes:
+
+- /admin → ADMIN
+- /sous-admin → SUB_ADMIN
+- /formateur → TRAINER
+- /etudiant → STUDENT
+
+Guidelines:
+
+- Use middleware for access control so unauthorized requests are rejected early, improving perceived navigation speed.
+- In layouts/pages inside protected segments, avoid calling requireAuth unless the route’s access rules differ from the prefix-level rule. Prefer getCurrentUser when you only need the current user’s info for UI (header, etc.).
+- Keep requireAuth for special cases where a route allows multiple roles (e.g., ADMIN and TRAINER) or has additional ownership checks. Middleware can be extended later with more granular matchers if needed.
+
+Rationale:
+
+Placing requireAuth in both the segment layout and page triggers multiple getServerSession calls per navigation, which can slightly slow down transitions. Relying on middleware for gating and calling getCurrentUser only where the user object is needed reduces redundant work while keeping behavior intact.

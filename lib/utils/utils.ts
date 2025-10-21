@@ -1,26 +1,45 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function getDashboardUrl(role: string): string {
-  const normalizedRole = role.toUpperCase()
-  
+  const normalizedRole = role.toUpperCase();
+
   switch (normalizedRole) {
     case "ADMIN":
-      return "/admin"
+      return "/admin";
     case "SUB_ADMIN":
-      return "/sous-admin"
+      return "/sous-admin";
     case "TRAINER":
     case "TEACHER":
-      return "/formateur"
+      return "/formateur";
     case "STUDENT":
-      return "/etudiant"
+      return "/etudiant";
     default:
-      return "/etudiant"
+      return "/etudiant";
   }
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return function executedFunction(...args: Parameters<T>) {
+    const later = () => {
+      timeout = null;
+      func(...args);
+    };
+
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(later, wait);
+  };
 }
 
 /**
@@ -30,11 +49,11 @@ export function getDashboardUrl(role: string): string {
  */
 export function getAvatarUrl(avatarUrl: string | null | undefined): string {
   const DEFAULT_AVATAR = '/avatars/default.png'
-  
+
   if (!avatarUrl || avatarUrl.trim() === '') {
     return DEFAULT_AVATAR
   }
-  
+
   return avatarUrl
 }
 
@@ -47,11 +66,11 @@ export function getUserInitials(name: string | null | undefined): string {
   if (!name || name.trim() === '') {
     return 'U'
   }
-  
+
   const parts = name.trim().split(' ')
   if (parts.length === 1) {
     return parts[0].substring(0, 2).toUpperCase()
   }
-  
+
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
