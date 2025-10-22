@@ -59,6 +59,8 @@ export default function QuizView({
   const [attemptCount, setAttemptCount] = useState(0);
   const [previousAttempts, setPreviousAttempts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasPassedBefore, setHasPassedBefore] = useState(false);
+  const [bestScore, setBestScore] = useState(0);
   const maxAttempts = 3;
 
   const currentQuestion = contentData.questions[currentQuestionIndex];
@@ -74,14 +76,20 @@ export default function QuizView({
           `/api/quiz-attempts?contentId=${contentId}`
         );
         const data = await response.json();
-        if (data.attempts) {
+        if (data.attempts && data.attempts.length > 0) {
           setPreviousAttempts(data.attempts);
           setAttemptCount(data.attempts.length);
 
           // Check if already passed
           const passedAttempt = data.attempts.find((a: any) => a.passed);
           if (passedAttempt) {
+            setHasPassedBefore(true);
+            setBestScore(passedAttempt.score);
             setIsSubmitted(true);
+          } else {
+            // Find best score even if not passed
+            const best = Math.max(...data.attempts.map((a: any) => a.score));
+            setBestScore(best);
           }
         }
       } catch (error) {
@@ -184,10 +192,10 @@ export default function QuizView({
   };
 
   if (isSubmitted) {
-    const score = calculateScore();
-    const passed = contentData.passingScore
-      ? score >= contentData.passingScore
-      : true;
+    const score = hasPassedBefore ? bestScore : calculateScore();
+    const passed =
+      hasPassedBefore ||
+      (contentData.passingScore ? score >= contentData.passingScore : true);
     const attemptsRemaining = maxAttempts - attemptCount;
     const canRetry = !passed && attemptCount < maxAttempts;
 
@@ -200,11 +208,18 @@ export default function QuizView({
                 <div className="space-y-4">
                   <Trophy className="h-20 w-20 mx-auto text-yellow-600" />
                   <h1 className="text-3xl font-bold text-green-600">
-                    Félicitations! 🎉
+                    {hasPassedBefore ? "Quiz Réussi!" : "Félicitations! 🎉"}
                   </h1>
                   <p className="text-muted-foreground">
-                    Vous avez réussi ce {getTypeLabel().toLowerCase()}
+                    {hasPassedBefore
+                      ? `Vous avez déjà réussi ce ${getTypeLabel().toLowerCase()}`
+                      : `Vous avez réussi ce ${getTypeLabel().toLowerCase()}`}
                   </p>
+                  {hasPassedBefore && (
+                    <Badge className="bg-green-600 text-white">
+                      Score enregistré: {bestScore}%
+                    </Badge>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -228,14 +243,16 @@ export default function QuizView({
             <CardContent className="space-y-6">
               <div className="text-center">
                 <div className="text-6xl font-bold mb-2">{score}%</div>
-                <p className="text-muted-foreground">
-                  {
-                    contentData.questions.filter(
-                      (q, i) => answers[i] === q.correctAnswer
-                    ).length
-                  }{" "}
-                  / {totalQuestions} questions correctes
-                </p>
+                {!hasPassedBefore && (
+                  <p className="text-muted-foreground">
+                    {
+                      contentData.questions.filter(
+                        (q, i) => answers[i] === q.correctAnswer
+                      ).length
+                    }{" "}
+                    / {totalQuestions} questions correctes
+                  </p>
+                )}
                 {contentData.passingScore && (
                   <p className="text-sm text-muted-foreground mt-2">
                     Score minimum requis: {contentData.passingScore}%
@@ -243,8 +260,37 @@ export default function QuizView({
                 )}
               </div>
 
-              {/* Show answers only if passed OR if no attempts remaining */}
-              {(passed || attemptCount >= maxAttempts) && (
+              {/* Show previous attempts history */}
+              {previousAttempts.length > 0 && !hasPassedBefore && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Historique des tentatives
+                  </h4>
+                  <div className="space-y-2">
+                    {previousAttempts
+                      .slice(0, 3)
+                      .map((attempt: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-sm p-2 bg-background rounded"
+                        >
+                          <span className="text-muted-foreground">
+                            Tentative {previousAttempts.length - idx}
+                          </span>
+                          <Badge
+                            variant={attempt.passed ? "default" : "secondary"}
+                          >
+                            {attempt.score}%
+                          </Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Show answers only if passed OR if no attempts remaining OR viewing previous success */}
+              {(passed || attemptCount >= maxAttempts) && !hasPassedBefore && (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg">
                     Révision des réponses
@@ -453,6 +499,53 @@ export default function QuizView({
             />
           </CardContent>
         </Card>
+
+        {/* Show previous score if they've attempted before */}
+        {previousAttempts.length > 0 && bestScore > 0 && (
+          <Card
+            className={`border-2 ${
+              hasPassedBefore
+                ? "border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800"
+                : "border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800"
+            }`}
+          >
+            <CardContent className="p-4 flex items-start gap-3">
+              {hasPassedBefore ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+              ) : (
+                <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              )}
+              <div className="flex-1">
+                {hasPassedBefore ? (
+                  <>
+                    <p className="font-medium text-green-900 dark:text-green-100">
+                      ✅ Vous avez déjà réussi ce {getTypeLabel().toLowerCase()}
+                      !
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                      Score enregistré:{" "}
+                      <span className="font-bold">{bestScore}%</span>
+                      {" · "}
+                      Ce score est sauvegardé dans vos jalons
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                      Vous avez déjà tenté ce {getTypeLabel().toLowerCase()}
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Meilleur score:{" "}
+                      <span className="font-bold">{bestScore}%</span>
+                      {" · "}
+                      Tentatives utilisées: {attemptCount} / {maxAttempts}
+                    </p>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Question */}
         <Card className="border-2">

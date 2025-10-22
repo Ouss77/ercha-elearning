@@ -1,6 +1,12 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db, handleDbError } from "./index";
-import { quizzes, quizAttempts, chapters, courses } from "@/drizzle/schema";
+import {
+  quizzes,
+  quizAttempts,
+  chapters,
+  courses,
+  contentItems,
+} from "@/drizzle/schema";
 
 // Quiz query functions
 export async function getQuizById(id: number) {
@@ -191,9 +197,10 @@ export async function getQuizzesByCourseWithAttempts(
   try {
     const result = await db
       .select({
-        quizId: quizzes.id,
-        quizTitle: quizzes.title,
-        passingScore: quizzes.passingScore,
+        quizId: contentItems.id,
+        quizTitle: contentItems.title,
+        contentType: contentItems.contentType,
+        contentData: contentItems.contentData,
         chapterId: chapters.id,
         chapterTitle: chapters.title,
         chapterOrder: chapters.orderIndex,
@@ -202,28 +209,37 @@ export async function getQuizzesByCourseWithAttempts(
         passed: quizAttempts.passed,
         attemptedAt: quizAttempts.attemptedAt,
       })
-      .from(quizzes)
-      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .from(contentItems)
+      .innerJoin(chapters, eq(contentItems.chapterId, chapters.id))
       .innerJoin(courses, eq(chapters.courseId, courses.id))
       .leftJoin(
         quizAttempts,
         and(
-          eq(quizAttempts.quizId, quizzes.id),
+          eq(quizAttempts.quizId, contentItems.id),
           eq(quizAttempts.studentId, studentId)
         )
       )
-      .where(eq(courses.id, courseId))
-      .orderBy(chapters.orderIndex, quizzes.id);
+      .where(
+        and(
+          eq(courses.id, courseId),
+          sql`${contentItems.contentType} IN ('quiz', 'test', 'exam')`
+        )
+      )
+      .orderBy(chapters.orderIndex, contentItems.orderIndex);
 
     // Group by quiz to get best attempt
     const quizzesMap = new Map();
     result.forEach((row) => {
       const quizKey = row.quizId;
       if (!quizzesMap.has(quizKey)) {
+        // Extract passing score from content data
+        const contentData = row.contentData as any;
+        const passingScore = contentData?.passingScore || 70;
+
         quizzesMap.set(quizKey, {
           quizId: row.quizId,
           quizTitle: row.quizTitle,
-          passingScore: row.passingScore,
+          passingScore: passingScore,
           chapterId: row.chapterId,
           chapterTitle: row.chapterTitle,
           chapterOrder: row.chapterOrder,

@@ -179,13 +179,25 @@ export function CheckpointsView({
       (c) => !c.isCompleted && c.progress > 0
     ).length;
 
+    // Quiz stats
+    const totalQuizzes = passedQuizzes.length;
+    const averageQuizScore =
+      totalQuizzes > 0
+        ? Math.round(
+            passedQuizzes.reduce((sum, quiz) => sum + quiz.score, 0) /
+              totalQuizzes
+          )
+        : 0;
+
     return {
       completed,
       total,
       inProgress,
       percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+      totalQuizzes,
+      averageQuizScore,
     };
-  }, [checkpoints]);
+  }, [checkpoints, passedQuizzes]);
 
   const formatDate = (date?: Date) => {
     if (!date) return null;
@@ -210,7 +222,7 @@ export function CheckpointsView({
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
         <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20 hover:shadow-lg transition-shadow duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -253,17 +265,40 @@ export function CheckpointsView({
           </CardContent>
         </Card>
 
+        <Card className="border-border bg-gradient-to-br from-yellow-50/50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/20 hover:shadow-lg transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+                  Quiz Réussis
+                </p>
+                <p className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {stats.totalQuizzes}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tests complétés
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-lg">
+                <Trophy className="h-8 w-8 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-border bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20 hover:shadow-lg transition-shadow duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
-                  Progression
+                  Score Moyen
                 </p>
                 <p className="text-4xl font-bold text-cyan-600 dark:text-cyan-400">
-                  {stats.percentage}%
+                  {stats.averageQuizScore}%
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Globale</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sur les quiz
+                </p>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
                 <Target className="h-8 w-8 text-white" />
@@ -276,18 +311,30 @@ export function CheckpointsView({
       {/* Quiz Achievements Section */}
       {passedQuizzes.length > 0 && (
         <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-yellow-600" />
-              Réussites aux Quiz
-            </h2>
-            <p className="text-muted-foreground">
-              Tous vos quiz, tests et examens réussis
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Trophy className="h-6 w-6 text-yellow-600" />
+                Réussites Récentes aux Quiz
+              </h2>
+              <p className="text-muted-foreground">
+                Vos {Math.min(3, passedQuizzes.length)} dernières réussites
+              </p>
+            </div>
+            {passedQuizzes.length > 3 && (
+              <Link href="/etudiant">
+                <Button
+                  variant="outline"
+                  className="hover:bg-yellow-50 hover:text-yellow-600 dark:hover:bg-yellow-950 dark:hover:text-yellow-400"
+                >
+                  Voir tout ({passedQuizzes.length})
+                </Button>
+              </Link>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {passedQuizzes.map((quiz) => {
+            {passedQuizzes.slice(0, 3).map((quiz) => {
               const typeColor =
                 quiz.quizType === "quiz"
                   ? "from-teal-600 to-emerald-600"

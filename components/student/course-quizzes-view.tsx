@@ -233,21 +233,48 @@ export function CourseQuizzesView({
                                 {quiz.totalAttempts > 1 ? "s" : ""}
                               </Badge>
                             )}
+                            {quiz.bestScore !== null && (
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${
+                                  quiz.passed
+                                    ? "border-green-600 text-green-700 dark:text-green-400"
+                                    : "border-orange-600 text-orange-700 dark:text-orange-400"
+                                }`}
+                              >
+                                <Trophy className="h-3 w-3 mr-1" />
+                                Meilleur score: {quiz.bestScore}%
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
                         {/* Status Badge */}
                         <div className="flex-shrink-0">
                           {quiz.passed ? (
-                            <Badge className="bg-emerald-500 text-white">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Réussi
-                            </Badge>
+                            <div className="text-right">
+                              <Badge className="bg-emerald-500 text-white mb-1">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Réussi
+                              </Badge>
+                              {quiz.bestScore !== null && (
+                                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                  {quiz.bestScore}%
+                                </div>
+                              )}
+                            </div>
                           ) : quiz.totalAttempts > 0 ? (
-                            <Badge className="bg-amber-500 text-white">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              En cours
-                            </Badge>
+                            <div className="text-right">
+                              <Badge className="bg-amber-500 text-white mb-1">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                En cours
+                              </Badge>
+                              {quiz.bestScore !== null && (
+                                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                                  {quiz.bestScore}%
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <Badge className="bg-teal-500 text-white">
                               <Clock className="h-3 w-3 mr-1" />
@@ -257,37 +284,25 @@ export function CourseQuizzesView({
                         </div>
                       </div>
 
-                      {/* Score Info */}
-                      {quiz.bestScore !== null && (
-                        <div className="mb-3 p-3 rounded-lg bg-muted/50">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Meilleur score:
-                            </span>
-                            <span
-                              className={`text-lg font-bold ${
-                                quiz.passed
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-amber-600 dark:text-amber-400"
-                              }`}
-                            >
-                              {quiz.bestScore}%
+                      {/* Additional Info - Last Attempt Date */}
+                      {quiz.lastAttemptedAt && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              Dernier essai: {formatDate(quiz.lastAttemptedAt)}
                             </span>
                           </div>
                         </div>
                       )}
 
                       {/* Footer */}
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          {quiz.lastAttemptedAt && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>
-                                Dernier essai:{" "}
-                                {formatDate(quiz.lastAttemptedAt)}
-                              </span>
-                            </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="text-xs text-muted-foreground">
+                          {quiz.passed && quiz.bestScore !== null && (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                              ✓ Score enregistré dans vos jalons
+                            </span>
                           )}
                         </div>
                         <Link href={`/etudiant/cours/${courseId}`}>
