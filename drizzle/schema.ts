@@ -94,26 +94,8 @@ export const enrollments = pgTable("enrollments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
-// Quizzes table
-export const quizzes = pgTable("quizzes", {
-  id: serial("id").primaryKey(),
-  chapterId: integer("chapter_id").references(() => chapters.id),
-  title: varchar("title", { length: 200 }).notNull(),
-  questions: jsonb("questions").notNull(),
-  passingScore: integer("passing_score").default(70),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-})
-
-// Quiz Attempts table
-export const quizAttempts = pgTable("quiz_attempts", {
-  id: serial("id").primaryKey(),
-  studentId: integer("student_id").references(() => users.id),
-  quizId: integer("quiz_id").references(() => quizzes.id),
-  answers: jsonb("answers").notNull(),
-  score: integer("score").notNull(),
-  passed: boolean("passed").notNull(),
-  attemptedAt: timestamp("attempted_at").defaultNow()
-})
+// Note: Quizzes are now handled as content_items with contentType="quiz"
+// Quiz attempts are tracked in content_item_attempts table
 
 // Final Projects table
 export const finalProjects = pgTable("final_projects", {

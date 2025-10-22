@@ -41,16 +41,7 @@ export * from './mappers';
 // ============================================================================
 // DOMAIN-SPECIFIC QUERY MODULES
 // ============================================================================
-// Export all refactored query modules
-export * from './user-queries';
-export * from './course-queries';
-export * from './enrollment-queries';
-export * from './domain-queries';
-export * from './chapter-queries';
-export * from './progress-queries';
-export * from './quiz-queries';
-export * from './project-queries';
-export * from './class-queries';
+// Export all queries through the central queries index
 export * from './queries';
 
 // ============================================================================

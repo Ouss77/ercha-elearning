@@ -94,8 +94,8 @@ export default async function CourseDetailPage({
     domain: courseData.domain?.name || "Non spécifié",
     domainColor:
       courseData.domain?.color || getDomainColor(courseData.domain?.name),
-    modules: courseData.chapterCount || 0,
-    enrollments: courseData.enrollmentCount || 0,
+    modules: courseData._count?.chapters || 0,
+    enrollments: courseData._count?.enrollments || 0,
     thumbnail:
       courseData.thumbnailUrl || getDomainThumbnail(courseData.domain?.name),
     icon: getDomainIcon(courseData.domain?.name),
