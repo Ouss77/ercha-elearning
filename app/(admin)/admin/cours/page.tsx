@@ -1,5 +1,5 @@
 import { CoursesManagement } from "@/components/admin/courses/courses-management";
 
-export default async function CoursesPage() {
+export default function CoursesPage() {
   return <CoursesManagement />;
 }

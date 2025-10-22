@@ -1,6 +1,21 @@
-CREATE TYPE "public"."course_status" AS ENUM('draft', 'validated');--> statement-breakpoint
-CREATE TYPE "public"."quiz_type" AS ENUM('auto', 'manual');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('STUDENT', 'TRAINER', 'SUB_ADMIN', 'ADMIN');--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."course_status" AS ENUM('draft', 'validated');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."quiz_type" AS ENUM('auto', 'manual');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."role" AS ENUM('STUDENT', 'TRAINER', 'SUB_ADMIN', 'ADMIN');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
 CREATE TABLE "chapter_progress" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"student_id" integer,

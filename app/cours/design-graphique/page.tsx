@@ -51,7 +51,7 @@ export default function DesignGraphiquePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader />
+      <HomeHeader user={null} />
 
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-purple-950/30 dark:via-gray-900 dark:to-purple-950/30">
