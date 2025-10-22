@@ -168,3 +168,87 @@ export async function createEnrollment(data: {
   return { success: true, data: mappedEnrollment };
 }
 
+
+/**
+ * Get student enrolled courses with progress statistics
+ * Uses query composition to build complex query from reusable fragments
+ * 
+ * @param studentId - The student ID
+ * @returns Result with enrolled courses and progress data
+ * 
+ * @performance
+ * - Complexity: O(n) where n = number of enrollments
+ * - Uses joins to avoid N+1 queries
+ * - Aggregates chapter progress at database level
+ * - Recommended: Cache results for frequently accessed students (5-minute TTL)
+ * 
+ * @example
+ * ```typescript
+ * const result = await getStudentEnrolledCoursesWithProgress(studentId);
+ * if (result.success) {
+ *   result.data.forEach(course => {
+ *     console.log(`${course.courseTitle}: ${course.completionPercentage}% complete`);
+ *   });
+ * }
+ * ```
+ */
+export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
+  const validId = validateId(studentId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { domains, chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { and } = await import("drizzle-orm");
+    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+
+    const result = await db
+      .select({
+        enrollmentId: enrollments.id,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseDescription: courses.description,
+        courseThumbnailUrl: courses.thumbnailUrl,
+        enrolledAt: enrollments.createdAt,
+        completedAt: enrollments.completedAt,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        teacherId: users.id,
+        teacherName: users.name,
+        totalChapters: chapterCountSql(),
+        completedChapters: completedChapterCountSql(),
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(
+        chapterProgress,
+        and(
+          eq(chapterProgress.chapterId, chapters.id),
+          eq(chapterProgress.studentId, validId.data)
+        )
+      )
+      .where(eq(enrollments.studentId, validId.data))
+      .groupBy(
+        enrollments.id,
+        courses.id,
+        courses.title,
+        courses.description,
+        courses.thumbnailUrl,
+        enrollments.createdAt,
+        enrollments.completedAt,
+        domains.id,
+        domains.name,
+        domains.color,
+        users.id,
+        users.name
+      )
+      .orderBy(desc(enrollments.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error, 'getStudentEnrolledCoursesWithProgress');
+  }
+}

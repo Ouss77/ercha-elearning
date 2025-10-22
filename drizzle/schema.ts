@@ -144,12 +144,9 @@ export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  teacherId: integer("teacher_id")
-    .references(() => users.id)
-    .notNull(),
+  teacherId: integer("teacher_id").references(() => users.id),
   domainId: integer("domain_id").references(() => domains.id),
   isActive: boolean("is_active").default(true),
-  maxStudents: integer("max_students"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -158,10 +155,22 @@ export const classes = pgTable("classes", {
 export const classEnrollments = pgTable("class_enrollments", {
   id: serial("id").primaryKey(),
   classId: integer("class_id")
-    .references(() => classes.id)
+    .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
   studentId: integer("student_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+});
+
+// Class Courses table (courses assigned to a class)
+export const classCourses = pgTable("class_courses", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id")
+    .references(() => classes.id, { onDelete: "cascade" })
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
 });

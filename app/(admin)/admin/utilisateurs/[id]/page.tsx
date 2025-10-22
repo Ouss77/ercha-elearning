@@ -65,6 +65,9 @@ export default function UserFormPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourses, setSelectedCourses] = useState<number[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
+  const [classes, setClasses] = useState<any[]>([])
+  const [selectedClassId, setSelectedClassId] = useState<string>("")
+  const [loadingClasses, setLoadingClasses] = useState(true)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -73,6 +76,7 @@ export default function UserFormPage() {
       fetchUser()
     }
     fetchCourses()
+    fetchClasses()
   }, [isEditMode])
 
   // Fetch enrollments after user data is loaded
@@ -95,6 +99,22 @@ export default function UserFormPage() {
       console.error("Error fetching courses:", error)
     } finally {
       setLoadingCourses(false)
+    }
+  }
+
+  const fetchClasses = async () => {
+    try {
+      setLoadingClasses(true)
+      const response = await fetch("/api/admin/classes")
+      const data = await response.json()
+
+      if (response.ok) {
+        setClasses(data.classes || [])
+      }
+    } catch (error) {
+      console.error("Error fetching classes:", error)
+    } finally {
+      setLoadingClasses(false)
     }
   }
 
@@ -188,6 +208,15 @@ export default function UserFormPage() {
 
       if (response.ok) {
         const createdUserId = isEditMode ? userId : data.user?.id
+        
+        // Handle class enrollment for students (only on creation)
+        if (!isEditMode && formData.role === "STUDENT" && createdUserId && selectedClassId) {
+          await fetch(`/api/admin/classes/${selectedClassId}/students`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ studentId: createdUserId }),
+          })
+        }
         
         // Handle course enrollments for students
         if (formData.role === "STUDENT" && createdUserId) {
@@ -457,6 +486,38 @@ export default function UserFormPage() {
                 </div>
               </div>
             </div>
+
+            {/* Class Selection (Students Only - Creation Mode) */}
+            {!isEditMode && formData.role === "STUDENT" && (
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-medium">Classe</h3>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="classId">Assigner à une classe (optionnel)</Label>
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={setSelectedClassId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une classe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Aucune classe</SelectItem>
+                      {classes.map((classItem) => (
+                        <SelectItem key={classItem.id} value={classItem.id.toString()}>
+                          {classItem.name} ({classItem.studentCount} étudiants)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    L'étudiant sera automatiquement inscrit aux cours de la classe
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Course Enrollment (Students Only) */}
             {formData.role === "STUDENT" && (

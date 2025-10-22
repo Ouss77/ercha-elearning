@@ -8,7 +8,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./index";
 import { handleDbError } from "./error-handler";
-import { finalProjects, projectSubmissions, courses } from "@/drizzle/schema";
+import { finalProjects, projectSubmissions, courses, users, domains } from "@/drizzle/schema";
 import { createBaseQueries } from "./base-queries";
 import { validateId, validateRequired, validateForeignKey, validateString } from "./validation";
 import { DbResult } from "./types";
@@ -345,3 +345,78 @@ export async function deleteProjectSubmission(id: number): Promise<DbResult<type
   return projectSubmissionBaseQueries.delete(id);
 }
 
+
+/**
+ * Get all project submissions for a teacher's courses
+ * Includes student, project, course, and domain information
+ * 
+ * @param teacherId - The teacher ID
+ * @returns Result with enriched project submissions
+ * 
+ * @performance
+ * - Uses joins to avoid N+1 queries
+ * - Ordered by submission date (most recent first)
+ * 
+ * @example
+ * ```typescript
+ * const result = await getTeacherProjectSubmissions(teacherId);
+ * if (result.success) {
+ *   result.data.forEach(submission => {
+ *     console.log(`${submission.studentName}: ${submission.projectTitle}`);
+ *   });
+ * }
+ * ```
+ */
+export async function getTeacherProjectSubmissions(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const result = await db
+      .select({
+        submissionId: projectSubmissions.id,
+        submissionUrl: projectSubmissions.submissionUrl,
+        description: projectSubmissions.description,
+        status: projectSubmissions.status,
+        feedback: projectSubmissions.feedback,
+        grade: projectSubmissions.grade,
+        submittedAt: projectSubmissions.submittedAt,
+        reviewedAt: projectSubmissions.reviewedAt,
+
+        // Student info
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatar: users.avatarUrl,
+
+        // Project info
+        projectId: finalProjects.id,
+        projectTitle: finalProjects.title,
+        projectDescription: finalProjects.description,
+
+        // Course info
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseThumbnail: courses.thumbnailUrl,
+
+        // Domain info
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(projectSubmissions.studentId, users.id))
+      .innerJoin(
+        finalProjects,
+        eq(projectSubmissions.finalProjectId, finalProjects.id)
+      )
+      .innerJoin(courses, eq(finalProjects.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(courses.teacherId, validId.data))
+      .orderBy(desc(projectSubmissions.submittedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherProjectSubmissions');
+  }
+}

@@ -364,3 +364,219 @@ export async function validateTeacherAssignment(teacherId: number): Promise<DbRe
   }
 }
 
+
+/**
+ * Get teacher's students statistics
+ * Aggregates student progress across all teacher's courses
+ * 
+ * @param teacherId - The teacher ID
+ * @returns Result with student statistics
+ */
+export async function getTeacherStudentsStats(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { sql, desc, and } = await import("drizzle-orm");
+    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+
+    // Get all unique students enrolled in teacher's courses
+    const studentsResult = await db
+      .select({
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        studentAvatarUrl: users.avatarUrl,
+        totalCourses: sql<number>`cast(count(distinct ${enrollments.courseId}) as int)`,
+        totalProgress: completedChapterCountSql(),
+        totalChapters: chapterCountSql(),
+        completedCourses: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.id} end) as int)`,
+      })
+      .from(enrollments)
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(
+        chapterProgress,
+        and(
+          eq(chapterProgress.chapterId, chapters.id),
+          eq(chapterProgress.studentId, enrollments.studentId)
+        )
+      )
+      .where(eq(courses.teacherId, validId.data))
+      .groupBy(users.id, users.name, users.email, users.avatarUrl)
+      .orderBy(desc(completedChapterCountSql()));
+
+    return { success: true, data: studentsResult };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherStudentsStats');
+  }
+}
+
+/**
+ * Get all students enrolled in teacher's courses
+ * Optimized to reduce N+1 queries by using parallel queries and efficient joins
+ * 
+ * @param teacherId - The teacher ID
+ * @returns Result with enriched student data including progress and quiz stats
+ */
+export async function getTeacherStudents(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { chapters, chapterProgress, domains, quizzes, quizAttempts } = await import("@/drizzle/schema");
+    const { sql, desc, and } = await import("drizzle-orm");
+
+    // Execute all queries in parallel to avoid sequential N+1 queries
+    const [studentsResult, courseChapters, courseQuizzes, quizStats] = await Promise.all([
+      // Main student query with enrollment and progress data
+      db
+        .select({
+          studentId: users.id,
+          studentName: users.name,
+          studentEmail: users.email,
+          studentAvatarUrl: users.avatarUrl,
+          studentPhone: users.phone,
+          studentCity: users.city,
+          courseId: courses.id,
+          courseTitle: courses.title,
+          courseThumbnailUrl: courses.thumbnailUrl,
+          domainId: domains.id,
+          domainName: domains.name,
+          domainColor: domains.color,
+          enrolledAt: enrollments.createdAt,
+          completedAt: enrollments.completedAt,
+          lastActivityDate: sql<Date | null>`MAX(${chapterProgress.completedAt})`,
+          chaptersCompleted: sql<number>`cast(count(distinct ${chapterProgress.chapterId}) as int)`,
+        })
+        .from(enrollments)
+        .innerJoin(users, eq(enrollments.studentId, users.id))
+        .innerJoin(courses, eq(enrollments.courseId, courses.id))
+        .leftJoin(domains, eq(courses.domainId, domains.id))
+        .leftJoin(
+          chapterProgress,
+          and(
+            eq(chapterProgress.studentId, enrollments.studentId),
+            sql`${chapterProgress.chapterId} IN (SELECT id FROM ${chapters} WHERE course_id = ${courses.id})`
+          )
+        )
+        .where(eq(courses.teacherId, validId.data))
+        .groupBy(
+          users.id,
+          users.name,
+          users.email,
+          users.avatarUrl,
+          users.phone,
+          users.city,
+          courses.id,
+          courses.title,
+          courses.thumbnailUrl,
+          domains.id,
+          domains.name,
+          domains.color,
+          enrollments.createdAt,
+          enrollments.completedAt
+        )
+        .orderBy(desc(enrollments.createdAt)),
+
+      // Get total chapters for each course
+      db
+        .select({
+          courseId: chapters.courseId,
+          totalChapters: sql<number>`cast(count(*) as int)`,
+        })
+        .from(chapters)
+        .groupBy(chapters.courseId),
+
+      // Get total quizzes for each course
+      db
+        .select({
+          courseId: courses.id,
+          totalQuizzes: sql<number>`cast(count(distinct ${quizzes.id}) as int)`,
+        })
+        .from(quizzes)
+        .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+        .innerJoin(courses, eq(chapters.courseId, courses.id))
+        .where(eq(courses.teacherId, validId.data))
+        .groupBy(courses.id),
+
+      // Get quiz statistics for each student
+      db
+        .select({
+          studentId: quizAttempts.studentId,
+          courseId: courses.id,
+          averageScore: sql<number>`cast(avg(${quizAttempts.score}) as int)`,
+          quizzesCompleted: sql<number>`cast(count(distinct ${quizAttempts.quizId}) as int)`,
+        })
+        .from(quizAttempts)
+        .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
+        .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+        .innerJoin(courses, eq(chapters.courseId, courses.id))
+        .where(eq(courses.teacherId, validId.data))
+        .groupBy(quizAttempts.studentId, courses.id),
+    ]);
+
+    // Create lookup maps for efficient data enrichment
+    const chapterMap = new Map(
+      courseChapters.map((c) => [c.courseId, c.totalChapters])
+    );
+
+    const quizTotalMap = new Map(
+      courseQuizzes.map((q) => [q.courseId, q.totalQuizzes])
+    );
+
+    const quizStatsMap = new Map(
+      quizStats.map((q) => [`${q.studentId}-${q.courseId}`, q])
+    );
+
+    // Enrich student data with aggregated statistics
+    const enrichedStudents = studentsResult.map((student) => {
+      const totalChapters = chapterMap.get(student.courseId) || 0;
+      const progress =
+        totalChapters > 0
+          ? Math.round((student.chaptersCompleted / totalChapters) * 100)
+          : 0;
+
+      const quizData = quizStatsMap.get(
+        `${student.studentId}-${student.courseId}`
+      );
+
+      const totalQuizzes = quizTotalMap.get(student.courseId) || 0;
+
+      // Determine status based on activity and progress
+      const daysSinceActivity = student.lastActivityDate
+        ? Math.floor(
+            (Date.now() - new Date(student.lastActivityDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        : 999;
+
+      let status: "active" | "inactive" | "struggling";
+      if (daysSinceActivity > 7) {
+        status = "inactive";
+      } else if (progress < 30 && daysSinceActivity > 3) {
+        status = "struggling";
+      } else {
+        status = "active";
+      }
+
+      return {
+        ...student,
+        totalChapters,
+        progress,
+        averageQuizScore: quizData?.averageScore || 0,
+        quizzesCompleted: quizData?.quizzesCompleted || 0,
+        totalQuizzes,
+        testsCompleted: 0, // TODO: Implement when test entity is added
+        totalTests: 0, // TODO: Implement when test entity is added
+        status,
+      };
+    });
+
+    return { success: true, data: enrichedStudents };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherStudents');
+  }
+}

@@ -313,3 +313,60 @@ export async function getBestQuizAttempt(
   }
 }
 
+
+/**
+ * Get student quiz attempts with course and chapter details
+ * Includes enriched information about the quiz, chapter, course, and domain
+ * 
+ * @param studentId - The student ID
+ * @returns Result with quiz attempts and related information
+ * 
+ * @performance
+ * - Uses joins to avoid N+1 queries
+ * - Ordered by attempt date (most recent first)
+ * 
+ * @example
+ * ```typescript
+ * const result = await getStudentQuizAttemptsWithDetails(studentId);
+ * if (result.success) {
+ *   result.data.forEach(attempt => {
+ *     console.log(`${attempt.quizTitle}: ${attempt.score}/${attempt.maxScore}`);
+ *   });
+ * }
+ * ```
+ */
+export async function getStudentQuizAttemptsWithDetails(studentId: number) {
+  const validId = validateId(studentId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { courses, domains } = await import("@/drizzle/schema");
+
+    const result = await db
+      .select({
+        attemptId: quizAttempts.id,
+        quizId: quizzes.id,
+        quizTitle: quizzes.title,
+        score: quizAttempts.score,
+        maxScore: quizzes.passingScore,
+        passed: quizAttempts.passed,
+        attemptedAt: quizAttempts.attemptedAt,
+        chapterId: chapters.id,
+        chapterTitle: chapters.title,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        domainName: domains.name,
+      })
+      .from(quizAttempts)
+      .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
+      .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
+      .innerJoin(courses, eq(chapters.courseId, courses.id))
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .where(eq(quizAttempts.studentId, validId.data))
+      .orderBy(desc(quizAttempts.attemptedAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error, 'getStudentQuizAttemptsWithDetails');
+  }
+}
