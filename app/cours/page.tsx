@@ -1,6 +1,5 @@
 import { HomeHeader } from "@/components/layout/home-header";
 import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
 import Link from "next/link";
 import {
   Card,
@@ -17,80 +16,63 @@ import {
   TrendingUp,
   ArrowRight,
   BookOpen,
-  Clock,
-  Award,
   Users,
-  GraduationCap,
 } from "lucide-react";
 import Image from "next/image";
-import { getCoursesWithDetails, getDomainsWithCounts } from "@/lib/db/queries";
+import { allStaticCourses } from "@/lib/data/static-courses";
 
 interface PageProps {
   searchParams: { domain?: string };
 }
 
 export default async function CoursesPage({ searchParams }: PageProps) {
-  const user = await getCurrentUser();
   const { domain: domainFilter } = searchParams;
 
-  // Fetch courses and domains from database
-  const coursesResult = await getCoursesWithDetails();
-  const domainsResult = await getDomainsWithCounts();
+  // Use static courses data
+  let filteredCourses = allStaticCourses;
 
-  const dbCourses = coursesResult.success ? coursesResult.data : [];
-  const domains = domainsResult.success ? domainsResult.data : [];
-
-  // Helper function to get domain-specific fallback thumbnail
-  const getDomainThumbnail = (domainName: string | null | undefined) => {
-    const thumbnails: Record<string, string> = {
-      "Développement Web": "/react-course.png",
-      "Design Graphique": "/ux-ui-design-course.png",
-      "Marketing Digital": "/marketing-course-concept.png",
-    };
-    return thumbnails[domainName || ""] || "/placeholder.svg";
-  };
+  // Filter by domain if specified
+  if (domainFilter) {
+    filteredCourses = allStaticCourses.filter(
+      (course) => course.domain.toLowerCase() === domainFilter.toLowerCase()
+    );
+  }
 
   // Helper function to get domain icon
-  const getDomainIcon = (domainName: string | null | undefined) => {
+  const getDomainIcon = (domainName: string) => {
     const icons: Record<string, any> = {
       "Développement Web": Code,
       "Design Graphique": Palette,
       "Marketing Digital": TrendingUp,
     };
-    return icons[domainName || ""] || BookOpen;
+    return icons[domainName] || BookOpen;
   };
 
   // Helper function to get domain color
-  const getDomainColor = (domainName: string | null | undefined) => {
+  const getDomainColor = (domainName: string) => {
     const colors: Record<string, string> = {
       "Développement Web": "blue",
       "Design Graphique": "purple",
       "Marketing Digital": "green",
     };
-    return colors[domainName || ""] || "teal";
+    return colors[domainName] || "teal";
   };
 
-  // Filter courses by domain if specified
-  let filteredCourses = dbCourses;
-  if (domainFilter) {
-    filteredCourses = dbCourses.filter(
-      (course: any) =>
-        course.domain?.name?.toLowerCase() === domainFilter.toLowerCase()
-    );
-  }
-
-  // Transform database courses
-  const courses = filteredCourses.map((course: any) => ({
+  // Transform static courses for display
+  const courses = filteredCourses.map((course) => ({
     id: course.id,
+    slug: course.slug,
     title: course.title,
-    description: course.description || "Description à venir",
-    instructor: course.teacher?.name || "Formateur",
-    domain: course.domain?.name || "Non spécifié",
-    modules: course._count?.chapters || 0,
-    enrollments: course._count?.enrollments || 0,
-    thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
-    icon: getDomainIcon(course.domain?.name),
-    color: getDomainColor(course.domain?.name),
+    description: course.description,
+    instructor: course.instructor,
+    domain: course.domain,
+    modules: course.chapters.length,
+    enrollments: Math.floor(Math.random() * 50) + 10, // Mock data for display
+    thumbnail: course.thumbnail,
+    duration: course.duration,
+    level: course.level,
+    icon: getDomainIcon(course.domain),
+    color: getDomainColor(course.domain),
   }));
 
   const getColorClasses = (color: string) => {
@@ -124,7 +106,7 @@ export default async function CoursesPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
+      <HomeHeader />
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">

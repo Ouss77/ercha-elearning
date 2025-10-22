@@ -4,11 +4,9 @@ import { getCurrentUser } from "@/lib/auth/auth";
 import { AboutContent } from "@/components/landing/about-content";
 
 export default async function AboutPage() {
-  const user = await getCurrentUser();
-
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
+      <HomeHeader />
       <AboutContent />
       <Footer />
     </div>
