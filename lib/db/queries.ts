@@ -110,20 +110,9 @@ export {
   unmarkChapterComplete,
 } from "./progress-queries";
 
-// Quiz queries
-export {
-  getQuizById,
-  getQuizzesByChapter,
-  createQuiz,
-  updateQuiz,
-  deleteQuiz,
-  getQuizAttemptById,
-  getQuizAttemptsByStudent,
-  getAllQuizAttemptsByStudent,
-  createQuizAttempt,
-  getBestQuizAttempt,
-  getStudentQuizAttemptsWithDetails,
-} from "./quiz-queries";
+// Note: Quiz functionality has been moved to content_items system
+// Quizzes are now content items with contentType="quiz"
+// Quiz attempts are tracked in content_item_attempts
 
 // Project queries
 export {

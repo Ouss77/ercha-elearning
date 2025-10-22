@@ -17,7 +17,6 @@ import {
   chapterProgress,
   contentItems,
   classes,
-  quizzes,
   finalProjects
 } from "@/drizzle/schema";
 
@@ -412,8 +411,10 @@ export function courseWithStatsBase() {
         name: users.name,
         email: users.email,
       },
-      enrollmentCount: enrollmentCountSql(),
-      chapterCount: chapterCountSql(),
+      _count: {
+        enrollments: enrollmentCountSql(),
+        chapters: chapterCountSql(),
+      },
     })
     .from(courses)
     .leftJoin(domains, eq(courses.domainId, domains.id))

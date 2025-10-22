@@ -48,7 +48,6 @@ export * from './enrollment-queries';
 export * from './domain-queries';
 export * from './chapter-queries';
 export * from './progress-queries';
-export * from './quiz-queries';
 export * from './project-queries';
 export * from './class-queries';
 export * from './queries';

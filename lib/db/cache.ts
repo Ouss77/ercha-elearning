@@ -160,8 +160,6 @@ export const CacheKeys = {
     `progress:student:${studentId}:chapter:${chapterId}`,
   studentProgressByCourse: (studentId: number, courseId: number) => 
     `progress:student:${studentId}:course:${courseId}`,
-  quiz: (id: number) => `quiz:${id}`,
-  quizzesByChapter: (chapterId: number) => `quizzes:chapter:${chapterId}`,
   teacherDashboard: (teacherId: number) => `dashboard:teacher:${teacherId}`,
   teacherCourseDetails: (courseId: number, teacherId: number) => 
     `course:details:${courseId}:teacher:${teacherId}`,

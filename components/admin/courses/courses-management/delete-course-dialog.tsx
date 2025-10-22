@@ -26,7 +26,7 @@ export function DeleteCourseDialog({ course, isOpen, isDeleting, onClose, onConf
 
   const hasEnrollments = course._count && course._count.enrollments > 0;
   const warning = hasEnrollments
-    ? `Ce cours a ${course._count.enrollments} inscription(s) active(s). Êtes-vous sûr de vouloir le supprimer ?`
+    ? `Ce cours a ${course._count?.enrollments || 0} inscription(s) active(s). Êtes-vous sûr de vouloir le supprimer ?`
     : null;
 
   return (

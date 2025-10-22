@@ -53,7 +53,7 @@ export async function Courses() {
       domain: course.domain?.name || "Non spécifié",
       teacher: course.teacher?.name || "Formateur",
       thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
-      totalChapters: course.chapterCount || 0,
+      totalChapters: course._count?.chapters || 0,
     }));
 
   // Calculate statistics

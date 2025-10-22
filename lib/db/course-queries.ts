@@ -359,11 +359,11 @@ export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, quizzes, quizAttempts } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress } = await import("@/drizzle/schema");
     const { sql } = await import("drizzle-orm");
 
     // Use a single query with UNION ALL to combine all activity types
-    // This is more efficient than 3 separate queries + application-level sorting
+    // Note: Quiz activity removed - now tracked via content_item_attempts
     const allActivity = await db.execute<{
       id: number;
       type: string;
@@ -374,25 +374,6 @@ export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
       score: number | null;
       timestamp: Date;
     }>(sql`
-      (
-        SELECT 
-          ${quizAttempts.id} as id,
-          'quiz_completed' as type,
-          ${users.id} as "studentId",
-          ${users.name} as "studentName",
-          ${courses.title} as "courseTitle",
-          ${chapters.title} as "chapterTitle",
-          ${quizAttempts.score} as score,
-          ${quizAttempts.attemptedAt} as timestamp
-        FROM ${quizAttempts}
-        INNER JOIN ${users} ON ${quizAttempts.studentId} = ${users.id}
-        INNER JOIN ${quizzes} ON ${quizAttempts.quizId} = ${quizzes.id}
-        INNER JOIN ${chapters} ON ${quizzes.chapterId} = ${chapters.id}
-        INNER JOIN ${courses} ON ${chapters.courseId} = ${courses.id}
-        WHERE ${courses.teacherId} = ${validId.data}
-          AND ${quizAttempts.attemptedAt} IS NOT NULL
-      )
-      UNION ALL
       (
         SELECT 
           ${chapterProgress.id} as id,

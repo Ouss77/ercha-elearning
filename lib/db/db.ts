@@ -9,7 +9,8 @@ export {
 
 // Legacy functions that need to be migrated or removed
 // These are kept for backward compatibility but should be updated to use Drizzle
-import { db, handleDbError } from "./index"
+import { db } from "./index"
+import { handleDbError } from '@/lib/db/error-handler';
 import { users } from "@/drizzle/schema"
 import { eq, and, ne } from "drizzle-orm"
 

@@ -426,11 +426,11 @@ export async function getTeacherStudents(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, domains, quizzes, quizAttempts } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, domains } = await import("@/drizzle/schema");
     const { sql, desc, and } = await import("drizzle-orm");
 
     // Execute all queries in parallel to avoid sequential N+1 queries
-    const [studentsResult, courseChapters, courseQuizzes, quizStats] = await Promise.all([
+    const [studentsResult, courseChapters] = await Promise.all([
       // Main student query with enrollment and progress data
       db
         .select({
@@ -489,46 +489,11 @@ export async function getTeacherStudents(teacherId: number) {
         })
         .from(chapters)
         .groupBy(chapters.courseId),
-
-      // Get total quizzes for each course
-      db
-        .select({
-          courseId: courses.id,
-          totalQuizzes: sql<number>`cast(count(distinct ${quizzes.id}) as int)`,
-        })
-        .from(quizzes)
-        .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
-        .innerJoin(courses, eq(chapters.courseId, courses.id))
-        .where(eq(courses.teacherId, validId.data))
-        .groupBy(courses.id),
-
-      // Get quiz statistics for each student
-      db
-        .select({
-          studentId: quizAttempts.studentId,
-          courseId: courses.id,
-          averageScore: sql<number>`cast(avg(${quizAttempts.score}) as int)`,
-          quizzesCompleted: sql<number>`cast(count(distinct ${quizAttempts.quizId}) as int)`,
-        })
-        .from(quizAttempts)
-        .innerJoin(quizzes, eq(quizAttempts.quizId, quizzes.id))
-        .innerJoin(chapters, eq(quizzes.chapterId, chapters.id))
-        .innerJoin(courses, eq(chapters.courseId, courses.id))
-        .where(eq(courses.teacherId, validId.data))
-        .groupBy(quizAttempts.studentId, courses.id),
     ]);
 
     // Create lookup maps for efficient data enrichment
     const chapterMap = new Map(
       courseChapters.map((c) => [c.courseId, c.totalChapters])
-    );
-
-    const quizTotalMap = new Map(
-      courseQuizzes.map((q) => [q.courseId, q.totalQuizzes])
-    );
-
-    const quizStatsMap = new Map(
-      quizStats.map((q) => [`${q.studentId}-${q.courseId}`, q])
     );
 
     // Enrich student data with aggregated statistics
@@ -538,12 +503,6 @@ export async function getTeacherStudents(teacherId: number) {
         totalChapters > 0
           ? Math.round((student.chaptersCompleted / totalChapters) * 100)
           : 0;
-
-      const quizData = quizStatsMap.get(
-        `${student.studentId}-${student.courseId}`
-      );
-
-      const totalQuizzes = quizTotalMap.get(student.courseId) || 0;
 
       // Determine status based on activity and progress
       const daysSinceActivity = student.lastActivityDate
@@ -566,11 +525,6 @@ export async function getTeacherStudents(teacherId: number) {
         ...student,
         totalChapters,
         progress,
-        averageQuizScore: quizData?.averageScore || 0,
-        quizzesCompleted: quizData?.quizzesCompleted || 0,
-        totalQuizzes,
-        testsCompleted: 0, // TODO: Implement when test entity is added
-        totalTests: 0, // TODO: Implement when test entity is added
         status,
       };
     });
