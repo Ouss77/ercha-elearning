@@ -1,26 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
-import { createClass, getTeacherClasses } from "@/lib/db/queries";
+import { type NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth/auth";
+import { createClass, getAllClasses } from "@/lib/db/queries";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
 
-    if (!session || session.user.role !== "TRAINER") {
+    if (!user || !["ADMIN", "SUB_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const result = await getTeacherClasses(Number(session.user.id));
+    const result = await getAllClasses();
 
-    if ("error" in result) {
+    if (!result.success) {
       return NextResponse.json(
         { error: result.error || "Failed to fetch classes" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(result.data);
+    return NextResponse.json({ classes: result.data });
   } catch (error) {
     console.error("Error fetching classes:", error);
     return NextResponse.json(
@@ -32,14 +31,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
 
-    if (!session || session.user.role !== "TRAINER") {
+    if (!user || !["ADMIN", "SUB_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { name, description, domainId } = body;
+    const { name, description, teacherId, domainId } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -51,18 +50,21 @@ export async function POST(request: NextRequest) {
     const result = await createClass({
       name: name.trim(),
       description: description?.trim() || undefined,
-      teacherId: Number(session.user.id),
-      domainId: domainId || undefined,
+      teacherId: teacherId ? Number(teacherId) : undefined,
+      domainId: domainId ? Number(domainId) : undefined,
     });
 
-    if ("error" in result) {
+    if (!result.success) {
       return NextResponse.json(
         { error: result.error || "Failed to create class" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(result.data, { status: 201 });
+    return NextResponse.json(
+      { message: "Class created successfully", class: result.data },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creating class:", error);
     return NextResponse.json(

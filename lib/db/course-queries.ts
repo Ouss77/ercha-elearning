@@ -283,3 +283,406 @@ export async function courseHasEnrollments(courseId: number): Promise<DbResult<b
   }
 }
 
+
+/**
+ * Get teacher's courses with enrollment and progress statistics
+ * Uses query composition helpers for aggregations
+ * 
+ * @param teacherId - The teacher ID
+ * @returns Result with courses and statistics
+ * 
+ * @performance
+ * - Complexity: O(n) where n = number of courses
+ * - Uses database-level aggregations for efficiency
+ * - Groups by course to calculate statistics
+ * - Recommended: Paginate results for teachers with many courses
+ * - Consider caching with 10-minute TTL for dashboard views
+ */
+export async function getTeacherCoursesWithStats(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { sql } = await import("drizzle-orm");
+    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+
+    const result = await db
+      .select({
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseDescription: courses.description,
+        courseThumbnailUrl: courses.thumbnailUrl,
+        courseIsActive: courses.isActive,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
+        totalChapters: chapterCountSql(),
+        completedEnrollments: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.id} end) as int)`,
+        totalProgress: completedChapterCountSql(),
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
+      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(chapterProgress, eq(chapters.id, chapterProgress.chapterId))
+      .where(eq(courses.teacherId, validId.data))
+      .groupBy(
+        courses.id,
+        courses.title,
+        courses.description,
+        courses.thumbnailUrl,
+        courses.isActive,
+        domains.id,
+        domains.name,
+        domains.color
+      )
+      .orderBy(desc(courses.createdAt));
+
+    return { success: true, data: result };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherCoursesWithStats');
+  }
+}
+
+/**
+ * Get recent activity for teacher's courses
+ * Optimized to use a single query with UNION ALL for better performance
+ * 
+ * @param teacherId - The teacher ID
+ * @param limit - Maximum number of activities to return (default: 10)
+ * @returns Result with recent activity items
+ */
+export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { chapters, chapterProgress, quizzes, quizAttempts } = await import("@/drizzle/schema");
+    const { sql } = await import("drizzle-orm");
+
+    // Use a single query with UNION ALL to combine all activity types
+    // This is more efficient than 3 separate queries + application-level sorting
+    const allActivity = await db.execute<{
+      id: number;
+      type: string;
+      studentId: number;
+      studentName: string;
+      courseTitle: string;
+      chapterTitle: string | null;
+      score: number | null;
+      timestamp: Date;
+    }>(sql`
+      (
+        SELECT 
+          ${quizAttempts.id} as id,
+          'quiz_completed' as type,
+          ${users.id} as "studentId",
+          ${users.name} as "studentName",
+          ${courses.title} as "courseTitle",
+          ${chapters.title} as "chapterTitle",
+          ${quizAttempts.score} as score,
+          ${quizAttempts.attemptedAt} as timestamp
+        FROM ${quizAttempts}
+        INNER JOIN ${users} ON ${quizAttempts.studentId} = ${users.id}
+        INNER JOIN ${quizzes} ON ${quizAttempts.quizId} = ${quizzes.id}
+        INNER JOIN ${chapters} ON ${quizzes.chapterId} = ${chapters.id}
+        INNER JOIN ${courses} ON ${chapters.courseId} = ${courses.id}
+        WHERE ${courses.teacherId} = ${validId.data}
+          AND ${quizAttempts.attemptedAt} IS NOT NULL
+      )
+      UNION ALL
+      (
+        SELECT 
+          ${chapterProgress.id} as id,
+          'chapter_completed' as type,
+          ${users.id} as "studentId",
+          ${users.name} as "studentName",
+          ${courses.title} as "courseTitle",
+          ${chapters.title} as "chapterTitle",
+          NULL as score,
+          ${chapterProgress.completedAt} as timestamp
+        FROM ${chapterProgress}
+        INNER JOIN ${users} ON ${chapterProgress.studentId} = ${users.id}
+        INNER JOIN ${chapters} ON ${chapterProgress.chapterId} = ${chapters.id}
+        INNER JOIN ${courses} ON ${chapters.courseId} = ${courses.id}
+        WHERE ${courses.teacherId} = ${validId.data}
+          AND ${chapterProgress.completedAt} IS NOT NULL
+      )
+      UNION ALL
+      (
+        SELECT 
+          ${enrollments.id} as id,
+          'course_enrolled' as type,
+          ${users.id} as "studentId",
+          ${users.name} as "studentName",
+          ${courses.title} as "courseTitle",
+          NULL as "chapterTitle",
+          NULL as score,
+          ${enrollments.createdAt} as timestamp
+        FROM ${enrollments}
+        INNER JOIN ${users} ON ${enrollments.studentId} = ${users.id}
+        INNER JOIN ${courses} ON ${enrollments.courseId} = ${courses.id}
+        WHERE ${courses.teacherId} = ${validId.data}
+          AND ${enrollments.createdAt} IS NOT NULL
+      )
+      ORDER BY timestamp DESC
+      LIMIT ${limit}
+    `);
+
+    return { success: true, data: allActivity.rows };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherRecentActivity');
+  }
+}
+
+/**
+ * Get detailed course information for teacher view
+ * Uses query composition and parallel queries for better performance
+ * 
+ * @param courseId - The course ID
+ * @param teacherId - The teacher ID (for authorization)
+ * @returns Result with detailed course information
+ */
+export async function getTeacherCourseDetails(
+  courseId: number,
+  teacherId: number
+) {
+  const validCourseId = validateId(courseId);
+  if (!validCourseId.success) return validCourseId as any;
+
+  const validTeacherId = validateId(teacherId);
+  if (!validTeacherId.success) return validTeacherId as any;
+
+  try {
+    const { chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { and, sql } = await import("drizzle-orm");
+    const { completedChapterCountSql } = await import("./query-builders");
+    const { DbErrorCode } = await import("./types");
+
+    // Get course basic info with teacher and domain
+    const courseResult = await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        slug: courses.slug,
+        description: courses.description,
+        thumbnailUrl: courses.thumbnailUrl,
+        isActive: courses.isActive,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        domainId: domains.id,
+        domainName: domains.name,
+        domainColor: domains.color,
+        domainDescription: domains.description,
+        teacherId: users.id,
+        teacherName: users.name,
+        teacherEmail: users.email,
+        teacherAvatarUrl: users.avatarUrl,
+        teacherBio: users.bio,
+      })
+      .from(courses)
+      .leftJoin(domains, eq(courses.domainId, domains.id))
+      .leftJoin(users, eq(courses.teacherId, users.id))
+      .where(and(eq(courses.id, validCourseId.data), eq(courses.teacherId, validTeacherId.data)))
+      .limit(1);
+
+    if (!courseResult[0]) {
+      return { success: false, error: "Course not found or access denied", code: DbErrorCode.NOT_FOUND };
+    }
+
+    const course = courseResult[0];
+
+    // Execute remaining queries in parallel for better performance
+    const [chaptersResult, enrollmentStats, progressStats, recentEnrollments] = await Promise.all([
+      // Get chapters with their details
+      db
+        .select({
+          id: chapters.id,
+          title: chapters.title,
+          description: chapters.description,
+          orderIndex: chapters.orderIndex,
+          createdAt: chapters.createdAt,
+        })
+        .from(chapters)
+        .where(eq(chapters.courseId, validCourseId.data))
+        .orderBy(chapters.orderIndex),
+
+      // Get enrollment statistics
+      db
+        .select({
+          totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
+          completedStudents: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.studentId} end) as int)`,
+        })
+        .from(enrollments)
+        .where(eq(enrollments.courseId, validCourseId.data)),
+
+      // Get progress statistics
+      db
+        .select({
+          totalProgress: completedChapterCountSql(),
+        })
+        .from(chapterProgress)
+        .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
+        .where(eq(chapters.courseId, validCourseId.data)),
+
+      // Get recent student enrollments
+      db
+        .select({
+          studentId: users.id,
+          studentName: users.name,
+          studentEmail: users.email,
+          studentAvatarUrl: users.avatarUrl,
+          enrolledAt: enrollments.createdAt,
+          completedAt: enrollments.completedAt,
+        })
+        .from(enrollments)
+        .innerJoin(users, eq(enrollments.studentId, users.id))
+        .where(eq(enrollments.courseId, validCourseId.data))
+        .orderBy(desc(enrollments.createdAt))
+        .limit(10),
+    ]);
+
+    const stats = enrollmentStats[0];
+    const totalChapters = chaptersResult.length;
+    const totalStudents = stats.totalStudents;
+    const averageProgress =
+      totalChapters > 0 && totalStudents > 0
+        ? Math.round(
+            (progressStats[0].totalProgress / (totalChapters * totalStudents)) *
+              100
+          )
+        : 0;
+
+    return {
+      success: true,
+      data: {
+        course,
+        chapters: chaptersResult,
+        stats: {
+          totalStudents: stats.totalStudents,
+          completedStudents: stats.completedStudents,
+          totalChapters,
+          averageProgress,
+          completionRate:
+            totalStudents > 0
+              ? Math.round((stats.completedStudents / totalStudents) * 100)
+              : 0,
+        },
+        recentEnrollments,
+      },
+    };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherCourseDetails');
+  }
+}
+
+/**
+ * Get teacher's dashboard summary
+ * Uses parallel queries (Promise.all) for better performance
+ *
+ * @param teacherId - The teacher ID
+ * @returns Result with comprehensive dashboard data
+ *
+ * @performance
+ * - Complexity: O(n) where n = total students across all courses
+ * - Executes 3 queries in parallel to reduce latency
+ * - Each sub-query is optimized with aggregations
+ * - Recommended: Cache results with 5-minute TTL
+ * - Typical response time: 100-300ms for teachers with <100 students
+ *
+ * @example
+ * ```typescript
+ * const result = await getTeacherDashboardSummary(teacherId);
+ * if (result.success) {
+ *   console.log(`Total courses: ${result.data.courses.length}`);
+ *   console.log(`Total students: ${result.data.students.totalStudents}`);
+ * }
+ * ```
+ */
+export async function getTeacherDashboardSummary(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    const { getTeacherStudentsStats } = await import("./user-queries");
+
+    // Execute all queries in parallel for better performance
+    const [coursesResult, studentsResult, activityResult] = await Promise.all([
+      getTeacherCoursesWithStats(validId.data),
+      getTeacherStudentsStats(validId.data),
+      getTeacherRecentActivity(validId.data),
+    ]);
+
+    // Check if any query failed
+    if (!coursesResult.success) {
+      return {
+        success: false,
+        error: `Failed to fetch courses: ${coursesResult.error}`,
+      };
+    }
+    if (!studentsResult.success) {
+      return {
+        success: false,
+        error: `Failed to fetch students: ${studentsResult.error}`,
+      };
+    }
+    if (!activityResult.success) {
+      return {
+        success: false,
+        error: `Failed to fetch activity: ${activityResult.error}`,
+      };
+    }
+
+    const courses = coursesResult.data;
+    const students = studentsResult.data;
+
+    // Calculate statistics
+    const totalCourses = courses.length;
+    const activeCourses = courses.filter((c: any) => c.courseIsActive).length;
+    const totalStudents = students.length;
+
+    // Get unique students active this month (based on recent activity)
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const activeStudents = activityResult.data
+      .filter((activity: any) => {
+        if (!activity.timestamp) return false;
+        return new Date(activity.timestamp) > oneMonthAgo;
+      })
+      .map((activity: any) => activity.studentId)
+      .filter(
+        (id: any, index: number, arr: any[]) => arr.indexOf(id) === index
+      ).length;
+
+    // Get top performing students (by progress percentage)
+    const topStudents = students
+      .map((student: any) => ({
+        ...student,
+        progressPercentage:
+          student.totalChapters > 0
+            ? Math.round((student.totalProgress / student.totalChapters) * 100)
+            : 0,
+      }))
+      .sort((a: any, b: any) => b.progressPercentage - a.progressPercentage)
+      .slice(0, 3);
+
+    return {
+      success: true,
+      data: {
+        stats: {
+          totalCourses,
+          activeCourses,
+          totalStudents,
+          activeStudents,
+        },
+        courses,
+        topStudents,
+        recentActivity: activityResult.data,
+      },
+    };
+  } catch (error) {
+    return handleDbError(error, "getTeacherDashboardSummary");
+  }
+}

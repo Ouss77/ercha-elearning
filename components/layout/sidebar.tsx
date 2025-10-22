@@ -33,6 +33,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   ADMIN: [
     { title: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
     { title: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
+    { title: "Classes", href: "/admin/classes", icon: UserCog },
     { title: "Cours", href: "/admin/cours", icon: BookOpen },
     { title: "Domaines", href: "/admin/domaines", icon: Activity },
     { title: "Analytique", href: "/admin/analytics", icon: BarChart3 },
@@ -40,10 +41,11 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { title: "Paramètres", href: "/admin/settings", icon: Settings },
   ],
   SUB_ADMIN: [
-    { title: "Dashboard", href: "/sous-admin", icon: LayoutDashboard },
-    { title: "Enrollments", href: "/sous-admin/enrollments", icon: UserCog },
-    { title: "Students", href: "/sous-admin/students", icon: Users },
-    { title: "Analytics", href: "/sous-admin/analytics", icon: BarChart3 },
+    { title: "Tableau de bord", href: "/sous-admin", icon: LayoutDashboard },
+    { title: "Classes", href: "/admin/classes", icon: UserCog },
+    { title: "Inscriptions", href: "/sous-admin/enrollments", icon: ClipboardList },
+    { title: "Étudiants", href: "/sous-admin/students", icon: Users },
+    { title: "Analytique", href: "/sous-admin/analytics", icon: BarChart3 },
     { title: "Notes", href: "/sous-admin/notes", icon: FileText },
   ],
   TRAINER: [
