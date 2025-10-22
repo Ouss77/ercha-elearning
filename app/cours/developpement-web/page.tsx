@@ -54,7 +54,7 @@ export default function DeveloppementWebPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader />
+      <HomeHeader user={null} />
 
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 dark:from-blue-950/30 dark:via-gray-900 dark:to-blue-950/30">

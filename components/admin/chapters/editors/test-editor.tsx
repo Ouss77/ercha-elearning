@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, AlertCircle } from "lucide-react"
@@ -61,25 +60,9 @@ export function TestEditor({ value, onChange, disabled = false }: TestEditorProp
       if (!q.question.trim()) {
         newErrors.push(`Question ${index + 1}: Le texte de la question est requis`)
       }
-      if (q.options.length < 2) {
-        newErrors.push(`Question ${index + 1}: Au moins 2 options sont requises`)
-      }
-      if (q.options.length > 6) {
-        newErrors.push(`Question ${index + 1}: Maximum 6 options autorisées`)
-      }
-      if (q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
-        newErrors.push(`Question ${index + 1}: Réponse correcte invalide`)
-      }
       if (!q.points || q.points <= 0) {
         newErrors.push(`Question ${index + 1}: Les points sont requis (> 0)`)
       }
-      q.options.forEach((opt, optIndex) => {
-        if (!opt.trim()) {
-          newErrors.push(
-            `Question ${index + 1}, Option ${optIndex + 1}: Le texte est requis`
-          )
-        }
-      })
     })
 
     setErrors(newErrors)
@@ -109,11 +92,10 @@ export function TestEditor({ value, onChange, disabled = false }: TestEditorProp
     const newQuestion: TestQuestion = {
       id: `q-${Date.now()}`,
       question: "",
-      options: ["", ""],
-      correctAnswer: 0,
-      explanation: "",
       points: 1,
       difficulty: "medium",
+      explanation: "",
+      expectedAnswer: "",
     }
     const newQuestions = [...questions, newQuestion]
     setQuestions(newQuestions)
@@ -133,51 +115,7 @@ export function TestEditor({ value, onChange, disabled = false }: TestEditorProp
     updateTestContent(newQuestions, passingScore, timeLimit, attemptsAllowed)
   }
 
-  const addOption = (questionIndex: number) => {
-    const question = questions[questionIndex]
-    if (question.options.length >= 6) return
 
-    const newQuestions = [...questions]
-    newQuestions[questionIndex] = {
-      ...question,
-      options: [...question.options, ""],
-    }
-    setQuestions(newQuestions)
-    updateTestContent(newQuestions, passingScore, timeLimit, attemptsAllowed)
-  }
-
-  const removeOption = (questionIndex: number, optionIndex: number) => {
-    const question = questions[questionIndex]
-    if (question.options.length <= 2) return
-
-    const newOptions = question.options.filter((_, i) => i !== optionIndex)
-    const newCorrectAnswer =
-      question.correctAnswer === optionIndex
-        ? 0
-        : question.correctAnswer > optionIndex
-        ? question.correctAnswer - 1
-        : question.correctAnswer
-
-    const newQuestions = [...questions]
-    newQuestions[questionIndex] = {
-      ...question,
-      options: newOptions,
-      correctAnswer: newCorrectAnswer,
-    }
-    setQuestions(newQuestions)
-    updateTestContent(newQuestions, passingScore, timeLimit, attemptsAllowed)
-  }
-
-  const updateOption = (
-    questionIndex: number,
-    optionIndex: number,
-    value: string
-  ) => {
-    const newQuestions = [...questions]
-    newQuestions[questionIndex].options[optionIndex] = value
-    setQuestions(newQuestions)
-    updateTestContent(newQuestions, passingScore, timeLimit, attemptsAllowed)
-  }
 
   useEffect(() => {
     if (questions.length > 0 || passingScore || timeLimit || attemptsAllowed) {
@@ -343,57 +281,22 @@ export function TestEditor({ value, onChange, disabled = false }: TestEditorProp
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Options de réponse *</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addOption(qIndex)}
-                  disabled={disabled || question.options.length >= 6}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Ajouter une option
-                </Button>
-              </div>
-
-              <RadioGroup
-                value={question.correctAnswer.toString()}
-                onValueChange={(value) =>
-                  updateQuestion(qIndex, { correctAnswer: parseInt(value, 10) })
+            <div className="space-y-2">
+              <Label htmlFor={`expected-answer-${qIndex}`}>
+                Réponse attendue (optionnel)
+              </Label>
+              <Textarea
+                id={`expected-answer-${qIndex}`}
+                value={question.expectedAnswer || ""}
+                onChange={(e) =>
+                  updateQuestion(qIndex, { expectedAnswer: e.target.value })
                 }
                 disabled={disabled}
-              >
-                {question.options.map((option, oIndex) => (
-                  <div key={oIndex} className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value={oIndex.toString()}
-                      id={`q${qIndex}-opt${oIndex}`}
-                    />
-                    <Input
-                      value={option}
-                      onChange={(e) =>
-                        updateOption(qIndex, oIndex, e.target.value)
-                      }
-                      disabled={disabled}
-                      placeholder={`Option ${oIndex + 1}`}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeOption(qIndex, oIndex)}
-                      disabled={disabled || question.options.length <= 2}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </RadioGroup>
+                placeholder="Décrivez la réponse attendue ou les critères d'évaluation..."
+                rows={3}
+              />
               <p className="text-xs text-muted-foreground">
-                Sélectionnez la bonne réponse en cliquant sur le bouton radio
+                Cette information aide à la correction manuelle. L'étudiant répondra de manière ouverte.
               </p>
             </div>
 

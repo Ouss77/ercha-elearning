@@ -16,10 +16,8 @@ import {
   Laptop,
 } from "lucide-react";
 import Image from "next/image";
-import { getCurrentUser } from "@/lib/auth/auth";
 
-export default async function MarketingDigitalPage() {
-  const user = await getCurrentUser();
+export default function MarketingDigitalPage() {
 
   const courseModules = [
     "Introduction au marketing digital",
@@ -51,8 +49,7 @@ export default async function MarketingDigitalPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      Todo : Fix Use client Error
-      <HomeHeader user={user} />
+      <HomeHeader user={null} />
 
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 dark:from-green-950/30 dark:via-gray-900 dark:to-green-950/30">

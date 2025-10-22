@@ -5,18 +5,56 @@ import type { Course } from "./types";
 interface CoursesTableProps {
   courses: Course[];
   searchTerm: string;
+  domainFilter?: number | null;
+  teacherFilter?: number | null;
+  statusFilter?: "all" | "active" | "inactive";
   onToggleStatus: (courseId: number) => void;
   onEdit: (course: Course) => void;
   onDelete: (course: Course) => void;
 }
 
-export function CoursesTable({ courses, searchTerm, onToggleStatus, onEdit, onDelete }: CoursesTableProps) {
+export function CoursesTable({ 
+  courses, 
+  searchTerm, 
+  domainFilter, 
+  teacherFilter, 
+  statusFilter = "all",
+  onToggleStatus, 
+  onEdit, 
+  onDelete 
+}: CoursesTableProps) {
   const filteredCourses = courses.filter(
-    (course) =>
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (course.domain?.name.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (course.teacher?.name.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    (course) => {
+      // Apply domain filter
+      if (domainFilter && course.domainId !== domainFilter) {
+        return false;
+      }
+      
+      // Apply teacher filter
+      if (teacherFilter && course.teacherId !== teacherFilter) {
+        return false;
+      }
+
+      // Apply status filter
+      if (statusFilter === "active" && !course.isActive) {
+        return false;
+      }
+      if (statusFilter === "inactive" && course.isActive) {
+        return false;
+      }
+      
+      // Apply search term filter
+      if (searchTerm) {
+        return (
+          course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (course.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (course.domain?.name.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (course.teacher?.name.toLowerCase() || "").includes(searchTerm.toLowerCase())
+        );
+      }
+
+      return true;
+    }
   );
 
   return (

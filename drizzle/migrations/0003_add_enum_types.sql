@@ -2,13 +2,25 @@
 -- This migration creates PostgreSQL enum types for role, course_status, and quiz_type
 -- and converts the users.role column from varchar to the role enum type
 
--- Step 1: Create enum types
+-- Step 1: Create enum types (only if they don't exist)
 --> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('STUDENT', 'TRAINER', 'SUB_ADMIN', 'ADMIN');
+DO $$ BEGIN
+ CREATE TYPE "public"."role" AS ENUM('STUDENT', 'TRAINER', 'SUB_ADMIN', 'ADMIN');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
-CREATE TYPE "public"."course_status" AS ENUM('draft', 'validated');
+DO $$ BEGIN
+ CREATE TYPE "public"."course_status" AS ENUM('draft', 'validated');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
-CREATE TYPE "public"."quiz_type" AS ENUM('auto', 'manual');
+DO $$ BEGIN
+ CREATE TYPE "public"."quiz_type" AS ENUM('auto', 'manual');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 
 -- Step 2: Validate existing role values before conversion
 -- This will fail if any invalid role values exist in the database

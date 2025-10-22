@@ -1,58 +1,116 @@
+/**
+ * Quiz query functions
+ * 
+ * This module provides database operations for quizzes and quiz attempts.
+ * Uses base query utilities for consistent patterns and error handling.
+ */
+
 import { eq, and, desc } from "drizzle-orm";
-import { db, handleDbError } from "./index";
-import { quizzes, quizAttempts } from "@/drizzle/schema";
+import { db } from "./index";
+import { handleDbError } from "./error-handler";
+import { quizzes, quizAttempts, chapters } from "@/drizzle/schema";
+import { createBaseQueries } from "./base-queries";
+import { validateId, validateRequired, validateForeignKey, validateNumberRange } from "./validation";
+import { DbResult } from "./types";
 
-// Quiz query functions
-export async function getQuizById(id: number) {
-  try {
-    const result = await db
-      .select()
-      .from(quizzes)
-      .where(eq(quizzes.id, id))
-      .limit(1);
+// Create base query operations for quizzes and quiz attempts
+const quizBaseQueries = createBaseQueries(quizzes, quizzes.id);
+const quizAttemptBaseQueries = createBaseQueries(quizAttempts, quizAttempts.id);
 
-    return { success: true, data: result[0] || null };
-  } catch (error) {
-    return handleDbError(error);
-  }
+/**
+ * Get a quiz by ID
+ * 
+ * @param id - The quiz ID
+ * @returns Result with quiz data or null if not found
+ * 
+ * @example
+ * ```typescript
+ * const quiz = await getQuizById(1);
+ * if (!quiz.success) return quiz;
+ * ```
+ */
+export async function getQuizById(id: number): Promise<DbResult<typeof quizzes.$inferSelect | null>> {
+  return quizBaseQueries.findById(id);
 }
 
-export async function getQuizzesByChapter(chapterId: number) {
-  try {
-    const result = await db
-      .select()
-      .from(quizzes)
-      .where(eq(quizzes.chapterId, chapterId));
+/**
+ * Get all quizzes for a specific chapter
+ * 
+ * @param chapterId - The chapter ID
+ * @returns Result with array of quizzes
+ */
+export async function getQuizzesByChapter(chapterId: number): Promise<DbResult<(typeof quizzes.$inferSelect)[]>> {
+  const validId = validateId(chapterId);
+  if (!validId.success) return validId as any;
 
-    return { success: true, data: result };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return quizBaseQueries.findMany(eq(quizzes.chapterId, validId.data));
 }
 
+/**
+ * Create a new quiz with chapter validation
+ * 
+ * @param data - Quiz data including chapterId, title, questions, and optional passingScore
+ * @returns Result with created quiz
+ * 
+ * @example
+ * ```typescript
+ * const quiz = await createQuiz({
+ *   chapterId: 1,
+ *   title: 'Chapter 1 Quiz',
+ *   questions: [{ question: 'What is...', options: [...] }],
+ *   passingScore: 80
+ * });
+ * ```
+ */
 export async function createQuiz(data: {
   chapterId: number;
   title: string;
   questions: any;
   passingScore?: number;
-}) {
-  try {
-    const result = await db
-      .insert(quizzes)
-      .values({
-        chapterId: data.chapterId,
-        title: data.title,
-        questions: data.questions,
-        passingScore: data.passingScore ?? 70,
-      })
-      .returning();
+}): Promise<DbResult<typeof quizzes.$inferSelect>> {
+  // Validate chapter ID
+  const validChapterId = validateId(data.chapterId);
+  if (!validChapterId.success) return validChapterId as any;
 
-    return { success: true, data: result[0] };
-  } catch (error) {
-    return handleDbError(error);
+  // Validate title
+  const validTitle = validateRequired(data.title, 'title');
+  if (!validTitle.success) return validTitle as any;
+
+  // Validate questions
+  const validQuestions = validateRequired(data.questions, 'questions');
+  if (!validQuestions.success) return validQuestions as any;
+
+  // Validate passing score if provided
+  if (data.passingScore !== undefined) {
+    const validScore = validateNumberRange(data.passingScore, 'passingScore', 0, 100);
+    if (!validScore.success) return validScore as any;
   }
+
+  // Validate that chapter exists
+  const chapterExists = await validateForeignKey(
+    chapters,
+    chapters.id,
+    validChapterId.data,
+    'chapterId'
+  );
+  if (!chapterExists.success) return chapterExists as any;
+
+  // Create quiz
+  return quizBaseQueries.create({
+    chapterId: validChapterId.data,
+    title: validTitle.data,
+    questions: validQuestions.data,
+    passingScore: data.passingScore ?? 70,
+  });
 }
 
+/**
+ * Update a quiz
+ * 
+ * @param id - The quiz ID
+ * @param data - Partial quiz data to update
+ * @returns Result with updated quiz
+ */
 export async function updateQuiz(
   id: number,
   data: Partial<{
@@ -60,118 +118,190 @@ export async function updateQuiz(
     questions: any;
     passingScore: number;
   }>
-) {
-  try {
-    const result = await db
-      .update(quizzes)
-      .set(data)
-      .where(eq(quizzes.id, id))
-      .returning();
-
-    return { success: true, data: result[0] };
-  } catch (error) {
-    return handleDbError(error);
+): Promise<DbResult<typeof quizzes.$inferSelect>> {
+  // Validate passing score if provided
+  if (data.passingScore !== undefined) {
+    const validScore = validateNumberRange(data.passingScore, 'passingScore', 0, 100);
+    if (!validScore.success) return validScore as any;
   }
+
+  return quizBaseQueries.update(id, data);
 }
 
-export async function deleteQuiz(id: number) {
-  try {
-    const result = await db
-      .delete(quizzes)
-      .where(eq(quizzes.id, id))
-      .returning();
-
-    return { success: true, data: result[0] };
-  } catch (error) {
-    return handleDbError(error);
-  }
+/**
+ * Delete a quiz
+ * 
+ * @param id - The quiz ID
+ * @returns Result with deleted quiz
+ */
+export async function deleteQuiz(id: number): Promise<DbResult<typeof quizzes.$inferSelect>> {
+  return quizBaseQueries.delete(id);
 }
 
 // Quiz Attempt query functions
-export async function getQuizAttemptById(id: number) {
-  try {
-    const result = await db
-      .select()
-      .from(quizAttempts)
-      .where(eq(quizAttempts.id, id))
-      .limit(1);
 
-    return { success: true, data: result[0] || null };
-  } catch (error) {
-    return handleDbError(error);
-  }
+/**
+ * Get a quiz attempt by ID
+ * 
+ * @param id - The quiz attempt ID
+ * @returns Result with quiz attempt data or null if not found
+ */
+export async function getQuizAttemptById(id: number): Promise<DbResult<typeof quizAttempts.$inferSelect | null>> {
+  return quizAttemptBaseQueries.findById(id);
 }
 
+/**
+ * Get all quiz attempts for a specific student and quiz
+ * 
+ * @param studentId - The student ID
+ * @param quizId - The quiz ID
+ * @returns Result with array of quiz attempts ordered by most recent first
+ */
 export async function getQuizAttemptsByStudent(
   studentId: number,
   quizId: number
-) {
+): Promise<DbResult<(typeof quizAttempts.$inferSelect)[]>> {
+  const validStudentId = validateId(studentId);
+  if (!validStudentId.success) return validStudentId as any;
+
+  const validQuizId = validateId(quizId);
+  if (!validQuizId.success) return validQuizId as any;
+
   try {
     const result = await db
       .select()
       .from(quizAttempts)
       .where(
         and(
-          eq(quizAttempts.studentId, studentId),
-          eq(quizAttempts.quizId, quizId)
+          eq(quizAttempts.studentId, validStudentId.data),
+          eq(quizAttempts.quizId, validQuizId.data)
         )
       )
       .orderBy(desc(quizAttempts.attemptedAt));
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error);
+    return handleDbError(error, 'getQuizAttemptsByStudent');
   }
 }
 
-export async function getAllQuizAttemptsByStudent(studentId: number) {
+/**
+ * Get all quiz attempts for a specific student across all quizzes
+ * 
+ * @param studentId - The student ID
+ * @returns Result with array of quiz attempts ordered by most recent first
+ */
+export async function getAllQuizAttemptsByStudent(studentId: number): Promise<DbResult<(typeof quizAttempts.$inferSelect)[]>> {
+  const validStudentId = validateId(studentId);
+  if (!validStudentId.success) return validStudentId as any;
+
   try {
     const result = await db
       .select()
       .from(quizAttempts)
-      .where(eq(quizAttempts.studentId, studentId))
+      .where(eq(quizAttempts.studentId, validStudentId.data))
       .orderBy(desc(quizAttempts.attemptedAt));
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error);
+    return handleDbError(error, 'getAllQuizAttemptsByStudent');
   }
 }
 
+/**
+ * Create a new quiz attempt with validation
+ * 
+ * @param data - Quiz attempt data including studentId, quizId, answers, score, and passed status
+ * @returns Result with created quiz attempt
+ * 
+ * @example
+ * ```typescript
+ * const attempt = await createQuizAttempt({
+ *   studentId: 1,
+ *   quizId: 1,
+ *   answers: [{ questionId: 1, answer: 'A' }],
+ *   score: 85,
+ *   passed: true
+ * });
+ * ```
+ */
 export async function createQuizAttempt(data: {
   studentId: number;
   quizId: number;
   answers: any;
   score: number;
   passed: boolean;
-}) {
-  try {
-    const result = await db
-      .insert(quizAttempts)
-      .values({
-        studentId: data.studentId,
-        quizId: data.quizId,
-        answers: data.answers,
-        score: data.score,
-        passed: data.passed,
-      })
-      .returning();
+}): Promise<DbResult<typeof quizAttempts.$inferSelect>> {
+  // Validate student ID
+  const validStudentId = validateId(data.studentId);
+  if (!validStudentId.success) return validStudentId as any;
 
-    return { success: true, data: result[0] };
-  } catch (error) {
-    return handleDbError(error);
+  // Validate quiz ID
+  const validQuizId = validateId(data.quizId);
+  if (!validQuizId.success) return validQuizId as any;
+
+  // Validate answers
+  const validAnswers = validateRequired(data.answers, 'answers');
+  if (!validAnswers.success) return validAnswers as any;
+
+  // Validate score
+  const validScore = validateNumberRange(data.score, 'score', 0, 100);
+  if (!validScore.success) return validScore as any;
+
+  // Validate passed is boolean
+  if (typeof data.passed !== 'boolean') {
+    return {
+      success: false,
+      error: 'passed must be a boolean value',
+    };
   }
+
+  // Create quiz attempt
+  return quizAttemptBaseQueries.create({
+    studentId: validStudentId.data,
+    quizId: validQuizId.data,
+    answers: validAnswers.data,
+    score: validScore.data,
+    passed: data.passed,
+  });
 }
 
-export async function getBestQuizAttempt(studentId: number, quizId: number) {
+/**
+ * Get the best quiz attempt for a student on a specific quiz
+ * Optimized to return only the highest scoring attempt
+ * 
+ * @param studentId - The student ID
+ * @param quizId - The quiz ID
+ * @returns Result with the best quiz attempt or null if no attempts exist
+ * 
+ * @example
+ * ```typescript
+ * const bestAttempt = await getBestQuizAttempt(1, 1);
+ * if (bestAttempt.success && bestAttempt.data) {
+ *   console.log(`Best score: ${bestAttempt.data.score}`);
+ * }
+ * ```
+ */
+export async function getBestQuizAttempt(
+  studentId: number,
+  quizId: number
+): Promise<DbResult<typeof quizAttempts.$inferSelect | null>> {
+  const validStudentId = validateId(studentId);
+  if (!validStudentId.success) return validStudentId as any;
+
+  const validQuizId = validateId(quizId);
+  if (!validQuizId.success) return validQuizId as any;
+
   try {
+    // Optimized query: order by score descending and limit to 1
+    // This ensures we get the best attempt without fetching all attempts
     const result = await db
       .select()
       .from(quizAttempts)
       .where(
         and(
-          eq(quizAttempts.studentId, studentId),
-          eq(quizAttempts.quizId, quizId)
+          eq(quizAttempts.studentId, validStudentId.data),
+          eq(quizAttempts.quizId, validQuizId.data)
         )
       )
       .orderBy(desc(quizAttempts.score))
@@ -179,7 +309,7 @@ export async function getBestQuizAttempt(studentId: number, quizId: number) {
 
     return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error);
+    return handleDbError(error, 'getBestQuizAttempt');
   }
 }
 

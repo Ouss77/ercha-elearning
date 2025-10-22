@@ -53,10 +53,14 @@ export const quizContentSchema = z.object({
   timeLimit: z.number().int().positive("Time limit must be positive").optional()
 })
 
-// Test Question Schema (extends Quiz Question)
-export const testQuestionSchema = quizQuestionSchema.extend({
+// Test Question Schema (open-ended questions without multiple choice options)
+export const testQuestionSchema = z.object({
+  id: z.string().min(1, "Question ID is required"),
+  question: z.string().min(1, "Question text is required"),
   points: z.number().positive("Points must be positive"),
-  difficulty: difficultyEnum
+  difficulty: difficultyEnum,
+  explanation: z.string().optional(),
+  expectedAnswer: z.string().optional() // Optional guidance for grading
 })
 
 // Test Content Schema
@@ -68,9 +72,13 @@ export const testContentSchema = z.object({
   attemptsAllowed: z.number().int().positive("Attempts allowed must be positive")
 })
 
-// Exam Question Schema (extends Test Question)
+// Exam Question Schema (extends Test Question with options for multiple choice)
 export const examQuestionSchema = testQuestionSchema.extend({
-  category: z.string().min(1, "Question category is required")
+  category: z.string().min(1, "Question category is required"),
+  options: z.array(z.string().min(1, "Option text is required"))
+    .min(2, "At least 2 options are required")
+    .max(6, "Maximum 6 options allowed"),
+  correctAnswer: z.number().int().min(0, "Correct answer index must be non-negative")
 })
 
 // Exam Content Schema
