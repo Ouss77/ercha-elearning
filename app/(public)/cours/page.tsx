@@ -1,7 +1,7 @@
-import { HomeHeader } from "@/components/layout/home-header";
-import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -17,82 +17,93 @@ import {
   TrendingUp,
   ArrowRight,
   BookOpen,
-  Clock,
-  Award,
   Users,
-  GraduationCap,
 } from "lucide-react";
 import Image from "next/image";
-import { getCoursesWithDetails, getDomainsWithCounts } from "@/lib/db/queries";
+import { allStaticCourses } from "@/lib/data/static-courses";
 
-interface PageProps {
-  searchParams: { domain?: string };
-}
+export default function CoursesPage() {
+  const searchParams = useSearchParams();
+  const domainFilter = searchParams.get("domain");
 
-export default async function CoursesPage({ searchParams }: PageProps) {
-  const user = await getCurrentUser();
-  const { domain: domainFilter } = searchParams;
+  // Use static courses data
+  let filteredCourses = allStaticCourses;
 
-  // Fetch courses and domains from database
-  const coursesResult = await getCoursesWithDetails();
-  const domainsResult = await getDomainsWithCounts();
-
-  const dbCourses = coursesResult.success ? coursesResult.data : [];
-  const domains = domainsResult.success ? domainsResult.data : [];
-
-  // Helper function to get domain-specific fallback thumbnail
-  const getDomainThumbnail = (domainName: string | null | undefined) => {
-    const thumbnails: Record<string, string> = {
-      "Développement Web": "/react-course.png",
-      "Design Graphique": "/ux-ui-design-course.png",
-      "Marketing Digital": "/marketing-course-concept.png",
-    };
-    return thumbnails[domainName || ""] || "/placeholder.svg";
-  };
+  // Filter by domain if specified
+  if (domainFilter) {
+    filteredCourses = allStaticCourses.filter(
+      (course) => course.domain.toLowerCase() === domainFilter.toLowerCase()
+    );
+  }
 
   // Helper function to get domain icon
-  const getDomainIcon = (domainName: string | null | undefined) => {
+  const getDomainIcon = (domainName: string) => {
     const icons: Record<string, any> = {
       "Développement Web": Code,
       "Design Graphique": Palette,
       "Marketing Digital": TrendingUp,
     };
-    return icons[domainName || ""] || BookOpen;
+    return icons[domainName] || BookOpen;
   };
 
-  // Filter courses by domain if specified
-  let filteredCourses = dbCourses;
-  if (domainFilter) {
-    filteredCourses = dbCourses.filter(
-      (course: any) =>
-        course.domain?.name?.toLowerCase() === domainFilter.toLowerCase()
-    );
-  }
+  // Helper function to get domain color
+  const getDomainColor = (domainName: string) => {
+    const colors: Record<string, string> = {
+      "Développement Web": "blue",
+      "Design Graphique": "purple",
+      "Marketing Digital": "green",
+    };
+    return colors[domainName] || "teal";
+  };
 
-  // Transform database courses
-  const courses = filteredCourses.map((course: any) => ({
+  // Transform static courses for display
+  const courses = filteredCourses.map((course) => ({
     id: course.id,
+    slug: course.slug,
     title: course.title,
-    description: course.description || "Description à venir",
-    instructor: course.teacher?.name || "Formateur",
-    domain: course.domain?.name || "Non spécifié",
-    domainId: course.domain?.id,
-    modules: course.chapterCount || 0,
-    enrollments: course.enrollmentCount || 0,
-    thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
-    icon: getDomainIcon(course.domain?.name),
-    domainColor: course.domain?.color,
+    description: course.description,
+    instructor: course.instructor,
+    domain: course.domain,
+    modules: course.chapters.length,
+    enrollments: Math.floor(Math.random() * 50) + 10, // Mock data for display
+    thumbnail: course.thumbnail,
+    duration: course.duration,
+    level: course.level,
+    icon: getDomainIcon(course.domain),
+    color: getDomainColor(course.domain),
   }));
 
-  // Create a map of domain colors from the domains data
-  const domainColorMap = new Map(
-    domains.map((domain: any) => [domain.id, domain.color || "#6366f1"])
-  );
+  const getColorClasses = (color: string) => {
+    const colors: Record<string, any> = {
+      blue: {
+        bg: "bg-blue-50 dark:bg-blue-950/30",
+        border: "border-blue-200 dark:border-blue-800",
+        text: "text-blue-600 dark:text-blue-400",
+        hover: "hover:border-blue-300 dark:hover:border-blue-700",
+        badge: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+      },
+      purple: {
+        bg: "bg-purple-50 dark:bg-purple-950/30",
+        border: "border-purple-200 dark:border-purple-800",
+        text: "text-purple-600 dark:text-purple-400",
+        hover: "hover:border-purple-300 dark:hover:border-purple-700",
+        badge:
+          "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
+      },
+      green: {
+        bg: "bg-green-50 dark:bg-green-950/30",
+        border: "border-green-200 dark:border-green-800",
+        text: "text-green-600 dark:text-green-400",
+        hover: "hover:border-green-300 dark:hover:border-green-700",
+        badge:
+          "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      },
+    };
+    return colors[color];
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
-
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="absolute inset-0 pointer-events-none">
@@ -147,20 +158,18 @@ export default async function CoursesPage({ searchParams }: PageProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {courses.map((course) => {
+                const colors = getColorClasses(course.color);
                 const IconComponent = course.icon;
-                const domainColor = course.domainColor || "#6366f1";
 
                 return (
                   <Card
                     key={course.id}
-                    className="group relative overflow-hidden border-2 hover:shadow-xl transition-all duration-300 flex flex-col h-full"
-                    style={{
-                      backgroundColor: `${domainColor}10`,
-                      borderColor: `${domainColor}40`,
-                    }}
+                    className={`group relative overflow-hidden ${colors.bg} border-2 ${colors.border} ${colors.hover} hover:shadow-xl transition-all duration-300 flex flex-col h-full`}
                   >
                     {/* Course Thumbnail */}
-                    <div className="relative h-48 overflow-hidden flex-shrink-0">
+                    <div
+                      className={`relative h-48 ${colors.bg} overflow-hidden flex-shrink-0`}
+                    >
                       <Image
                         src={course.thumbnail}
                         alt={course.title}
@@ -173,28 +182,15 @@ export default async function CoursesPage({ searchParams }: PageProps) {
                       {/* Icon Badge */}
                       <div className="absolute top-4 right-4">
                         <div
-                          className="p-2.5 rounded-full backdrop-blur-sm"
-                          style={{
-                            backgroundColor: `${domainColor}20`,
-                          }}
+                          className={`p-2.5 rounded-full ${colors.badge} backdrop-blur-sm`}
                         >
-                          <IconComponent
-                            className="h-5 w-5"
-                            style={{ color: domainColor }}
-                          />
+                          <IconComponent className={`h-5 w-5 ${colors.text}`} />
                         </div>
                       </div>
 
                       {/* Domain Badge */}
                       <div className="absolute bottom-4 left-4">
-                        <Badge
-                          className="text-xs"
-                          style={{
-                            backgroundColor: `${domainColor}20`,
-                            color: domainColor,
-                            borderColor: `${domainColor}40`,
-                          }}
-                        >
+                        <Badge className={`${colors.badge} text-xs`}>
                           {course.domain}
                         </Badge>
                       </div>
@@ -256,8 +252,6 @@ export default async function CoursesPage({ searchParams }: PageProps) {
           )}
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

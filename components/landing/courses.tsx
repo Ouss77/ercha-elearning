@@ -1,9 +1,11 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Users, ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { getCoursesWithDetails } from "@/lib/db/queries";
 import { CourseCard } from "./course-card";
+import { foundationCourses, allStaticCourses } from "@/lib/data/static-courses";
 
 interface Course {
   id: number;
@@ -18,49 +20,30 @@ interface Course {
 /**
  * Courses Section
  * Features:
- * - Display courses with rich information
+ * - Display foundation courses (one per domain)
  * - Domain categorization
  * - Teacher information
  * - Visual thumbnails
  * - Responsive grid layout
+ * - Static data for consistent learning path
  */
-export async function Courses() {
-  // Fetch courses from database
-  const result = await getCoursesWithDetails();
-  const dbCourses = result.success ? result.data : [];
-
-  // Helper function to get domain-specific fallback thumbnail
-  const getDomainThumbnail = (domainName: string | null | undefined) => {
-    const thumbnails: Record<string, string> = {
-      "Développement Web": "/react-course.png",
-      "Design Graphique": "/ux-ui-design-course.png",
-      "Marketing Digital": "/marketing-course-concept.png",
-      // Fallback for old names
-      Informatique: "/react-course.png",
-      Design: "/ux-ui-design-course.png",
-      Marketing: "/marketing-course-concept.png",
-    };
-    return thumbnails[domainName || ""] || "/placeholder.svg";
-  };
-
-  // Transform database courses to match our interface and filter only first 3 courses
-  const courses: Course[] = dbCourses
-    .filter((course: any) => [0, 1, 2].includes(course.id)) // Filter courses with IDs 1, 2, 3
-    .map((course: any) => ({
-      id: course.id,
-      title: course.title,
-      description: course.description || "Description à venir",
-      domain: course.domain?.name || "Non spécifié",
-      teacher: course.teacher?.name || "Formateur",
-      thumbnail: course.thumbnailUrl || getDomainThumbnail(course.domain?.name),
-      totalChapters: course._count?.chapters || 0,
-    }));
+export function Courses() {
+  // Use foundation courses (3 courses, one per domain)
+  const courses: Course[] = foundationCourses.map((course) => ({
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    domain: course.domain,
+    teacher: course.instructor,
+    thumbnail: course.thumbnail,
+    totalChapters: course.chapters.length,
+  }));
 
   // Calculate statistics
   const stats = {
-    totalCourses: courses.length,
-    totalChapters: courses.reduce(
-      (acc, course) => acc + course.totalChapters,
+    totalCourses: allStaticCourses.length,
+    totalChapters: allStaticCourses.reduce(
+      (acc, course) => acc + course.chapters.length,
       0
     ),
     totalStudents: "60+",

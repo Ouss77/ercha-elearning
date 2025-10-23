@@ -1,8 +1,7 @@
-import { HomeHeader } from "@/components/layout/home-header";
-import { Footer } from "@/components/layout/footer";
-import { getCurrentUser } from "@/lib/auth/auth";
-import { getCoursesWithDetails, getChaptersByCourseId } from "@/lib/db/queries";
-import { notFound } from "next/navigation";
+"use client";
+
+import { getCourseById } from "@/lib/data/static-courses";
+import { notFound, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -16,95 +15,73 @@ import {
 } from "@/components/ui/card";
 import {
   BookOpen,
-  Users,
   Clock,
   Award,
   CheckCircle,
   ArrowLeft,
-  PlayCircle,
   FileText,
   Code,
   Palette,
   TrendingUp,
+  Target,
+  Wrench,
 } from "lucide-react";
 
-interface CourseDetailPageProps {
-  params: { id: string };
-}
-
-export default async function CourseDetailPage({
-  params,
-}: CourseDetailPageProps) {
-  const user = await getCurrentUser();
-  const courseId = parseInt(params.id);
+export default function CourseDetailPage() {
+  const params = useParams();
+  const courseId = parseInt(params.id as string);
 
   if (isNaN(courseId)) {
     notFound();
   }
 
-  // Fetch course details
-  const coursesResult = await getCoursesWithDetails();
-  const allCourses = coursesResult.success ? coursesResult.data : [];
-  const courseData = allCourses.find((c: any) => c.id === courseId);
+  // Get static course data
+  const staticCourse = getCourseById(courseId);
 
-  if (!courseData) {
+  if (!staticCourse) {
     notFound();
   }
 
-  // Fetch chapters
-  const chaptersResult = await getChaptersByCourseId(courseId);
-  const chapters = chaptersResult.success ? chaptersResult.data : [];
-
-  // Helper function to get domain-specific thumbnail
-  const getDomainThumbnail = (domainName: string | null | undefined) => {
-    const thumbnails: Record<string, string> = {
-      "Développement Web": "/react-course.png",
-      "Design Graphique": "/ux-ui-design-course.png",
-      "Marketing Digital": "/marketing-course-concept.png",
-    };
-    return thumbnails[domainName || ""] || "/placeholder.svg";
-  };
-
   // Helper function to get domain icon
-  const getDomainIcon = (domainName: string | null | undefined) => {
+  const getDomainIcon = (domainName: string) => {
     const icons: Record<string, any> = {
       "Développement Web": Code,
       "Design Graphique": Palette,
       "Marketing Digital": TrendingUp,
     };
-    return icons[domainName || ""] || BookOpen;
+    return icons[domainName] || BookOpen;
   };
 
   // Helper function to get domain color
-  const getDomainColor = (domainName: string | null | undefined) => {
+  const getDomainColor = (domainName: string) => {
     const colors: Record<string, string> = {
       "Développement Web": "blue",
       "Design Graphique": "purple",
       "Marketing Digital": "green",
     };
-    return colors[domainName || ""] || "teal";
+    return colors[domainName] || "teal";
   };
 
   const course = {
-    id: courseData.id,
-    title: courseData.title,
-    description: courseData.description || "Description à venir",
-    instructor: courseData.teacher?.name || "Formateur",
-    instructorEmail: courseData.teacher?.email || "",
-    domain: courseData.domain?.name || "Non spécifié",
-    domainColor:
-      courseData.domain?.color || getDomainColor(courseData.domain?.name),
-    modules: courseData._count?.chapters || 0,
-    enrollments: courseData._count?.enrollments || 0,
-    thumbnail:
-      courseData.thumbnailUrl || getDomainThumbnail(courseData.domain?.name),
-    icon: getDomainIcon(courseData.domain?.name),
-    color: getDomainColor(courseData.domain?.name),
-    isActive: courseData.isActive,
-    createdAt: courseData.createdAt,
+    id: staticCourse.id,
+    slug: staticCourse.slug,
+    title: staticCourse.title,
+    description: staticCourse.fullDescription,
+    instructor: staticCourse.instructor,
+    domain: staticCourse.domain,
+    domainColor: getDomainColor(staticCourse.domain),
+    modules: staticCourse.chapters.length,
+    enrollments: Math.floor(Math.random() * 50) + 10, // Mock data
+    thumbnail: staticCourse.thumbnail,
+    duration: staticCourse.duration,
+    level: staticCourse.level,
+    learningObjectives: staticCourse.learningObjectives,
+    prerequisites: staticCourse.prerequisites,
+    tools: staticCourse.tools,
   };
 
-  const IconComponent = course.icon;
+  const chapters = staticCourse.chapters;
+  const IconComponent = getDomainIcon(course.domain);
 
   const getColorClasses = (color: string) => {
     const colors: Record<string, any> = {
@@ -142,12 +119,10 @@ export default async function CourseDetailPage({
     return colors[color] || colors.teal;
   };
 
-  const colors = getColorClasses(course.color);
+  const colors = getColorClasses(course.domainColor);
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader user={user} />
-
       {/* Hero Section with Course Info */}
       <section className="relative py-12 overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="absolute inset-0 pointer-events-none">
@@ -188,12 +163,12 @@ export default async function CourseDetailPage({
                     </Badge>
                   </div>
 
-                  {/* Status Badge */}
-                  {course.isActive && (
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-green-500 text-white">Actif</Badge>
-                    </div>
-                  )}
+                  {/* Level Badge */}
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white">
+                      {course.level}
+                    </Badge>
+                  </div>
                 </div>
               </Card>
             </div>
@@ -213,7 +188,7 @@ export default async function CourseDetailPage({
               <div className="grid grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center text-center gap-2">
                       <div className={`p-3 rounded-full ${colors.bg}`}>
                         <BookOpen className={`h-5 w-5 ${colors.text}`} />
                       </div>
@@ -231,16 +206,16 @@ export default async function CourseDetailPage({
 
                 <Card>
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center text-center gap-2">
                       <div className={`p-3 rounded-full ${colors.bg}`}>
-                        <Users className={`h-5 w-5 ${colors.text}`} />
+                        <Clock className={`h-5 w-5 ${colors.text}`} />
                       </div>
                       <div>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {course.enrollments}
+                          {course.duration.split(" ")[0]}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Étudiants
+                          {course.duration.split(" ")[1]}
                         </p>
                       </div>
                     </div>
@@ -253,7 +228,7 @@ export default async function CourseDetailPage({
       </section>
 
       {/* Course Content Section */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gray-50 dark:bg-gray-900/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content - Course Chapters */}
@@ -263,109 +238,139 @@ export default async function CourseDetailPage({
                   Contenu du cours
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {chapters.length} chapitres disponibles
+                  {chapters.length} chapitres • {course.duration}
                 </p>
               </div>
 
-              {chapters.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Aucun chapitre disponible pour le moment
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {chapters.map((chapter: any, index: number) => (
-                    <Card
-                      key={chapter.id}
-                      className={`group hover:shadow-md transition-all duration-300 ${colors.border} hover:border-2`}
-                    >
-                      <CardHeader>
-                        <div className="flex items-start gap-4">
-                          <div
-                            className={`p-3 rounded-full ${colors.bg} flex-shrink-0`}
-                          >
-                            <span
-                              className={`text-lg font-bold ${colors.text}`}
-                            >
-                              {index + 1}
-                            </span>
-                          </div>
-                          <div className="flex-grow">
-                            <CardTitle className="text-xl mb-2 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                              {chapter.title}
-                            </CardTitle>
-                            {chapter.description && (
-                              <CardDescription className="text-sm">
-                                {chapter.description}
-                              </CardDescription>
+              <div className="space-y-4">
+                {chapters.map((chapter, index: number) => (
+                  <Card
+                    key={chapter.id}
+                    className={`group hover:shadow-md transition-all duration-300 border-2 hover:${colors.border}`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`p-3 rounded-full ${colors.bg} flex-shrink-0`}
+                        >
+                          <span className={`text-lg font-bold ${colors.text}`}>
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="flex-grow">
+                          <CardTitle className="text-xl mb-2">
+                            {chapter.title}
+                          </CardTitle>
+                          <CardDescription className="text-sm mb-3">
+                            {chapter.description}
+                          </CardDescription>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {chapter.topics
+                              .slice(0, 3)
+                              .map((topic: string, i: number) => (
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {topic}
+                                </Badge>
+                              ))}
+                            {chapter.topics.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{chapter.topics.length - 3} plus
+                              </Badge>
                             )}
-                            <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <PlayCircle className="h-4 w-4" />
-                                <span>Vidéo</span>
-                              </div>
-                              {chapter.content && (
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-4 w-4" />
-                                  <span>Contenu</span>
-                                </div>
-                              )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{chapter.duration}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-4 w-4" />
+                              <span>{chapter.topics.length} sujets</span>
                             </div>
                           </div>
-                          {user && (
-                            <CheckCircle className="h-5 w-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                          )}
                         </div>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             </div>
 
-            {/* Sidebar - What You'll Learn */}
+            {/* Sidebar */}
             <div className="space-y-6">
+              {/* Learning Objectives */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className={`h-5 w-5 ${colors.text}`} />
-                    Ce que vous allez apprendre
+                    <Target className={`h-5 w-5 ${colors.text}`} />
+                    Objectifs d'apprentissage
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        Maîtriser les concepts fondamentaux
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        Développer des projets pratiques
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        Acquérir des compétences professionnelles
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        Obtenir un certificat de réussite
-                      </span>
-                    </li>
+                    {course.learningObjectives.map(
+                      (objective: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {objective}
+                          </span>
+                        </li>
+                      )
+                    )}
                   </ul>
                 </CardContent>
               </Card>
 
+              {/* Prerequisites */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className={`h-5 w-5 ${colors.text}`} />
+                    Prérequis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {course.prerequisites.map(
+                      (prereq: string, index: number) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          <span className="text-gray-400">•</span>
+                          {prereq}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Tools */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className={`h-5 w-5 ${colors.text}`} />
+                    Outils utilisés
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {course.tools.map((tool: string, index: number) => (
+                      <Badge key={index} className={colors.badge}>
+                        {tool}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Course Info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -378,14 +383,14 @@ export default async function CourseDetailPage({
                     <span className="text-gray-600 dark:text-gray-400">
                       Niveau
                     </span>
-                    <Badge variant="outline">Tous niveaux</Badge>
+                    <Badge variant="outline">{course.level}</Badge>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
                       Durée estimée
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {chapters.length * 2}h
+                      {course.duration}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
@@ -408,8 +413,6 @@ export default async function CourseDetailPage({
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

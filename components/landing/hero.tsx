@@ -4,11 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { getDashboardUrl } from "@/lib/utils/utils";
-
-interface HeroProps {
-  user?: { name?: string | null; role: string } | null;
-}
 
 /**
  * Hero Section for EduPlatform
@@ -19,7 +14,7 @@ interface HeroProps {
  * - Course count display
  * - Responsive layout
  */
-export function Hero({ user }: HeroProps) {
+export function Hero() {
   return (
     <section className="relative py-16 md:py-24 px-4 overflow-hidden bg-gradient-to-br from-cyan-50 via-teal-50 to-emerald-50 dark:from-background dark:via-background/95 dark:to-background/90">
       {/* Decorative Grid Pattern - Left Side */}
@@ -228,42 +223,24 @@ export function Hero({ user }: HeroProps) {
             <span className="text-lg">cours dans 3 domaines clés</span>
           </div>
 
-          {/* CTA Buttons - Only show if not authenticated */}
-          {!user && (
-            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                className="px-8 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white shadow-xl"
-                asChild
-              >
-                <Link href="/a-propos">À Propos de Nous</Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="px-8 border-2 border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950"
-                asChild
-              >
-                <Link href="/contact">Contactez-nous</Link>
-              </Button>
-            </div>
-          )}
-
-          {/* Dashboard Button - Show if authenticated */}
-          {user && (
-            <div className="mt-12">
-              <Button
-                size="lg"
-                className="px-8 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white shadow-xl"
-                asChild
-              >
-                <Link href={getDashboardUrl(user.role)}>
-                  Accéder au tableau de bord
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          )}
+          {/* CTA Buttons */}
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              size="lg"
+              className="px-8 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 dark:from-teal-500 dark:to-emerald-500 text-white shadow-xl"
+              asChild
+            >
+              <Link href="/a-propos">À Propos de Nous</Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 border-2 border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950"
+              asChild
+            >
+              <Link href="/contact">Contactez-nous</Link>
+            </Button>
+          </div>
         </div>
       </div>
 
