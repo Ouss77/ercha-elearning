@@ -1,5 +1,7 @@
+"use client";
+
 import { getCourseById } from "@/lib/data/static-courses";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -25,14 +27,9 @@ import {
   Wrench,
 } from "lucide-react";
 
-interface CourseDetailPageProps {
-  params: { id: string };
-}
-
-export default async function CourseDetailPage({
-  params,
-}: CourseDetailPageProps) {
-  const courseId = parseInt(params.id);
+export default function CourseDetailPage() {
+  const params = useParams();
+  const courseId = parseInt(params.id as string);
 
   if (isNaN(courseId)) {
     notFound();

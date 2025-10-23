@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -19,12 +22,9 @@ import {
 import Image from "next/image";
 import { allStaticCourses } from "@/lib/data/static-courses";
 
-interface PageProps {
-  searchParams: { domain?: string };
-}
-
-export default async function CoursesPage({ searchParams }: PageProps) {
-  const { domain: domainFilter } = searchParams;
+export default function CoursesPage() {
+  const searchParams = useSearchParams();
+  const domainFilter = searchParams.get("domain");
 
   // Use static courses data
   let filteredCourses = allStaticCourses;

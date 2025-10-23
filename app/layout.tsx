@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { SessionProvider } from "@/components/auth/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import "globals.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Erchad - Plateforme E-learning",
