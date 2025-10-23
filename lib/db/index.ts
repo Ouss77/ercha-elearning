@@ -21,7 +21,55 @@ const pool = new Pool({
 // Create Drizzle client
 export const db = drizzle(pool, { schema })
 
-// Helper function to handle database errors
+// ============================================================================
+// FOUNDATIONAL UTILITIES
+// ============================================================================
+// Export new foundational types and utilities
+export * from './types';
+export * from './error-handler';
+export * from './validation';
+export * from './base-queries';
+export * from './transactions';
+export * from './query-builders';
+
+// ============================================================================
+// DATA MAPPERS
+// ============================================================================
+// Export data mapping utilities for backward compatibility
+export * from './mappers';
+
+// ============================================================================
+// DOMAIN-SPECIFIC QUERY MODULES
+// ============================================================================
+// Export all queries through the central queries index
+export * from './queries';
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION UTILITIES
+// ============================================================================
+// Export performance optimization utilities
+export * from './cache';
+export * from './pagination';
+export * from './profiler';
+
+// ============================================================================
+// DEPRECATED FUNCTIONS
+// ============================================================================
+/**
+ * @deprecated Use handleDbError from './error-handler' instead
+ * This function will be removed in a future version.
+ * 
+ * Migration guide:
+ * ```typescript
+ * // Old way:
+ * import { handleDbError } from '@/lib/db';
+ * 
+ * // New way:
+ * import { handleDbError } from '@/lib/db/error-handler';
+ * // or
+ * import { handleDbError } from '@/lib/db';
+ * ```
+ */
 export function handleDbError(error: unknown) {
   console.error("Database error:", error)
   

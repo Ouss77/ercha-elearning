@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, domainId, maxStudents } = body;
+    const { name, description, domainId } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
       description: description?.trim() || undefined,
       teacherId: Number(session.user.id),
       domainId: domainId || undefined,
-      maxStudents: maxStudents || undefined,
     });
 
     if ("error" in result) {

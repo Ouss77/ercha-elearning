@@ -94,26 +94,8 @@ export const enrollments = pgTable("enrollments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
-// Quizzes table
-export const quizzes = pgTable("quizzes", {
-  id: serial("id").primaryKey(),
-  chapterId: integer("chapter_id").references(() => chapters.id),
-  title: varchar("title", { length: 200 }).notNull(),
-  questions: jsonb("questions").notNull(),
-  passingScore: integer("passing_score").default(70),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-})
-
-// Quiz Attempts table
-export const quizAttempts = pgTable("quiz_attempts", {
-  id: serial("id").primaryKey(),
-  studentId: integer("student_id").references(() => users.id),
-  quizId: integer("quiz_id").references(() => quizzes.id),
-  answers: jsonb("answers").notNull(),
-  score: integer("score").notNull(),
-  passed: boolean("passed").notNull(),
-  attemptedAt: timestamp("attempted_at").defaultNow()
-})
+// Note: Quizzes are now handled as content_items with contentType="quiz"
+// Quiz attempts are tracked in content_item_attempts table
 
 // Final Projects table
 export const finalProjects = pgTable("final_projects", {
@@ -144,12 +126,9 @@ export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  teacherId: integer("teacher_id")
-    .references(() => users.id)
-    .notNull(),
+  teacherId: integer("teacher_id").references(() => users.id),
   domainId: integer("domain_id").references(() => domains.id),
   isActive: boolean("is_active").default(true),
-  maxStudents: integer("max_students"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -158,10 +137,22 @@ export const classes = pgTable("classes", {
 export const classEnrollments = pgTable("class_enrollments", {
   id: serial("id").primaryKey(),
   classId: integer("class_id")
-    .references(() => classes.id)
+    .references(() => classes.id, { onDelete: "cascade" })
     .notNull(),
   studentId: integer("student_id")
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+});
+
+// Class Courses table (courses assigned to a class)
+export const classCourses = pgTable("class_courses", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id")
+    .references(() => classes.id, { onDelete: "cascade" })
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
 });

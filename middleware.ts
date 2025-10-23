@@ -20,8 +20,13 @@ export default withAuth(
     } as const
 
     for (const [prefix, requiredRole] of Object.entries(roleByPrefix)) {
-      if (path.startsWith(prefix) && token?.role !== requiredRole) {
-        return NextResponse.redirect(new URL("/non-autorise", req.url))
+      if (path.startsWith(prefix)) {
+        if (!token) {
+          return NextResponse.redirect(new URL("/connexion", req.url))
+        }
+        if (token.role !== requiredRole) {
+          return NextResponse.redirect(new URL("/non-autorise", req.url))
+        }
       }
     }
 
@@ -30,8 +35,8 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token }) => {
-        // Only allow access if the user is authenticated and active
-        return !!(token && (token as any).active !== false)
+        // Always return true here - actual auth check happens in middleware function
+        return true
       }
     }
   }

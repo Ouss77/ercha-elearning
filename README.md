@@ -137,8 +137,8 @@ After seeding, use these credentials to test different roles:
 - **chapter_progress**: Student progress tracking
 
 ### Assessment Tables
-- **quizzes**: Quiz definitions with questions
-- **quiz_attempts**: Student quiz submissions and scores
+- **content_items**: Flexible content system (video, text, quiz, test, exam)
+- **content_item_attempts**: Student attempts on quizzes/tests/exams
 - **final_projects**: Course final project requirements
 - **project_submissions**: Student project submissions and grades
 

@@ -8,9 +8,10 @@
     "lint": "next lint",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run drizzle/migrate.ts",
+    "db:migrate": "echo '⚠️  This project uses db:push workflow. Use: bun run db:push' && exit 1",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run drizzle/seed.ts",
+    "db:studio": "drizzle-kit studio",
     "deploy:check": "npm run validate:env && npm run build"
   },
   "dependencies": {
