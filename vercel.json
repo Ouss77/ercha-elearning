@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
-  "installCommand": "corepack enable && pnpm install",
+  "installCommand": "corepack enable && corepack prepare pnpm@9.12.3 --activate && pnpm install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
