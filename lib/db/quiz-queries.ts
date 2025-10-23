@@ -247,7 +247,8 @@ export async function getQuizzesByCourseWithAttempts(
         const contentData = quiz.contentData as any;
         const passingScore =
           contentData?.passingScore || contentData?.passing_score || 70;
-        const maxAttempts = contentData?.maxAttempts || contentData?.max_attempts || 3;
+        const maxAttempts =
+          contentData?.maxAttempts || contentData?.max_attempts || 3;
 
         return {
           quizId: quiz.quizId,

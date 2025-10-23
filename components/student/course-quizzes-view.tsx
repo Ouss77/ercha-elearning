@@ -309,11 +309,12 @@ export function CourseQuizzesView({
                           )}
                           {!quiz.passed && quiz.totalAttempts > 0 && (
                             <span className="text-amber-600 dark:text-amber-400 font-medium">
-                              {quiz.maxAttempts - quiz.totalAttempts} tentative(s) restante(s)
+                              {quiz.maxAttempts - quiz.totalAttempts}{" "}
+                              tentative(s) restante(s)
                             </span>
                           )}
                         </div>
-                        
+
                         {/* Button Logic:
                             1. If passed -> Green button to Checkpoints page
                             2. If failed but has attempts left -> Orange button with score + retry
