@@ -156,6 +156,24 @@ export async function createEnrollment(data: {
   const courseExists = await validateForeignKey(courses, courses.id, validCourseId.data, 'courseId');
   if (!courseExists.success) return courseExists as any;
 
+  // Validate that the course is active
+  try {
+    const course = await db
+      .select({ isActive: courses.isActive })
+      .from(courses)
+      .where(eq(courses.id, validCourseId.data))
+      .limit(1);
+
+    if (course.length === 0 || !course[0].isActive) {
+      return {
+        success: false,
+        error: 'Cannot enroll in an inactive course',
+      } as any;
+    }
+  } catch (error) {
+    return handleDbError(error, 'createEnrollment');
+  }
+
   // Create the enrollment
   const result = await enrollmentBaseQueries.create({
     studentId: validStudentId.data,

@@ -363,7 +363,7 @@ export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
     const { sql } = await import("drizzle-orm");
 
     // Use a single query with UNION ALL to combine all activity types
-    // Note: Quiz activity removed - now tracked via content_item_attempts
+    // This is more efficient than 3 separate queries + application-level sorting
     const allActivity = await db.execute<{
       id: number;
       type: string;
