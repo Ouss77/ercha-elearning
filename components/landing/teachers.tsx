@@ -11,7 +11,7 @@ import { Code, Palette, TrendingUp, Users } from "lucide-react";
 export function Teachers() {
   const teachers = [
     {
-      name: "Walid Draa",
+      name: "Yassine Benali",
       role: "Formateur Développement Web",
       specialty: "Développement Web",
       description:
@@ -27,7 +27,7 @@ export function Teachers() {
         "bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20",
     },
     {
-      name: "Adam Khairi",
+      name: "Salma Idrissi",
       role: "Formateur Design Graphique",
       specialty: "Design Graphique",
       description:
@@ -43,7 +43,7 @@ export function Teachers() {
         "bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20",
     },
     {
-      name: "Anas ElGhamraoui",
+      name: "Karim Alami",
       role: "Formateur Marketing Digital",
       specialty: "Marketing Digital",
       description:

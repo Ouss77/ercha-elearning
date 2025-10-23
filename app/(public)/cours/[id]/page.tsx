@@ -1,5 +1,3 @@
-import { HomeHeader } from "@/components/layout/home-header";
-import { Footer } from "@/components/layout/footer";
 import { getCourseById } from "@/lib/data/static-courses";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -128,8 +126,6 @@ export default async function CourseDetailPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <HomeHeader />
-
       {/* Hero Section with Course Info */}
       <section className="relative py-12 overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="absolute inset-0 pointer-events-none">
@@ -420,8 +416,6 @@ export default async function CourseDetailPage({
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
