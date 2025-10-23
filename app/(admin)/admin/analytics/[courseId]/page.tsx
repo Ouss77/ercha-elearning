@@ -11,7 +11,7 @@ interface PageProps {
     courseId: string
   }
 }
-
+ 
 export default async function CourseAnalyticsPage({ params }: PageProps) {
   const cookieStore = await cookies()
   const token = cookieStore.get("auth-token")?.value

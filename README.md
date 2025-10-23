@@ -59,7 +59,7 @@ cp .env.example .env
 
 Edit `.env` with your configuration:
 ```env
-DATABASE_URL=postgresql://user:password@host:5432/database
+DATABASE_URL=postgresql://neondb_owner:npg_eW9UazAH3jdZ@ep-dry-grass-ad4nbvok-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key-here
 ```

@@ -5,15 +5,8 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "DATABASE_URL": "@database-url",
-    "NEXTAUTH_SECRET": "@nextauth-secret",
-    "NEXTAUTH_URL": "@nextauth-url"
-  },
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database-url",
-      "NEXTAUTH_SECRET": "@nextauth-secret",
-      "NEXTAUTH_URL": "@nextauth-url"
-    }
+    "DATABASE_URL": "postgresql://neondb_owner:npg_eW9UazAH3jdZ@ep-dry-grass-ad4nbvok-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    "NEXTAUTH_SECRET": "your-actual-secret-here",
+    "NEXTAUTH_URL": "https://your-vercel-project-name.vercel.app"
   }
 }
