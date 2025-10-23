@@ -11,6 +11,8 @@ import {
   Target,
   PlayCircle,
   Calendar,
+  Flag,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -21,6 +23,7 @@ interface CourseQuizzesViewProps {
     quizId: number;
     quizTitle: string;
     passingScore: number | null;
+    maxAttempts: number;
     chapterId: number | null;
     chapterTitle: string | null;
     chapterOrder: number | null;
@@ -304,31 +307,58 @@ export function CourseQuizzesView({
                               ✓ Score enregistré dans vos jalons
                             </span>
                           )}
+                          {!quiz.passed && quiz.totalAttempts > 0 && (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">
+                              {quiz.maxAttempts - quiz.totalAttempts} tentative(s) restante(s)
+                            </span>
+                          )}
                         </div>
-                        <Link href={`/etudiant/cours/${courseId}`}>
+                        
+                        {/* Button Logic:
+                            1. If passed -> Green button to Checkpoints page
+                            2. If failed but has attempts left -> Orange button with score + retry
+                            3. If out of attempts -> Red button with score + failure message
+                        */}
+                        {quiz.passed ? (
+                          <Link href="/etudiant/jalons">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                            >
+                              <Flag className="h-4 w-4 mr-2" />
+                              Voir mes jalons
+                            </Button>
+                          </Link>
+                        ) : quiz.totalAttempts >= quiz.maxAttempts ? (
                           <Button
                             size="sm"
-                            className={
-                              quiz.passed
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                                : "bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
-                            }
+                            disabled
+                            className="bg-gradient-to-r from-red-600 to-red-700 text-white opacity-75 cursor-not-allowed"
                           >
-                            {quiz.passed ? (
-                              <>
-                                <Trophy className="h-4 w-4 mr-2" />
-                                Revoir
-                              </>
-                            ) : (
-                              <>
-                                <PlayCircle className="h-4 w-4 mr-2" />
-                                {quiz.totalAttempts > 0
-                                  ? "Réessayer"
-                                  : "Commencer"}
-                              </>
-                            )}
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Échec ({quiz.bestScore}%) - Plus de tentatives
                           </Button>
-                        </Link>
+                        ) : quiz.totalAttempts > 0 ? (
+                          <Link href={`/etudiant/cours/${courseId}`}>
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Réessayer ({quiz.bestScore}%)
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Link href={`/etudiant/cours/${courseId}`}>
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
+                            >
+                              <PlayCircle className="h-4 w-4 mr-2" />
+                              Commencer
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
