@@ -317,8 +317,9 @@ export function CourseQuizzesView({
 
                         {/* Button Logic:
                             1. If passed -> Green button to Checkpoints page
-                            2. If failed but has attempts left -> Orange button with score + retry
-                            3. If out of attempts -> Red button with score + failure message
+                            2. If out of attempts and failed -> Red disabled button with highest score
+                            3. If failed but has attempts left -> Orange button with score + retry
+                            4. If not attempted yet -> Teal button to start
                         */}
                         {quiz.passed ? (
                           <Link href="/etudiant/jalons">
@@ -334,13 +335,15 @@ export function CourseQuizzesView({
                           <Button
                             size="sm"
                             disabled
-                            className="bg-gradient-to-r from-red-600 to-red-700 text-white opacity-75 cursor-not-allowed"
+                            className="bg-red-600 text-white opacity-75 cursor-not-allowed"
                           >
                             <XCircle className="h-4 w-4 mr-2" />
-                            Échec ({quiz.bestScore}%) - Plus de tentatives
+                            Échec ({quiz.bestScore}%)
                           </Button>
                         ) : quiz.totalAttempts > 0 ? (
-                          <Link href={`/etudiant/cours/${courseId}`}>
+                          <Link
+                            href={`/etudiant/cours/${courseId}/quiz/${quiz.quizId}`}
+                          >
                             <Button
                               size="sm"
                               className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white"
@@ -350,7 +353,9 @@ export function CourseQuizzesView({
                             </Button>
                           </Link>
                         ) : (
-                          <Link href={`/etudiant/cours/${courseId}`}>
+                          <Link
+                            href={`/etudiant/cours/${courseId}/quiz/${quiz.quizId}`}
+                          >
                             <Button
                               size="sm"
                               className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
