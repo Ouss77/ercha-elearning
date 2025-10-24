@@ -16,9 +16,7 @@ export default async function TeacherPage() {
   const teacherId = parseInt(user.id);
   const dashboardResult = await getTeacherDashboardSummary(teacherId);
 
-  if (!dashboardResult.success || !dashboardResult.data) {
-    redirect("/non-autorise");
-  }
+  const dashboardData = dashboardResult.success ? dashboardResult.data : [];
 
-  return <TeacherDashboard user={user} dashboardData={dashboardResult.data} />;
+  return <TeacherDashboard user={user} dashboardData={dashboardData} />;
 }
