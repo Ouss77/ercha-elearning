@@ -66,86 +66,86 @@ export function CourseQuizzesView({
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
         <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20 hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
                   Total Tests
                 </p>
-                <p className="text-4xl font-bold text-teal-600 dark:text-teal-400">
+                <p className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400">
                   {stats.total}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Dans ce cours
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg">
-                <Target className="h-8 w-8 text-white" />
+              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg">
+                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border bg-gradient-to-br from-emerald-50/50 to-cyan-50/50 dark:from-emerald-950/20 dark:to-cyan-950/20 hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
                   Réussis
                 </p>
-                <p className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+                <p className="text-3xl sm:text-4xl font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.completed}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Tests validés
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
-                <CheckCircle2 className="h-8 w-8 text-white" />
+              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
+                <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
                   En Attente
                 </p>
-                <p className="text-4xl font-bold text-amber-600 dark:text-amber-400">
+                <p className="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400">
                   {stats.pending}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   À compléter
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
-                <Clock className="h-8 w-8 text-white" />
+              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+                <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20 hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
                   Tentatives
                 </p>
-                <p className="text-4xl font-bold text-cyan-600 dark:text-cyan-400">
+                <p className="text-3xl sm:text-4xl font-bold text-cyan-600 dark:text-cyan-400">
                   {stats.attempted}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Tests essayés
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
-                <PlayCircle className="h-8 w-8 text-white" />
+              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
+                <PlayCircle className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
             </div>
           </CardContent>
@@ -193,8 +193,8 @@ export function CourseQuizzesView({
                   isNextToAttempt ? "ring-2 ring-teal-500/50" : ""
                 }`}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                     {/* Icon */}
                     <div
                       className={`p-3 rounded-xl flex-shrink-0 ${
@@ -206,28 +206,28 @@ export function CourseQuizzesView({
                       }`}
                     >
                       {quiz.passed ? (
-                        <Trophy className="h-6 w-6 text-white" />
+                        <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       ) : quiz.totalAttempts > 0 ? (
-                        <Clock className="h-6 w-6 text-white" />
+                        <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       ) : (
-                        <Target className="h-6 w-6 text-white" />
+                        <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       )}
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-foreground mb-1">
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-2">
+                        <div className="flex-1 w-full">
+                          <h3 className="font-bold text-base sm:text-lg text-foreground mb-1">
                             {quiz.quizTitle}
                           </h3>
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                             Chapitre: {quiz.chapterTitle || "N/A"}
                           </p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="text-xs">
                               <Target className="h-3 w-3 mr-1" />
-                              Score minimum: {quiz.passingScore}%
+                              Score min: {quiz.passingScore}%
                             </Badge>
                             {quiz.totalAttempts > 0 && (
                               <Badge variant="outline" className="text-xs">
@@ -246,7 +246,7 @@ export function CourseQuizzesView({
                                 }`}
                               >
                                 <Trophy className="h-3 w-3 mr-1" />
-                                Meilleur score: {quiz.bestScore}%
+                                Score: {quiz.bestScore}%
                               </Badge>
                             )}
                           </div>

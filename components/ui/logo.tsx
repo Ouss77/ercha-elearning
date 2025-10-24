@@ -9,6 +9,7 @@ interface LogoProps {
   iconSize?: "sm" | "md" | "lg" | "xl";
   showText?: boolean;
   variant?: "light" | "dark";
+  href?: string;
 }
 
 export function Logo({
@@ -16,6 +17,7 @@ export function Logo({
   iconSize = "md",
   showText = true,
   variant = "light",
+  href = "/",
 }: LogoProps) {
   const sizeClasses = {
     sm: "h-8 w-8",
@@ -44,7 +46,10 @@ export function Logo({
       : "bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent";
 
   return (
-    <Link href="/" className={cn("flex items-center gap-2 group", className)}>
+    <Link
+      href={href}
+      className={cn("flex items-center gap-2 group", className)}
+    >
       <div
         className={cn(
           sizeClasses[iconSize],

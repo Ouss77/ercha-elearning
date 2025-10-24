@@ -55,6 +55,16 @@ export function Header({ user, onMenuClick }: HeaderProps) {
   const avatarSrc = getAvatarUrl(user.image);
   const initials = getUserInitials(user.name);
 
+  // Get dashboard href based on role
+  const dashboardHref = user.role
+    ? {
+        ADMIN: "/admin",
+        SUB_ADMIN: "/sous-admin",
+        TRAINER: "/formateur",
+        STUDENT: "/etudiant",
+      }[user.role] || "/"
+    : "/";
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-card/80 backdrop-blur-md shadow-sm">
       <div className="flex h-16 items-center justify-between gap-2 px-2 sm:px-4 lg:px-6">
@@ -71,7 +81,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
         {/* Logo - visible on mobile */}
         <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden flex-1 min-w-0">
-          <Logo iconSize="sm" />
+          <Logo iconSize="sm" href={dashboardHref} />
         </div>
 
         {/* Spacer for desktop */}

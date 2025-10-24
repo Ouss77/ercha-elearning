@@ -14,7 +14,6 @@ import {
   BookOpen,
   PlayCircle,
   CheckCircle2,
-  Lock,
   FileText,
   Video,
   Image as ImageIcon,
@@ -176,28 +175,32 @@ export function CourseContentView({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <Link href="/etudiant">
-                <Button variant="ghost" size="sm">
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Retour
+                <Button variant="ghost" size="sm" className="h-8 sm:h-9">
+                  <ChevronLeft className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Retour</span>
                 </Button>
               </Link>
-              <Separator orientation="vertical" className="h-8" />
-              <div>
-                <h1 className="text-xl font-bold text-foreground line-clamp-1">
+              <Separator
+                orientation="vertical"
+                className="h-8 hidden sm:block"
+              />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl font-bold text-foreground truncate">
                   {course.title}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {teacher?.name || "Instructeur"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-end">
               {domain && (
                 <Badge
+                  className="text-xs sm:text-sm"
                   style={{
                     backgroundColor: domain.color
                       ? `${domain.color}20`
@@ -215,20 +218,20 @@ export function CourseContentView({
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Sidebar - Course Chapters */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
+            <div className="lg:sticky lg:top-24 space-y-4">
               {/* Progress Card */}
               <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
                         Progression du cours
                       </span>
-                      <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                      <span className="text-xl sm:text-2xl font-bold text-teal-600 dark:text-teal-400">
                         {stats.percentage}%
                       </span>
                     </div>
