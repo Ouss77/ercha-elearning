@@ -16,7 +16,19 @@ export default async function TeacherPage() {
   const teacherId = parseInt(user.id);
   const dashboardResult = await getTeacherDashboardSummary(teacherId);
 
-  const dashboardData = dashboardResult.success ? dashboardResult.data : [];
+  const dashboardData = dashboardResult.success
+    ? dashboardResult.data
+    : {
+        stats: {
+          totalCourses: 0,
+          activeCourses: 0,
+          totalStudents: 0,
+          activeStudents: 0,
+        },
+        courses: [],
+        topStudents: [],
+        recentActivity: [],
+      };
 
   return <TeacherDashboard user={user} dashboardData={dashboardData} />;
 }

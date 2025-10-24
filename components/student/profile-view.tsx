@@ -39,7 +39,7 @@ import type { User as DbUser } from "@/types/user";
 
 interface ProfileViewProps {
   user: UserType;
-  userData: DbUser;
+  userData: DbUser | null;
 }
 
 export function ProfileView({ user, userData }: ProfileViewProps) {
@@ -48,28 +48,28 @@ export function ProfileView({ user, userData }: ProfileViewProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
-    userData.avatarUrl || null
+    userData?.avatarUrl || null
   );
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state - initialize with real database data
+  // Form state - initialize with real database data or user session data
   const [formData, setFormData] = useState({
-    name: userData.name || "",
-    email: userData.email || "",
-    phone: userData.phone || "",
-    location: userData.city
+    name: userData?.name || user.name || "",
+    email: userData?.email || user.email || "",
+    phone: userData?.phone || "",
+    location: userData?.city
       ? `${userData.city}${userData.country ? `, ${userData.country}` : ""}`
-      : userData.country || "Alger, Algérie",
-    bio: userData.bio || "",
-    birthDate: userData.dateOfBirth
+      : userData?.country || "Alger, Algérie",
+    bio: userData?.bio || "",
+    birthDate: userData?.dateOfBirth
       ? new Date(userData.dateOfBirth).toISOString().split("T")[0]
       : "",
-    address: userData.address || "",
-    city: userData.city || "",
-    postalCode: userData.postalCode || "",
-    country: userData.country || "Morocco",
+    address: userData?.address || "",
+    city: userData?.city || "",
+    postalCode: userData?.postalCode || "",
+    country: userData?.country || "Morocco",
     website: "",
     linkedin: "",
     github: "",
@@ -185,20 +185,20 @@ export function ProfileView({ user, userData }: ProfileViewProps) {
     setIsEditing(false);
     // Reset form data to original database values
     setFormData({
-      name: userData.name || "",
-      email: userData.email || "",
-      phone: userData.phone || "",
-      location: userData.city
+      name: userData?.name || user.name || "",
+      email: userData?.email || user.email || "",
+      phone: userData?.phone || "",
+      location: userData?.city
         ? `${userData.city}${userData.country ? `, ${userData.country}` : ""}`
-        : userData.country || "Alger, Algérie",
-      bio: userData.bio || "",
-      birthDate: userData.dateOfBirth
+        : userData?.country || "Alger, Algérie",
+      bio: userData?.bio || "",
+      birthDate: userData?.dateOfBirth
         ? new Date(userData.dateOfBirth).toISOString().split("T")[0]
         : "",
-      address: userData.address || "",
-      city: userData.city || "",
-      postalCode: userData.postalCode || "",
-      country: userData.country || "Morocco",
+      address: userData?.address || "",
+      city: userData?.city || "",
+      postalCode: userData?.postalCode || "",
+      country: userData?.country || "Morocco",
       website: "",
       linkedin: "",
       github: "",

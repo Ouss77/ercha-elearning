@@ -71,10 +71,16 @@ export function TeacherDashboard({
   user,
   dashboardData,
 }: TeacherDashboardProps) {
-  const { stats, courses, topStudents, recentActivity } = dashboardData;
+  const {
+    stats,
+    courses = [],
+    topStudents = [],
+    recentActivity = [],
+  } = dashboardData || {};
 
   // Calculate average progress for each course
   const coursesWithProgress = useMemo(() => {
+    if (!courses || courses.length === 0) return [];
     return courses.map((course) => {
       const averageProgress =
         course.totalChapters > 0 && course.totalStudents > 0
@@ -93,11 +99,13 @@ export function TeacherDashboard({
 
   // Calculate total students across all courses
   const totalStudents = useMemo(() => {
+    if (!courses || courses.length === 0) return 0;
     return courses.reduce((sum, course) => sum + course.totalStudents, 0);
   }, [courses]);
 
   // Get main domain (the one with most courses)
   const mainDomain = useMemo(() => {
+    if (!courses || courses.length === 0) return null;
     const domainMap = new Map<string, { count: number; color: string }>();
     courses.forEach((course) => {
       if (course.domainName) {
