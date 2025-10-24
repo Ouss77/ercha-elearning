@@ -21,11 +21,6 @@ export default async function QuizPage({ params }: QuizPageProps) {
     redirect("/connexion");
   }
 
-  // Check role authorization
-  if (session.user.role !== "STUDENT") {
-    redirect("/non-autorise");
-  }
-
   const courseId = parseInt(params.id);
   const contentId = parseInt(params.contentId);
 
