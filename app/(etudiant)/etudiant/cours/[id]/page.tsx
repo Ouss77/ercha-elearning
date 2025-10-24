@@ -5,6 +5,7 @@ import {
   getChaptersWithContent,
   getUserById,
   getDomainById,
+  getQuizzesByCourseWithAttempts,
 } from "@/lib/db/queries";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -76,6 +77,22 @@ export default async function CoursePage({ params }: CoursePageProps) {
     .map((cp) => cp.chapterId)
     .filter((id): id is number => id !== null);
 
+  // Fetch quiz attempts for all quizzes in this course
+  const quizAttemptsResult = await getQuizzesByCourseWithAttempts(
+    courseId,
+    studentId
+  );
+  const quizzes = quizAttemptsResult.success ? quizAttemptsResult.data : [];
+
+  // Transform to the format expected by CourseContentView
+  const quizAttempts = quizzes.map((quiz) => ({
+    quizId: quiz.quizId,
+    totalAttempts: quiz.totalAttempts,
+    bestScore: quiz.bestScore,
+    passed: quiz.passed,
+    maxAttempts: quiz.maxAttempts,
+  }));
+
   return (
     <CourseContentView
       user={user}
@@ -85,6 +102,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
       chapters={chapters}
       completedChapters={completedChapters}
       totalChapters={chapters.length}
+      quizAttempts={quizAttempts}
     />
   );
 }
