@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { SessionProvider } from "@/components/auth/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { TopLoadingBar } from "@/components/layout/top-loading-bar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionProvider>
+            <TopLoadingBar />
             <Suspense fallback={null}>{children}</Suspense>
           </SessionProvider>
           <Toaster />
