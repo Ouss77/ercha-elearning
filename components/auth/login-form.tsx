@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/schemas/auth";
 import { z } from "zod";
+import { toast } from "sonner";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -28,7 +29,9 @@ export function LoginForm() {
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "inactive") {
-      setError("Votre compte a été désactivé par un administrateur. Veuillez contacter le support.");
+      setError(
+        "Votre compte a été désactivé par un administrateur. Veuillez contacter le support."
+      );
     }
   }, [searchParams]);
 
@@ -57,6 +60,26 @@ export function LoginForm() {
         const session = await response.json();
 
         if (session?.user?.role) {
+          // Map role to French display name
+          const roleNames = {
+            ADMIN: "Administrateur",
+            SUB_ADMIN: "Sous-administrateur",
+            TRAINER: "Formateur",
+            STUDENT: "Étudiant",
+          };
+
+          const roleName =
+            roleNames[session.user.role as keyof typeof roleNames] ||
+            "Utilisateur";
+
+          // Show success toast with role
+          toast.success("Connexion réussie", {
+            description: `Bienvenue, ${roleName} !`,
+          });
+
+          // Small delay to show toast before redirect
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
           // Role-based redirect
           switch (session.user.role) {
             case "ADMIN":
@@ -135,7 +158,11 @@ export function LoginForm() {
         )}
       </div>
 
-      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+        disabled={isLoading}
+      >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -149,13 +176,18 @@ export function LoginForm() {
       <div className="text-sm text-muted-foreground text-center">
         <p>
           Pas encore de compte ?{" "}
-          <a href="/inscription" className="text-primary font-medium hover:underline">
+          <a
+            href="/inscription"
+            className="text-primary font-medium hover:underline"
+          >
             S'inscrire
           </a>
         </p>
         {process.env.NODE_ENV === "development" && (
           <div className="mt-4 p-4 border border-primary/20 bg-primary/5 rounded-lg text-sm">
-            <p className="font-semibold text-foreground mb-2">Mode développement</p>
+            <p className="font-semibold text-foreground mb-2">
+              Mode développement
+            </p>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>
                 <strong>Connexion simplifiée :</strong>
