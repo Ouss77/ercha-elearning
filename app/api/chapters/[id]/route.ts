@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/auth";
+import { requireAdmin } from "@/lib/auth/auth";
 import {
   getChapterById,
-  getCourseIdByChapterId,
-  canManageChapter,
   updateChapter,
   deleteChapter,
 } from "@/lib/db/chapter-queries";
@@ -13,17 +11,15 @@ import { ZodError } from "zod";
 /**
  * PATCH /api/chapters/[id]
  * Update chapter details
+ * @auth ADMIN only (TRAINER access removed)
  */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Authentication check
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Enforce ADMIN-only access
+    await requireAdmin();
 
     // Parse and validate chapter ID
     const chapterId = parseInt(params.id, 10);
@@ -34,25 +30,10 @@ export async function PATCH(
       );
     }
 
-    // Get chapter to verify it exists and get course ID
+    // Get chapter to verify it exists
     const chapterResult = await getChapterById(chapterId);
     if (!chapterResult.success || !chapterResult.data) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
-    }
-
-    const courseId = chapterResult.data.courseId;
-
-    // Authorization check - verify user can manage chapters for this course
-    const hasAccess = await canManageChapter(
-      parseInt(user.id),
-      user.role as any,
-      courseId!
-    );
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: "You do not have permission to update this chapter" },
-        { status: 403 }
-      );
     }
 
     // Parse and validate request body
@@ -85,17 +66,15 @@ export async function PATCH(
 /**
  * DELETE /api/chapters/[id]
  * Delete a chapter and all its content items (cascade)
+ * @auth ADMIN only (TRAINER access removed)
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Authentication check
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Enforce ADMIN-only access
+    await requireAdmin();
 
     // Parse and validate chapter ID
     const chapterId = parseInt(params.id, 10);
@@ -106,25 +85,10 @@ export async function DELETE(
       );
     }
 
-    // Get chapter to verify it exists and get course ID
+    // Get chapter to verify it exists
     const chapterResult = await getChapterById(chapterId);
     if (!chapterResult.success || !chapterResult.data) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
-    }
-
-    const courseId = chapterResult.data.courseId;
-
-    // Authorization check - verify user can manage chapters for this course
-    const hasAccess = await canManageChapter(
-      parseInt(user.id),
-      user.role as any,
-      courseId!
-    );
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: "You do not have permission to delete this chapter" },
-        { status: 403 }
-      );
     }
 
     // Delete chapter (cascade delete handled by database)

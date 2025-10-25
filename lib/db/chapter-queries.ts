@@ -143,10 +143,40 @@ export async function getChapterById(
  */
 export async function getChaptersByCourseId(courseId: number) {
   try {
+    // Query chapters through modules relationship
+    const { modules } = await import("@/drizzle/schema");
+    const result = await db
+      .select({
+        id: chapters.id,
+        moduleId: chapters.moduleId,
+        title: chapters.title,
+        description: chapters.description,
+        orderIndex: chapters.orderIndex,
+        createdAt: chapters.createdAt,
+        updatedAt: chapters.updatedAt,
+      })
+      .from(chapters)
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
+      .where(eq(modules.courseId, courseId))
+      .orderBy(asc(chapters.orderIndex));
+
+    return { success: true as const, data: result };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+/**
+ * Get chapters by module ID
+ * @param moduleId - The module ID
+ * @returns Result with chapters array
+ */
+export async function getChaptersByModuleId(moduleId: number) {
+  try {
     const result = await db
       .select()
       .from(chapters)
-      .where(eq(chapters.courseId, courseId))
+      .where(eq(chapters.moduleId, moduleId))
       .orderBy(asc(chapters.orderIndex));
 
     return { success: true as const, data: result };
@@ -186,11 +216,21 @@ export async function getChaptersWithContent(
   if (!validId.success) return validId as any;
 
   try {
-    // Fetch all chapters for the course in a single query
+    // Fetch all chapters for the course through modules in a single query
+    const { modules } = await import("@/drizzle/schema");
     const chaptersResult = await db
-      .select()
+      .select({
+        id: chapters.id,
+        moduleId: chapters.moduleId,
+        title: chapters.title,
+        description: chapters.description,
+        orderIndex: chapters.orderIndex,
+        createdAt: chapters.createdAt,
+        updatedAt: chapters.updatedAt,
+      })
       .from(chapters)
-      .where(eq(chapters.courseId, validId.data))
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
+      .where(eq(modules.courseId, validId.data))
       .orderBy(asc(chapters.orderIndex));
 
     if (chaptersResult.length === 0) {
@@ -218,7 +258,6 @@ export async function getChaptersWithContent(
     const chaptersWithContent: ChapterWithContent[] = chaptersResult.map(
       (chapter) => ({
         ...chapter,
-        courseId: chapter.courseId!,
         contentItems: contentItemsByChapter[chapter.id] || [],
       })
     );
@@ -236,21 +275,22 @@ export async function getChaptersWithContent(
  * @returns Result with the created chapter
  */
 export async function createChapter(
-  courseId: number,
+  moduleId: number,
   data: CreateChapterInput
 ): Promise<DbResult<Chapter>> {
-  // Validate course ID
-  const validCourseId = validateId(courseId);
-  if (!validCourseId.success) return validCourseId as any;
+  // Validate module ID
+  const validModuleId = validateId(moduleId);
+  if (!validModuleId.success) return validModuleId as any;
 
-  // Validate that the course exists
-  const courseExists = await validateForeignKey(
-    courses,
-    courses.id,
-    validCourseId.data,
-    "courseId"
+  // Validate that the module exists
+  const { modules } = await import("@/drizzle/schema");
+  const moduleExists = await validateForeignKey(
+    modules,
+    modules.id,
+    validModuleId.data,
+    "moduleId"
   );
-  if (!courseExists.success) return courseExists as any;
+  if (!moduleExists.success) return moduleExists as any;
 
   // Validate required fields
   const validTitle = validateRequired(data.title, "title");
@@ -263,12 +303,12 @@ export async function createChapter(
         maxOrder: sql<number>`COALESCE(MAX(${chapters.orderIndex}), -1)`,
       })
       .from(chapters)
-      .where(eq(chapters.courseId, validCourseId.data));
+      .where(eq(chapters.moduleId, validModuleId.data));
 
     const nextOrderIndex = data.orderIndex ?? maxOrderResult[0].maxOrder + 1;
 
     console.log("[createChapter] Creating chapter with data:", {
-      courseId: validCourseId.data,
+      moduleId: validModuleId.data,
       title: validTitle.data,
       description: data.description,
       orderIndex: nextOrderIndex,
@@ -277,7 +317,7 @@ export async function createChapter(
     const result = await db
       .insert(chapters)
       .values({
-        courseId: validCourseId.data,
+        moduleId: validModuleId.data,
         title: validTitle.data,
         description: data.description ?? null,
         orderIndex: nextOrderIndex,
@@ -334,11 +374,11 @@ export async function deleteChapter(id: number): Promise<DbResult<Chapter>> {
  * @returns Result with success message
  */
 export async function reorderChapters(
-  courseId: number,
+  moduleId: number,
   chapterIds: number[]
 ): Promise<DbResult<{ message: string }>> {
-  const validCourseId = validateId(courseId);
-  if (!validCourseId.success) return validCourseId as any;
+  const validModuleId = validateId(moduleId);
+  if (!validModuleId.success) return validModuleId as any;
 
   if (!chapterIds || chapterIds.length === 0) {
     return {
@@ -628,9 +668,11 @@ export async function getCourseIdByChapterId(
   chapterId: number
 ): Promise<number | null> {
   try {
+    const { modules } = await import("@/drizzle/schema");
     const result = await db
-      .select({ courseId: chapters.courseId })
+      .select({ courseId: modules.courseId })
       .from(chapters)
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
       .where(eq(chapters.id, chapterId))
       .limit(1);
 
@@ -642,6 +684,80 @@ export async function getCourseIdByChapterId(
 }
 
 /**
+ * Move a chapter to a different module
+ * @param chapterId - The chapter ID to move
+ * @param targetModuleId - The target module ID
+ * @param targetOrderIndex - Optional target position within the module
+ * @returns Result with updated chapter
+ */
+export async function moveChapter(
+  chapterId: number,
+  targetModuleId: number,
+  targetOrderIndex?: number
+): Promise<DbResult<Chapter>> {
+  const validChapterId = validateId(chapterId);
+  if (!validChapterId.success) return validChapterId as any;
+
+  const validModuleId = validateId(targetModuleId);
+  if (!validModuleId.success) return validModuleId as any;
+
+  try {
+    // Validate that the target module exists
+    const { modules } = await import("@/drizzle/schema");
+    const moduleExists = await db
+      .select({ id: modules.id })
+      .from(modules)
+      .where(eq(modules.id, validModuleId.data))
+      .limit(1);
+
+    if (moduleExists.length === 0) {
+      return {
+        success: false,
+        error: "Target module not found",
+      };
+    }
+
+    // If targetOrderIndex is not provided, append to end of module
+    let finalOrderIndex = targetOrderIndex;
+    if (finalOrderIndex === undefined) {
+      const maxOrderResult = await db
+        .select({
+          maxOrder: sql<number>`COALESCE(MAX(${chapters.orderIndex}), -1)`,
+        })
+        .from(chapters)
+        .where(eq(chapters.moduleId, validModuleId.data));
+
+      finalOrderIndex = maxOrderResult[0].maxOrder + 1;
+    }
+
+    // Move the chapter to the new module
+    const result = await db
+      .update(chapters)
+      .set({
+        moduleId: validModuleId.data,
+        orderIndex: finalOrderIndex,
+        updatedAt: new Date(),
+      })
+      .where(eq(chapters.id, validChapterId.data))
+      .returning();
+
+    if (result.length === 0) {
+      return {
+        success: false,
+        error: "Chapter not found",
+      };
+    }
+
+    return {
+      success: true,
+      data: result[0],
+    };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+/**
  * Get the course ID for a content item
  * Helper function for authorization checks
  */
@@ -649,10 +765,12 @@ export async function getCourseIdByContentItemId(
   contentItemId: number
 ): Promise<number | null> {
   try {
+    const { modules } = await import("@/drizzle/schema");
     const result = await db
-      .select({ courseId: chapters.courseId })
+      .select({ courseId: modules.courseId })
       .from(contentItems)
       .innerJoin(chapters, eq(contentItems.chapterId, chapters.id))
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
       .where(eq(contentItems.id, contentItemId))
       .limit(1);
 

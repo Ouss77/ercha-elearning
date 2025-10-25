@@ -1,8 +1,6 @@
 import dynamic from "next/dynamic";
-import type { ComponentType } from "react";
 import { requireAuth } from "@/lib/auth/auth";
 import { getTeacherStudents } from "@/lib/db/queries";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 // Dynamically load the StudentProgress component as a client component
 const StudentProgress = dynamic<{

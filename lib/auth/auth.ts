@@ -56,6 +56,21 @@ export async function requireAuth(allowedRoles?: string[]) {
   return user
 }
 
+// Require ADMIN role for content management
+export async function requireAdmin() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect("/connexion")
+  }
+
+  if (user.role !== "ADMIN") {
+    redirect("/non-autorise")
+  }
+
+  return user
+}
+
 // Helper function to normalize role names for backward compatibility
 function normalizeRole(role: string): string {
   const roleMap: Record<string, string> = {

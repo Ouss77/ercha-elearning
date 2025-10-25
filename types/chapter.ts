@@ -28,7 +28,7 @@ import type {
  */
 export interface Chapter {
   id: number;
-  courseId: number;
+  moduleId: number; // Now required - references modules table
   title: string;
   description: string | null;
   orderIndex: number;

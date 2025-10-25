@@ -7,6 +7,7 @@ import {
   getDomainById,
   getQuizzesByCourseWithAttempts,
 } from "@/lib/db/queries";
+import { getModulesWithChaptersAndContent } from "@/lib/db/module-queries";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { chapterProgress } from "@/drizzle/schema";
@@ -32,9 +33,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   const course = courseResult.data;
 
-  // Fetch chapters with content
-  const chaptersResult = await getChaptersWithContent(courseId);
-  const chapters = chaptersResult.success ? chaptersResult.data : [];
+  // Fetch modules with chapters (modular structure)
+  const modules = await getModulesWithChaptersAndContent(courseId);
+
+  // Calculate total chapters across all modules
+  const totalChapters = modules.reduce((sum, module) => sum + module.chapters.length, 0);
+  const allChapterIds = modules.flatMap(module => module.chapters.map(ch => ch.id));
 
   // Fetch domain
   let domain = null;
@@ -56,26 +60,20 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   // Fetch completed chapters for this student
   const studentId = parseInt(user.id);
-  const chapterIds = chapters.map((ch) => ch.id);
+  let completedChapters: number[] = [];
 
-  let completedChaptersData: Array<{ chapterId: number | null }> = [];
-
-  if (chapterIds.length > 0) {
-    // Query with IN clause for chapter IDs
-    completedChaptersData = await db
+  if (allChapterIds.length > 0) {
+    const completedChaptersData = await db
       .select({ chapterId: chapterProgress.chapterId })
       .from(chapterProgress)
       .where(
-        and(
-          eq(chapterProgress.studentId, studentId),
-          inArray(chapterProgress.chapterId, chapterIds)
-        )
+        eq(chapterProgress.studentId, studentId)
       );
-  }
 
-  const completedChapters = completedChaptersData
-    .map((cp) => cp.chapterId)
-    .filter((id): id is number => id !== null);
+    completedChapters = completedChaptersData
+      .map((cp) => cp.chapterId)
+      .filter((id): id is number => id !== null);
+  }
 
   // Fetch quiz attempts for all quizzes in this course
   const quizAttemptsResult = await getQuizzesByCourseWithAttempts(
@@ -99,9 +97,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
       course={course}
       domain={domain}
       teacher={teacher}
-      chapters={chapters}
+      modules={modules}
       completedChapters={completedChapters}
-      totalChapters={chapters.length}
+      totalChapters={totalChapters}
       quizAttempts={quizAttempts}
     />
   );
