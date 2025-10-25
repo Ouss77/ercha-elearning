@@ -7,7 +7,8 @@ import { fetchWithErrorHandling } from "@/lib/utils/chapter-error-handler";
 
 export function useViewMode(
   courseId: number,
-  setChapters: (chapters: ChapterWithContent[]) => void
+  setChapters: (chapters: ChapterWithContent[]) => void,
+  moduleId?: number
 ) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedChapter, setSelectedChapter] = useState<ChapterWithContent | null>(null);
@@ -17,12 +18,17 @@ export function useViewMode(
     async (chapter: ChapterWithContent, contentId?: number) => {
       try {
         // Fetch fresh chapter data
+        const endpoint = moduleId 
+          ? `/api/modules/${moduleId}/chapters`
+          : `/api/courses/${courseId}/chapters`;
+        
         const response = await fetchWithErrorHandling(
-          `/api/courses/${courseId}/chapters`,
+          endpoint,
           { method: "GET" },
           "Fetch chapter data"
         );
-        const { chapters: freshChapters } = await response.json();
+        const data = await response.json();
+        const freshChapters = Array.isArray(data) ? data : data.chapters;
         const freshChapter = freshChapters.find(
           (ch: ChapterWithContent) => ch.id === chapter.id
         );
@@ -40,7 +46,7 @@ export function useViewMode(
         setViewMode("edit");
       }
     },
-    [courseId, setChapters]
+    [courseId, moduleId, setChapters]
   );
 
   const handleChapterPreview = useCallback((chapter: ChapterWithContent) => {
@@ -85,12 +91,17 @@ export function useViewMode(
       if (!chapter) return;
 
       try {
+        const endpoint = moduleId 
+          ? `/api/modules/${moduleId}/chapters`
+          : `/api/courses/${courseId}/chapters`;
+        
         const response = await fetchWithErrorHandling(
-          `/api/courses/${courseId}/chapters`,
+          endpoint,
           { method: "GET" },
           "Fetch chapter data"
         );
-        const { chapters: freshChapters } = await response.json();
+        const data = await response.json();
+        const freshChapters = Array.isArray(data) ? data : data.chapters;
         const freshChapter = freshChapters.find(
           (ch: ChapterWithContent) => ch.id === chapterId
         );
@@ -113,7 +124,7 @@ export function useViewMode(
         setViewMode("edit");
       }
     },
-    [courseId, setChapters]
+    [courseId, moduleId, setChapters]
   );
 
   return {

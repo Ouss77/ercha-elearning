@@ -186,6 +186,62 @@ export async function getChaptersByModuleId(moduleId: number) {
 }
 
 /**
+ * Get chapters with their content items for a module
+ * Optimized to reduce N+1 queries by fetching all data in 2 queries
+ *
+ * @param moduleId - The module ID
+ * @returns Result with chapters including their content items
+ */
+export async function getChaptersWithContentByModuleId(
+  moduleId: number
+): Promise<DbResult<ChapterWithContent[]>> {
+  const validId = validateId(moduleId);
+  if (!validId.success) return validId as any;
+
+  try {
+    // Fetch all chapters for the module
+    const chaptersResult = await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.moduleId, validId.data))
+      .orderBy(asc(chapters.orderIndex));
+
+    if (chaptersResult.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    // Fetch all content items for these chapters in a single query
+    const chapterIds = chaptersResult.map((ch) => ch.id);
+    const contentItemsResult = await db
+      .select()
+      .from(contentItems)
+      .where(inArray(contentItems.chapterId, chapterIds))
+      .orderBy(asc(contentItems.orderIndex));
+
+    // Group content items by chapter ID for O(1) lookup
+    const contentItemsByChapter = contentItemsResult.reduce((acc, item) => {
+      if (!acc[item.chapterId]) {
+        acc[item.chapterId] = [];
+      }
+      acc[item.chapterId].push(item as ContentItem);
+      return acc;
+    }, {} as Record<number, ContentItem[]>);
+
+    // Combine chapters with their content items
+    const chaptersWithContent: ChapterWithContent[] = chaptersResult.map(
+      (chapter) => ({
+        ...chapter,
+        contentItems: contentItemsByChapter[chapter.id] || [],
+      })
+    );
+
+    return { success: true, data: chaptersWithContent };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+/**
  * Get chapters with their content items for a course
  * Optimized to reduce N+1 queries by fetching all data in 2 queries
  *

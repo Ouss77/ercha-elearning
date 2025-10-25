@@ -10,7 +10,7 @@ import {
   showErrorToast,
 } from "@/lib/utils/chapter-error-handler";
 
-export function useChapterOperations(courseId: number) {
+export function useChapterOperations(courseId: number, moduleId?: number) {
   const [chapters, setChapters] = useState<ChapterWithContent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +22,19 @@ export function useChapterOperations(courseId: number) {
 
   const fetchChapters = useCallback(async () => {
     try {
+      const endpoint = moduleId 
+        ? `/api/modules/${moduleId}/chapters`
+        : `/api/courses/${courseId}/chapters`;
+      
       const response = await fetchWithErrorHandling(
-        `/api/courses/${courseId}/chapters`,
+        endpoint,
         { method: "GET" },
         "Fetch chapters"
       );
-      const { chapters: updatedChapters } = await response.json();
+      
+      // Handle different response formats
+      const data = await response.json();
+      const updatedChapters = Array.isArray(data) ? data : data.chapters;
       setChapters(updatedChapters);
       return updatedChapters;
     } catch (error: any) {
@@ -35,7 +42,7 @@ export function useChapterOperations(courseId: number) {
       setError(chapterError.message);
       throw chapterError;
     }
-  }, [courseId]);
+  }, [courseId, moduleId]);
 
   const createChapter = useCallback(
     async (data: ChapterEditorData) => {
@@ -43,8 +50,12 @@ export function useChapterOperations(courseId: number) {
       setError(null);
 
       try {
+        const endpoint = moduleId 
+          ? `/api/modules/${moduleId}/chapters`
+          : `/api/courses/${courseId}/chapters`;
+        
         const response = await fetchWithErrorHandling(
-          `/api/courses/${courseId}/chapters`,
+          endpoint,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -56,7 +67,8 @@ export function useChapterOperations(courseId: number) {
           "Create chapter"
         );
 
-        const { chapter } = await response.json();
+        const responseData = await response.json();
+        const chapter = responseData.chapter || responseData;
 
         if (data.contentType && data.contentData) {
           await fetchWithErrorHandling(
@@ -84,7 +96,7 @@ export function useChapterOperations(courseId: number) {
         setIsLoading(false);
       }
     },
-    [courseId, fetchChapters]
+    [courseId, moduleId, fetchChapters]
   );
 
   const updateChapter = useCallback(
@@ -217,12 +229,20 @@ export function useChapterOperations(courseId: number) {
       setIsReorderingChapters(true);
 
       try {
+        const endpoint = moduleId 
+          ? `/api/modules/${moduleId}/chapters/reorder`
+          : `/api/chapters/reorder`;
+        
+        const body = moduleId
+          ? { chapterIds }
+          : { courseId, chapterIds };
+        
         await fetchWithErrorHandling(
-          `/api/chapters/reorder`,
+          endpoint,
           {
-            method: "PATCH",
+            method: moduleId ? "POST" : "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ courseId, chapterIds }),
+            body: JSON.stringify(body),
           },
           "Reorder chapters"
         );
@@ -237,7 +257,7 @@ export function useChapterOperations(courseId: number) {
         setIsReorderingChapters(false);
       }
     },
-    [chapters, courseId]
+    [chapters, courseId, moduleId]
   );
 
   return {

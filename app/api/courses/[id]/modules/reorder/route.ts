@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/auth"
-import { createModule } from "@/lib/db/module-queries"
+import { reorderModules } from "@/lib/db/module-queries"
 import { getCourseById } from "@/lib/db/queries"
-import { createModuleSchema } from "@/lib/schemas/module"
-import { ZodError } from "zod"
+import { z } from "zod"
 
 /**
- * POST /api/courses/[id]/modules
- * Create a new module for a course
+ * Request body schema for module reordering
+ */
+const reorderModulesSchema = z.object({
+  moduleIds: z.array(z.number().int().positive()).min(1, "Au moins un module requis"),
+})
+
+/**
+ * POST /api/courses/[id]/modules/reorder
+ * Reorder modules within a course
  * 
- * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 8.3, 8.4
+ * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 8.3, 8.4
  */
 export async function POST(
   request: NextRequest,
@@ -22,7 +28,7 @@ export async function POST(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
 
-    // Authorization check - only admins can create modules
+    // Authorization check - only admins can reorder modules
     if (user.role !== "ADMIN") {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
     }
@@ -47,7 +53,7 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json()
-    const validation = createModuleSchema.safeParse(body)
+    const validation = reorderModulesSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -59,26 +65,29 @@ export async function POST(
       )
     }
 
-    // Create module
-    const module = await createModule(courseId, validation.data)
+    const { moduleIds } = validation.data
+
+    // Reorder modules
+    const success = await reorderModules(courseId, moduleIds)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Échec de la réorganisation des modules" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json(
       {
-        message: "Module créé avec succès",
-        module,
+        message: "Modules réorganisés avec succès",
+        success: true,
       },
-      { status: 201 }
+      { status: 200 }
     )
   } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Données invalides", details: error.errors },
-        { status: 400 }
-      )
-    }
-    console.error("[API] Error creating module:", error)
+    console.error("[API] Error reordering modules:", error)
     return NextResponse.json(
-      { error: "Erreur lors de la création du module" },
+      { error: "Erreur lors de la réorganisation des modules" },
       { status: 500 }
     )
   }

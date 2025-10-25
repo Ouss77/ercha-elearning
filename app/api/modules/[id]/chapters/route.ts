@@ -13,10 +13,10 @@ import { createChapterSchema } from "@/lib/schemas/chapter";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const moduleId = parseInt(params.moduleId);
+    const moduleId = parseInt(params.id);
     if (isNaN(moduleId)) {
       return NextResponse.json(
         { error: "Invalid module ID" },
@@ -47,13 +47,13 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Enforce ADMIN-only access
     await requireAdmin();
 
-    const moduleId = parseInt(params.moduleId);
+    const moduleId = parseInt(params.id);
     if (isNaN(moduleId)) {
       return NextResponse.json(
         { error: "Invalid module ID" },

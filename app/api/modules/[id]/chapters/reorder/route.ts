@@ -16,13 +16,13 @@ const reorderChaptersSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { moduleId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Enforce ADMIN-only access
     await requireAdmin();
 
-    const moduleId = parseInt(params.moduleId);
+    const moduleId = parseInt(params.id);
     if (isNaN(moduleId)) {
       return NextResponse.json(
         { error: "Invalid module ID" },

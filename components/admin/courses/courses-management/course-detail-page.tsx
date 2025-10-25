@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -19,6 +21,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Home,
   ArrowLeft,
   Edit,
@@ -28,8 +37,16 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  FolderOpen,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+
+import { ModuleList } from "@/components/admin/modules/module-list";
+import { ModuleForm } from "@/components/admin/modules/module-form";
+import type { ModuleWithChapters } from "@/types/module";
+import type { ModuleWithChaptersAndContent } from "@/lib/db/module-queries";
 
 interface Course {
   id: number;
@@ -45,6 +62,7 @@ interface Course {
 }
 
 interface CourseStats {
+  totalModules: number;
   totalChapters: number;
   totalContent: number;
   totalStudents: number;
@@ -53,15 +71,26 @@ interface CourseStats {
 
 interface CourseDetailPageProps {
   course: Course;
+  modules: ModuleWithChaptersAndContent[];
   userRole: string;
   stats?: CourseStats;
 }
 
 export function CourseDetailPage({
   course,
+  modules: initialModules,
   userRole,
   stats,
 }: CourseDetailPageProps) {
+  const router = useRouter();
+  
+  // State management
+  const [modules, setModules] = useState<ModuleWithChapters[]>(initialModules);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState<ModuleWithChapters | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("fr-FR", {
       year: "numeric",
@@ -70,7 +99,108 @@ export function CourseDetailPage({
     });
   };
 
+  // Module CRUD handlers
+  const handleCreateModule = async (data: { title: string; description?: string | null }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/courses/${course.id}/modules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create module");
+      }
+      
+      toast.success("Module créé avec succès");
+      router.refresh();
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la création du module");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const handleEditModule = async (data: { title: string; description?: string | null }) => {
+    if (!selectedModule) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/modules/${selectedModule.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update module");
+      }
+      
+      toast.success("Module mis à jour avec succès");
+      router.refresh();
+      setIsEditDialogOpen(false);
+      setSelectedModule(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour du module");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: number) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/modules/${moduleId}`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete module");
+      }
+      
+      toast.success("Module supprimé avec succès");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression du module");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReorderModules = async (reorderedModules: ModuleWithChapters[]) => {
+    const moduleIds = reorderedModules.map((m) => m.id);
+    
+    // Optimistic update
+    setModules(reorderedModules);
+    
+    try {
+      const response = await fetch(`/api/courses/${course.id}/modules/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleIds }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reorder modules");
+      }
+      
+      toast.success("Modules réorganisés avec succès");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la réorganisation des modules");
+      // Revert to server state on error
+      router.refresh();
+    }
+  };
+
+  const handleManageChapters = (moduleId: number) => {
+    router.push(`/admin/cours/${course.id}/modules/${moduleId}/chapters`);
+  };
 
   return (
     <div className="container mx-auto py-4 sm:py-8 space-y-4 sm:space-y-6 px-4 sm:px-6">
@@ -194,66 +324,60 @@ export function CourseDetailPage({
             </CardContent>
           </Card>
 
-          {/* Chapters Section */}
+          {/* Modules Section */}
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Chapitres
+                    <FolderOpen className="h-5 w-5" />
+                    Modules du cours
                   </CardTitle>
                   <CardDescription className="mt-1">
+                    {stats?.totalModules ?? 0} module
+                    {(stats?.totalModules ?? 0) !== 1 ? "s" : ""} •{" "}
                     {stats?.totalChapters ?? 0} chapitre
-                    {(stats?.totalChapters ?? 0) !== 1 ? "s" : ""} •{" "}
-                    {stats?.totalContent ?? 0} contenu
-                    {(stats?.totalContent ?? 0) !== 1 ? "s" : ""}
+                    {(stats?.totalChapters ?? 0) !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
-                <Button asChild size="sm" className="w-full sm:w-auto">
-                  <Link href={`/admin/cours/${course.id}/chapters`}>
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Gérer les chapitres
-                  </Link>
+                <Button 
+                  size="sm" 
+                  className="w-full sm:w-auto"
+                  onClick={() => setIsCreateDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer un module
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {(stats?.totalChapters ?? 0) === 0 ? (
+              {modules.length === 0 ? (
                 <div className="text-center py-8 px-4 text-muted-foreground bg-muted/30 rounded-lg border-2 border-dashed">
-                  <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <FolderOpen className="h-12 w-12 mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium mb-1">
-                    Aucun chapitre pour l'instant
+                    Aucun module pour l'instant
                   </p>
-                  <p className="text-xs">
-                    Cliquez sur "Gérer les chapitres" pour commencer à
-                    structurer votre cours
+                  <p className="text-xs mb-4">
+                    Créez votre premier module pour commencer à structurer votre cours
                   </p>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                  >
+                    Créer le premier module
+                  </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Progression du cours
-                    </span>
-                    <span className="font-medium">
-                      {stats?.totalChapters} chapitres
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Contenu total</span>
-                    <span className="font-medium">
-                      {stats?.totalContent} éléments
-                    </span>
-                  </div>
-                  <div className="mt-4 pt-4 border-t">
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href={`/admin/cours/${course.id}/chapters`}>
-                        Voir tous les chapitres
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
+                <ModuleList
+                  modules={modules}
+                  onReorder={handleReorderModules}
+                  onEdit={(module) => {
+                    setSelectedModule(module);
+                    setIsEditDialogOpen(true);
+                  }}
+                  onDelete={handleDeleteModule}
+                  onManageChapters={handleManageChapters}
+                />
               )}
             </CardContent>
           </Card>
@@ -277,6 +401,22 @@ export function CourseDetailPage({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Étudiants inscrits
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/10 rounded-lg">
+                  <FolderOpen className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {stats?.totalModules ?? 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Module{(stats?.totalModules ?? 0) !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
@@ -362,6 +502,49 @@ export function CourseDetailPage({
           </Card>
         </div>
       </div>
+
+      {/* Create Module Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau module</DialogTitle>
+            <DialogDescription>
+              Ajoutez un module pour organiser les chapitres de votre cours
+            </DialogDescription>
+          </DialogHeader>
+          <ModuleForm
+            onSubmit={handleCreateModule}
+            onCancel={() => setIsCreateDialogOpen(false)}
+            isLoading={isLoading}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Module Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) setSelectedModule(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le module</DialogTitle>
+            <DialogDescription>
+              Mettez à jour le titre et la description du module
+            </DialogDescription>
+          </DialogHeader>
+          {selectedModule && (
+            <ModuleForm
+              initialData={selectedModule}
+              onSubmit={handleEditModule}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedModule(null);
+              }}
+              isLoading={isLoading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

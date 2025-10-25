@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/auth";
-import { getCourseById, getChaptersWithContent, getEnrollmentsByCourseId } from "@/lib/db/queries";
+import { getCourseById, getEnrollmentsByCourseId } from "@/lib/db/queries";
+import { getModulesWithChaptersAndContent } from "@/lib/db/module-queries";
 import { CourseDetailPage } from "@/components/admin/courses";
 
 export const dynamic = "force-dynamic";
@@ -32,17 +33,19 @@ export default async function CourseDetailPageRoute({ params }: PageProps) {
     redirect("/non-autorise");
   }
 
-  // Fetch chapters
-  const chaptersResult = await getChaptersWithContent(courseId);
-  const chapters = chaptersResult.success ? chaptersResult.data : [];
+  // Fetch modules with chapters and content
+  const modules = await getModulesWithChaptersAndContent(courseId);
 
   // Fetch enrollments
   const enrollmentsResult = await getEnrollmentsByCourseId(courseId);
   const enrollments = enrollmentsResult.success ? enrollmentsResult.data : [];
 
-  // Calculate stats
-  const totalChapters = chapters.length;
-  const totalContent = chapters.reduce((acc, ch) => acc + ch.contentItems.length, 0);
+  // Calculate module-level statistics
+  const totalModules = modules.length;
+  const totalChapters = modules.reduce((acc, m) => acc + m.chapters.length, 0);
+  const totalContent = modules.reduce((acc, m) => 
+    acc + m.chapters.reduce((sum, ch) => sum + ch.contentItems.length, 0), 0
+  );
   const totalStudents = enrollments.length;
   const completedEnrollments = enrollments.filter(e => e && e.completedAt).length;
   const completionRate = totalStudents > 0 
@@ -51,9 +54,11 @@ export default async function CourseDetailPageRoute({ params }: PageProps) {
 
   return (
     <CourseDetailPage 
-      course={course} 
+      course={course}
+      modules={modules}
       userRole={user.role}
       stats={{
+        totalModules,
         totalChapters,
         totalContent,
         totalStudents,
