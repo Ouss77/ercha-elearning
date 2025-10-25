@@ -14,7 +14,6 @@ import {
   BookOpen,
   PlayCircle,
   CheckCircle2,
-  Lock,
   FileText,
   Video,
   Image as ImageIcon,
@@ -25,6 +24,9 @@ import {
   ChevronDown,
   ChevronRight,
   AlertCircle,
+  Flag,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 import type { User } from "@/lib/auth/auth";
 
@@ -77,6 +79,13 @@ interface CourseContentViewProps {
   chapters: Chapter[];
   completedChapters: number[];
   totalChapters: number;
+  quizAttempts: Array<{
+    quizId: number;
+    totalAttempts: number;
+    bestScore: number | null;
+    passed: boolean;
+    maxAttempts: number;
+  }>;
 }
 
 export function CourseContentView({
@@ -87,6 +96,7 @@ export function CourseContentView({
   chapters,
   completedChapters,
   totalChapters,
+  quizAttempts = [],
 }: CourseContentViewProps) {
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(
     new Set([chapters[0]?.id])
@@ -165,28 +175,32 @@ export function CourseContentView({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <Link href="/etudiant">
-                <Button variant="ghost" size="sm">
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Retour
+                <Button variant="ghost" size="sm" className="h-8 sm:h-9">
+                  <ChevronLeft className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Retour</span>
                 </Button>
               </Link>
-              <Separator orientation="vertical" className="h-8" />
-              <div>
-                <h1 className="text-xl font-bold text-foreground line-clamp-1">
+              <Separator
+                orientation="vertical"
+                className="h-8 hidden sm:block"
+              />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl font-bold text-foreground truncate">
                   {course.title}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {teacher?.name || "Instructeur"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-end">
               {domain && (
                 <Badge
+                  className="text-xs sm:text-sm"
                   style={{
                     backgroundColor: domain.color
                       ? `${domain.color}20`
@@ -204,20 +218,20 @@ export function CourseContentView({
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Sidebar - Course Chapters */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
+            <div className="lg:sticky lg:top-24 space-y-4">
               {/* Progress Card */}
               <Card className="border-border bg-gradient-to-br from-teal-50/50 to-emerald-50/50 dark:from-teal-950/20 dark:to-emerald-950/20">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
                         Progression du cours
                       </span>
-                      <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                      <span className="text-xl sm:text-2xl font-bold text-teal-600 dark:text-teal-400">
                         {stats.percentage}%
                       </span>
                     </div>
@@ -551,6 +565,15 @@ export function CourseContentView({
 
                       // QUIZ CONTENT
                       if (contentType === "quiz") {
+                        const quizId = currentContent.content.id;
+                        const attemptData = quizAttempts.find(
+                          (a) => a.quizId === quizId
+                        );
+                        const maxAttempts = contentData?.attemptsAllowed || 3;
+                        const totalAttempts = attemptData?.totalAttempts || 0;
+                        const bestScore = attemptData?.bestScore || null;
+                        const passed = attemptData?.passed || false;
+
                         return (
                           <div className="space-y-6">
                             <div className="p-6 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950 dark:to-emerald-950 rounded-lg border border-teal-200 dark:border-teal-800">
@@ -576,21 +599,73 @@ export function CourseContentView({
                                     %
                                   </span>
                                 )}
+                                {totalAttempts > 0 && (
+                                  <span>
+                                    🔄 {totalAttempts}/{maxAttempts} tentatives
+                                  </span>
+                                )}
+                                {bestScore !== null && (
+                                  <span
+                                    className={
+                                      passed
+                                        ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                                        : "text-amber-600 dark:text-amber-400 font-semibold"
+                                    }
+                                  >
+                                    🏆 Meilleur: {bestScore}%
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            <Link
-                              href={`/etudiant/cours/${course.id}/quiz/${currentContent.content.id}`}
-                            >
-                              <Button className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white">
-                                Commencer le quiz
+                            {passed ? (
+                              <Link href="/etudiant/jalons">
+                                <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white">
+                                  <Flag className="h-4 w-4 mr-2" />
+                                  Voir mes jalons
+                                </Button>
+                              </Link>
+                            ) : totalAttempts >= maxAttempts ? (
+                              <Button
+                                disabled
+                                className="w-full bg-red-600 text-white opacity-75 cursor-not-allowed"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Échec ({bestScore}%)
                               </Button>
-                            </Link>
+                            ) : totalAttempts > 0 ? (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white">
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Réessayer ({bestScore}%)
+                                </Button>
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white">
+                                  <PlayCircle className="h-4 w-4 mr-2" />
+                                  Commencer le quiz
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         );
                       }
 
                       // TEST CONTENT
                       if (contentType === "test") {
+                        const quizId = currentContent.content.id;
+                        const attemptData = quizAttempts.find(
+                          (a) => a.quizId === quizId
+                        );
+                        const maxAttempts = contentData?.attemptsAllowed || 3;
+                        const totalAttempts = attemptData?.totalAttempts || 0;
+                        const bestScore = attemptData?.bestScore || null;
+                        const passed = attemptData?.passed || false;
+
                         return (
                           <div className="space-y-6">
                             <div className="p-6 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 rounded-lg border border-orange-200 dark:border-orange-800">
@@ -616,26 +691,73 @@ export function CourseContentView({
                                     %
                                   </span>
                                 )}
-                                {contentData?.attemptsAllowed && (
+                                {totalAttempts > 0 && (
                                   <span>
-                                    🔄 Tentatives: {contentData.attemptsAllowed}
+                                    🔄 {totalAttempts}/{maxAttempts} tentatives
+                                  </span>
+                                )}
+                                {bestScore !== null && (
+                                  <span
+                                    className={
+                                      passed
+                                        ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                                        : "text-amber-600 dark:text-amber-400 font-semibold"
+                                    }
+                                  >
+                                    🏆 Meilleur: {bestScore}%
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <Link
-                              href={`/etudiant/cours/${course.id}/quiz/${currentContent.content.id}`}
-                            >
-                              <Button className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white">
-                                Commencer le test
+                            {passed ? (
+                              <Link href="/etudiant/jalons">
+                                <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white">
+                                  <Flag className="h-4 w-4 mr-2" />
+                                  Voir mes jalons
+                                </Button>
+                              </Link>
+                            ) : totalAttempts >= maxAttempts ? (
+                              <Button
+                                disabled
+                                className="w-full bg-red-600 text-white opacity-75 cursor-not-allowed"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Échec ({bestScore}%)
                               </Button>
-                            </Link>
+                            ) : totalAttempts > 0 ? (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white">
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Réessayer ({bestScore}%)
+                                </Button>
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white">
+                                  <PlayCircle className="h-4 w-4 mr-2" />
+                                  Commencer le test
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         );
                       }
 
                       // EXAM CONTENT
                       if (contentType === "exam") {
+                        const quizId = currentContent.content.id;
+                        const attemptData = quizAttempts.find(
+                          (a) => a.quizId === quizId
+                        );
+                        const maxAttempts = contentData?.attemptsAllowed || 3;
+                        const totalAttempts = attemptData?.totalAttempts || 0;
+                        const bestScore = attemptData?.bestScore || null;
+                        const passed = attemptData?.passed || false;
+
                         return (
                           <div className="space-y-6">
                             <div className="p-6 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950 rounded-lg border-2 border-red-300 dark:border-red-800">
@@ -661,10 +783,20 @@ export function CourseContentView({
                                     %
                                   </span>
                                 )}
-                                {contentData?.attemptsAllowed && (
+                                {totalAttempts > 0 && (
                                   <span>
-                                    🔄 {contentData.attemptsAllowed}{" "}
-                                    tentative(s)
+                                    🔄 {totalAttempts}/{maxAttempts} tentatives
+                                  </span>
+                                )}
+                                {bestScore !== null && (
+                                  <span
+                                    className={
+                                      passed
+                                        ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                                        : "text-amber-600 dark:text-amber-400 font-semibold"
+                                    }
+                                  >
+                                    🏆 Meilleur: {bestScore}%
                                   </span>
                                 )}
                               </div>
@@ -677,13 +809,40 @@ export function CourseContentView({
                                 </div>
                               )}
                             </div>
-                            <Link
-                              href={`/etudiant/cours/${course.id}/quiz/${currentContent.content.id}`}
-                            >
-                              <Button className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white">
-                                Commencer l&apos;examen
+                            {passed ? (
+                              <Link href="/etudiant/jalons">
+                                <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white">
+                                  <Flag className="h-4 w-4 mr-2" />
+                                  Voir mes jalons
+                                </Button>
+                              </Link>
+                            ) : totalAttempts >= maxAttempts ? (
+                              <Button
+                                disabled
+                                className="w-full bg-red-600 text-white opacity-75 cursor-not-allowed"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Échec ({bestScore}%)
                               </Button>
-                            </Link>
+                            ) : totalAttempts > 0 ? (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white">
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Réessayer ({bestScore}%)
+                                </Button>
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/etudiant/cours/${course.id}/quiz/${quizId}`}
+                              >
+                                <Button className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white">
+                                  <PlayCircle className="h-4 w-4 mr-2" />
+                                  Commencer l&apos;examen
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         );
                       }

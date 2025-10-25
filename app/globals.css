@@ -41,6 +41,9 @@
   --sidebar-accent-foreground: oklch(0.25 0.02 240);
   --sidebar-border: oklch(0.92 0.005 240);
   --sidebar-ring: oklch(0.68 0.12 180);
+
+  /* Sidebar width - controlled by JS */
+  --sidebar-width: 16rem;
 }
 
 .dark {

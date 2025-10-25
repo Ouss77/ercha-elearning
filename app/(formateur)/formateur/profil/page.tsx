@@ -13,7 +13,7 @@ export default async function TrainerProfilePage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== "TRAINER") {
-    redirect("/non-autorise");
+    redirect("/connexion");
   }
 
   // Fetch full user data from database
@@ -22,7 +22,8 @@ export default async function TrainerProfilePage() {
   const userData = userDataResult.success ? userDataResult.data : null;
 
   if (!userData) {
-    redirect("/non-autorise");
+    // If user data fetch fails, use basic user data from session
+    return <ProfileView user={user} userData={null} />;
   }
 
   return <ProfileView user={user} userData={userData} />;

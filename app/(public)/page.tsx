@@ -21,16 +21,16 @@ export default function HomePage() {
 
       switch (role) {
         case "ADMIN":
-          router.push("/admin");
+          router.replace("/admin");
           break;
         case "TRAINER":
-          router.push("/formateur");
+          router.replace("/formateur");
           break;
         case "STUDENT":
-          router.push("/etudiant");
+          router.replace("/etudiant");
           break;
         case "SUB_ADMIN":
-          router.push("/sous-admin");
+          router.replace("/sous-admin");
           break;
         default:
           break;
@@ -38,20 +38,7 @@ export default function HomePage() {
     }
   }, [status, session, router]);
 
-  // Show loading state while checking authentication
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Chargement...</div>
-      </div>
-    );
-  }
-
-  // Don't render homepage content if user is authenticated (will redirect)
-  if (status === "authenticated") {
-    return null;
-  }
-
+  // Show content immediately, redirect happens in background
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with Search */}

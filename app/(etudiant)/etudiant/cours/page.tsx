@@ -7,7 +7,7 @@ export default async function MyCoursesPage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== "STUDENT") {
-    redirect("/unauthorized");
+    redirect("/non-autorise");
   }
 
   // Fetch enrolled courses with progress

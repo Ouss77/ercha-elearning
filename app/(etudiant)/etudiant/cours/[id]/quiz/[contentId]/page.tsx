@@ -16,12 +16,18 @@ interface QuizPageProps {
 export default async function QuizPage({ params }: QuizPageProps) {
   const session = await getServerSession(authOptions);
 
+  // Check authentication
   if (!session?.user) {
-    redirect("/login");
+    redirect("/connexion");
   }
 
   const courseId = parseInt(params.id);
   const contentId = parseInt(params.contentId);
+
+  // Validate parameters
+  if (isNaN(courseId) || isNaN(contentId)) {
+    redirect(`/etudiant/cours/${params.id}`);
+  }
 
   // Fetch the content item with quiz data
   const [content] = await db

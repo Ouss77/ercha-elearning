@@ -52,7 +52,11 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
   SUB_ADMIN: [
     { title: "Tableau de bord", href: "/sous-admin", icon: LayoutDashboard },
     { title: "Classes", href: "/admin/classes", icon: UserCog },
-    { title: "Inscriptions", href: "/sous-admin/enrollments", icon: ClipboardList },
+    {
+      title: "Inscriptions",
+      href: "/sous-admin/enrollments",
+      icon: ClipboardList,
+    },
     { title: "Étudiants", href: "/sous-admin/students", icon: Users },
     { title: "Analytique", href: "/sous-admin/analytics", icon: BarChart3 },
     { title: "Notes", href: "/sous-admin/notes", icon: FileText },
@@ -76,11 +80,20 @@ export function MobileNav({ role, open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
   const menuItems = menuItemsByRole[role] || [];
 
+  // Get dashboard href based on role
+  const dashboardHref =
+    {
+      ADMIN: "/admin",
+      SUB_ADMIN: "/sous-admin",
+      TRAINER: "/formateur",
+      STUDENT: "/etudiant",
+    }[role] || "/";
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-64 p-0">
         <SheetHeader className="border-b border-border p-4">
-          <Logo iconSize="sm" showText={false} />
+          <Logo iconSize="sm" showText={false} href={dashboardHref} />
           <SheetTitle className="text-lg font-bold">EduPlatform</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col space-y-1 p-4">

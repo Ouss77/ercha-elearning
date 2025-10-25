@@ -1,9 +1,24 @@
-import { pgTable, serial, varchar, text, timestamp, pgEnum, jsonb, integer, boolean } from "drizzle-orm/pg-core"
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  timestamp,
+  pgEnum,
+  jsonb,
+  integer,
+  boolean,
+} from "drizzle-orm/pg-core";
 
 // Enums
-export const roleEnum = pgEnum("role", ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"])
-export const courseStatusEnum = pgEnum("course_status", ["draft", "validated"])
-export const quizTypeEnum = pgEnum("quiz_type", ["auto", "manual"])
+export const roleEnum = pgEnum("role", [
+  "STUDENT",
+  "TRAINER",
+  "SUB_ADMIN",
+  "ADMIN",
+]);
+export const courseStatusEnum = pgEnum("course_status", ["draft", "validated"]);
+export const quizTypeEnum = pgEnum("quiz_type", ["auto", "manual"]);
 
 // Users table
 export const users = pgTable("users", {
@@ -14,7 +29,7 @@ export const users = pgTable("users", {
   role: roleEnum("role").notNull().default("STUDENT"),
   avatarUrl: varchar("avatar_url", { length: 500 }),
   isActive: boolean("is_active").default(true),
-  
+
   // Student-specific information
   phone: varchar("phone", { length: 20 }),
   dateOfBirth: timestamp("date_of_birth"),
@@ -25,10 +40,10 @@ export const users = pgTable("users", {
 
   // Additional info
   bio: text("bio"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-})
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Domains table
 export const domains = pgTable("domains", {
@@ -36,8 +51,8 @@ export const domains = pgTable("domains", {
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   color: varchar("color", { length: 7 }).default("#6366f1"),
-  createdAt: timestamp("created_at").defaultNow()
-})
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // Courses table
 export const courses = pgTable("courses", {
@@ -50,39 +65,43 @@ export const courses = pgTable("courses", {
   thumbnailUrl: text("thumbnail_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-})
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Chapters table
 export const chapters = pgTable("chapters", {
   id: serial("id").primaryKey(),
-  courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-})
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Content Items table
 export const contentItems = pgTable("content_items", {
   id: serial("id").primaryKey(),
-  chapterId: integer("chapter_id").references(() => chapters.id, { onDelete: "cascade" }).notNull(),
+  chapterId: integer("chapter_id")
+    .references(() => chapters.id, { onDelete: "cascade" })
+    .notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   contentType: varchar("content_type", { length: 20 }).notNull(),
   orderIndex: integer("order_index").notNull().default(0),
   contentData: jsonb("content_data").notNull().default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-})
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Chapter Progress table
 export const chapterProgress = pgTable("chapter_progress", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").references(() => users.id),
   chapterId: integer("chapter_id").references(() => chapters.id),
-  completedAt: timestamp("completed_at").defaultNow()
-})
+  completedAt: timestamp("completed_at").defaultNow(),
+});
 
 // Enrollments table
 export const enrollments = pgTable("enrollments", {
@@ -91,11 +110,19 @@ export const enrollments = pgTable("enrollments", {
   courseId: integer("course_id").references(() => courses.id),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
-})
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-// Note: Quizzes are now handled as content_items with contentType="quiz"
-// Quiz attempts are tracked in content_item_attempts table
+// Quiz Attempts table (tracks student quiz attempts)
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").references(() => users.id),
+  quizId: integer("quiz_id"), // References content_items where contentType="quiz"
+  answers: jsonb("answers").notNull(),
+  score: integer("score").notNull(),
+  passed: boolean("passed").notNull(),
+  attemptedAt: timestamp("attempted_at").defaultNow(),
+});
 
 // Final Projects table
 export const finalProjects = pgTable("final_projects", {
@@ -104,22 +131,24 @@ export const finalProjects = pgTable("final_projects", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description").notNull(),
   requirements: jsonb("requirements"),
-  createdAt: timestamp("created_at").defaultNow()
-})
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // Project Submissions table
 export const projectSubmissions = pgTable("project_submissions", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").references(() => users.id),
-  finalProjectId: integer("final_project_id").references(() => finalProjects.id),
+  finalProjectId: integer("final_project_id").references(
+    () => finalProjects.id
+  ),
   submissionUrl: text("submission_url"),
   description: text("description"),
   status: varchar("status", { length: 20 }).default("submitted"),
   feedback: text("feedback"),
   grade: integer("grade"),
   submittedAt: timestamp("submitted_at").defaultNow(),
-  reviewedAt: timestamp("reviewed_at")
-})
+  reviewedAt: timestamp("reviewed_at"),
+});
 
 // Classes table (for grouping students by teacher)
 export const classes = pgTable("classes", {

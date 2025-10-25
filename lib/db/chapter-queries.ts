@@ -12,7 +12,7 @@
 
 import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
 import { db } from "./index";
-import { handleDbError } from '@/lib/db/error-handler';
+import { handleDbError } from "@/lib/db/error-handler";
 import { chapters, contentItems, courses } from "@/drizzle/schema";
 import type { Chapter, ContentItem, ChapterWithContent } from "@/types/chapter";
 import type { Role } from "@/lib/schemas/user";
@@ -380,7 +380,12 @@ export async function reorderChapters(
 export async function getContentItemById(
   id: number
 ): Promise<DbResult<ContentItem | null>> {
-  return contentItemBaseQueries.findById(id);
+  const result = await contentItemBaseQueries.findById(id);
+  if (!result.success) return result;
+  return {
+    success: true,
+    data: result.data as ContentItem | null,
+  };
 }
 
 /**
@@ -517,7 +522,7 @@ export async function updateContentItem(
       );
     }
 
-    return result;
+    return result as DbResult<ContentItem>;
   } catch (error) {
     console.error("[updateContentItem] Error updating content item:", error);
     return handleDbError(error);
@@ -568,7 +573,7 @@ export async function deleteContentItem(
         )
       );
 
-    return { success: true, data: deletedItem };
+    return { success: true, data: deletedItem as ContentItem };
   } catch (error) {
     return handleDbError(error);
   }

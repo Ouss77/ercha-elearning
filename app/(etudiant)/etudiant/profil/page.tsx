@@ -7,7 +7,7 @@ export default async function ProfilePage() {
   const user = await getCurrentUser();
 
   if (!user || user.role !== "STUDENT") {
-    redirect("/unauthorized");
+    redirect("/non-autorise");
   }
 
   // Fetch full user data from database
@@ -16,7 +16,7 @@ export default async function ProfilePage() {
   const userData = userDataResult.success ? userDataResult.data : null;
 
   if (!userData) {
-    redirect("/unauthorized");
+    redirect("/non-autorise");
   }
 
   return <ProfileView user={user} userData={userData} />;

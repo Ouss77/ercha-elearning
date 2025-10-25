@@ -16,13 +16,11 @@ export default async function TeacherCoursesPage() {
   const teacherId = parseInt(user.id);
   const coursesResult = await getTeacherCoursesWithStats(teacherId);
 
-  if (!coursesResult.success) {
-    redirect("/non-autorise");
-  }
+  const courses = coursesResult.success ? coursesResult.data : [];
 
   return (
     <div className="space-y-6">
-      <MyCourses courses={coursesResult.data} />
+      <MyCourses courses={courses} />
     </div>
   );
 }
