@@ -179,6 +179,12 @@ export const reorderContentItemsSchema = z.object({
   contentItemIds: z.array(z.number().int().positive()).min(1, "At least one content item ID is required")
 })
 
+// Move chapter to different module schema
+export const moveChapterSchema = z.object({
+  targetModuleId: z.number().int().positive("Target module ID must be positive"),
+  targetOrderIndex: z.number().int().min(0, "Order index must be non-negative").optional()
+})
+
 // ============================================================================
 // Type Exports
 // ============================================================================

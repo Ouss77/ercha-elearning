@@ -13,9 +13,12 @@ A comprehensive learning management system built with Next.js 14, featuring role
 ### Core Functionality
 - Secure authentication with NextAuth.js and bcrypt password hashing
 - Role-based access control (RBAC) with protected routes
+- **Modular course structure** with Course → Module → Chapter hierarchy
 - Course management with domains, chapters, and multimedia content
+- Module-based content organization for better course structure
 - Quiz system with auto and manual grading
-- Progress tracking and completion certificates
+- Progress tracking with module-level analytics
+- Completion certificates
 - Final project submissions and reviews
 - Responsive design with dark theme
 
@@ -132,9 +135,34 @@ After seeding, use these credentials to test different roles:
 - **users**: User accounts with roles (ADMIN, SUB_ADMIN, TRAINER, STUDENT)
 - **domains**: Course categories/subjects
 - **courses**: Course content with teacher assignments
-- **chapters**: Course chapters with content (video, text, quiz)
+- **modules**: Logical grouping of related chapters within a course _(NEW)_
+- **chapters**: Course chapters now associated with modules (not directly with courses)
 - **enrollments**: Student course enrollments
 - **chapter_progress**: Student progress tracking
+
+### Modular Course Structure
+
+The platform uses a three-level hierarchy for organizing course content:
+
+```
+Course
+  └─ Module (e.g., "HTML Fundamentals")
+      ├─ Chapter 1: "Introduction to HTML"
+      ├─ Chapter 2: "HTML Document Structure"
+      └─ Chapter 3: "Semantic HTML"
+```
+
+**Benefits**:
+- **Better Organization**: Group related chapters into logical modules
+- **Improved Navigation**: Students can see course structure at a glance
+- **Progress Tracking**: View completion percentage per module
+- **Flexible Structure**: Easily reorder modules and chapters
+
+**Implementation Notes**:
+- Modules reference courses via `courseId`
+- Chapters reference modules via `moduleId` (changed from `courseId`)
+- Cascade deletes ensure referential integrity
+- Module management is ADMIN-only (TRAINER role cannot manage course content)
 
 ### Assessment Tables
 - **content_items**: Flexible content system (video, text, quiz, test, exam)

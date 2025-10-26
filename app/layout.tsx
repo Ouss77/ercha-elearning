@@ -1,14 +1,16 @@
-import type React from "react";
-import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Analytics } from "@vercel/analytics/next";
-import { Suspense } from "react";
-import { SessionProvider } from "@/components/auth/session-provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import { SessionProvider } from "@/components/auth/session-provider"
+import { ThemeProvider } from "@/components/theme-provider"
+import { QueryProvider } from "@/lib/query/query-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 import { TopLoadingBar } from "@/components/layout/top-loading-bar";
-import "./globals.css";
+import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Erchad - Plateforme E-learning",
@@ -30,10 +32,14 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <SessionProvider>
-            <TopLoadingBar />
-            <Suspense fallback={null}>{children}</Suspense>
-          </SessionProvider>
+          <TooltipProvider>
+            <QueryProvider>
+              <SessionProvider>
+                <TopLoadingBar />
+                <Suspense fallback={null}>{children}</Suspense>
+              </SessionProvider>
+            </QueryProvider>
+          </TooltipProvider>
           <Toaster />
         </ThemeProvider>
         <Analytics />

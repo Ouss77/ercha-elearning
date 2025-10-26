@@ -7,6 +7,8 @@ export interface ChapterManagementPageProps {
   courseId: number;
   courseTitle: string;
   courseSlug?: string;
+  moduleId?: number;
+  moduleTitle?: string;
   initialChapters: ChapterWithContent[];
   userRole: Role;
   userId: number;

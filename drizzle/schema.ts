@@ -68,12 +68,21 @@ export const courses = pgTable("courses", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Modules table (NEW - grouping layer between courses and chapters)
+export const modules = pgTable("modules", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+})
+
 // Chapters table
 export const chapters = pgTable("chapters", {
   id: serial("id").primaryKey(),
-  courseId: integer("course_id")
-    .references(() => courses.id, { onDelete: "cascade" })
-    .notNull(),
+  moduleId: integer("module_id").references(() => modules.id, { onDelete: "cascade" }).notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   orderIndex: integer("order_index").notNull().default(0),

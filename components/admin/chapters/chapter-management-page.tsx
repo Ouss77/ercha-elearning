@@ -35,6 +35,8 @@ export function ChapterManagementPage({
   courseId,
   courseTitle,
   courseSlug,
+  moduleId,
+  moduleTitle,
   initialChapters,
   userRole,
   userId,
@@ -56,7 +58,7 @@ export function ChapterManagementPage({
     deleteChapter,
     confirmDeleteChapter,
     reorderChapters,
-  } = useChapterOperations(courseId);
+  } = useChapterOperations(courseId, moduleId);
 
   const {
     viewMode,
@@ -70,7 +72,7 @@ export function ChapterManagementPage({
     handleCancelEdit,
     handleEditContent,
     handleAddContent,
-  } = useViewMode(courseId, setChapters);
+  } = useViewMode(courseId, setChapters, moduleId);
 
   const { reorderContent, deleteContent, confirmDeleteContent } =
     useContentOperations(
@@ -146,6 +148,16 @@ export function ChapterManagementPage({
                   {courseSlug || courseTitle}
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {moduleId && moduleTitle && (
+                <>
+                  <BreadcrumbSeparator className="hidden sm:block" />
+                  <BreadcrumbItem className="hidden sm:block">
+                    <BreadcrumbLink href={`/admin/cours/${courseId}`} className="text-xs sm:text-sm max-w-[150px] truncate">
+                      {moduleTitle}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
               <BreadcrumbSeparator className="hidden sm:block" />
               <BreadcrumbItem>
                 <BreadcrumbPage className="text-xs sm:text-sm">Chapitres</BreadcrumbPage>
@@ -187,7 +199,7 @@ export function ChapterManagementPage({
                   Gestion des Chapitres
                 </h1>
                 <p className="text-muted-foreground mt-1 text-xs sm:text-sm truncate">
-                  {courseTitle}
+                  {moduleTitle ? `${courseTitle} → ${moduleTitle}` : courseTitle}
                 </p>
               </div>
             </div>

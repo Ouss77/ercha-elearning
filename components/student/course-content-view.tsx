@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +22,13 @@ import {
   ChevronDown,
   ChevronRight,
   AlertCircle,
+  FolderOpen,
   Flag,
   RotateCcw,
   XCircle,
 } from "lucide-react";
 import type { User } from "@/lib/auth/auth";
+import type { ModuleWithChaptersAndContent } from "@/lib/db/module-queries";
 
 interface ContentItem {
   id: number;
@@ -76,7 +76,7 @@ interface CourseContentViewProps {
     name: string | null;
     email: string;
   } | null;
-  chapters: Chapter[];
+  modules: ModuleWithChaptersAndContent[];
   completedChapters: number[];
   totalChapters: number;
   quizAttempts: Array<{
@@ -93,25 +93,36 @@ export function CourseContentView({
   course,
   domain,
   teacher,
-  chapters,
+  modules,
   completedChapters,
   totalChapters,
   quizAttempts = [],
 }: CourseContentViewProps) {
+  const [expandedModules, setExpandedModules] = useState<Set<number>>(
+    new Set(modules.length > 0 ? [modules[0].id] : [])
+  );
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(
-    new Set([chapters[0]?.id])
+    new Set()
   );
   const [selectedContent, setSelectedContent] = useState<{
     chapterId: number;
     contentId: number;
   } | null>(null);
 
+  // Flatten chapters from all modules for easier access
+  const allChapters = useMemo(() => {
+    return modules.flatMap(module => module.chapters.map(ch => ({
+      ...ch,
+      contentItems: ch.contentItems || []
+    })));
+  }, [modules]);
+
   const stats = useMemo(() => {
     const completed = completedChapters.length;
     const total = totalChapters;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    const totalContentItems = chapters.reduce(
-      (acc, ch) => acc + ch.contentItems.length,
+    const totalContentItems = allChapters.reduce(
+      (acc, ch) => acc + (ch.contentItems?.length || 0),
       0
     );
 
@@ -121,7 +132,17 @@ export function CourseContentView({
       percentage,
       totalContentItems,
     };
-  }, [completedChapters, totalChapters, chapters]);
+  }, [completedChapters, totalChapters, allChapters]);
+
+  const toggleModule = (moduleId: number) => {
+    const newExpanded = new Set(expandedModules);
+    if (newExpanded.has(moduleId)) {
+      newExpanded.delete(moduleId);
+    } else {
+      newExpanded.add(moduleId);
+    }
+    setExpandedModules(newExpanded);
+  };
 
   const toggleChapter = (chapterId: number) => {
     const newExpanded = new Set(expandedChapters);
@@ -164,12 +185,19 @@ export function CourseContentView({
 
   const currentContent = useMemo(() => {
     if (!selectedContent) return null;
-    const chapter = chapters.find((ch) => ch.id === selectedContent.chapterId);
-    const content = chapter?.contentItems.find(
+    const chapter = allChapters.find((ch) => ch.id === selectedContent.chapterId);
+    const content = chapter?.contentItems?.find(
       (item) => item.id === selectedContent.contentId
     );
-    return content ? { chapter, content } : null;
-  }, [selectedContent, chapters]);
+    if (!content || !chapter) return null;
+
+    // Find the module that contains this chapter
+    const module = modules.find(m =>
+      m.chapters.some(ch => ch.id === chapter.id)
+    );
+
+    return { module, chapter, content };
+  }, [selectedContent, allChapters, modules]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,114 +286,176 @@ export function CourseContentView({
                 </CardContent>
               </Card>
 
-              {/* Chapters List */}
+              {/* Modules and Chapters List */}
               <Card className="border-border">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-4">
-                    <BookOpen className="h-5 w-5 text-teal-600" />
-                    <h2 className="font-bold text-lg">Chapitres du cours</h2>
+                    <FolderOpen className="h-5 w-5 text-teal-600" />
+                    <h2 className="font-bold text-lg">Contenu du cours</h2>
                   </div>
-                  <div className="space-y-2">
-                    {chapters.map((chapter, index) => {
-                      const isExpanded = expandedChapters.has(chapter.id);
-                      const isCompleted = isChapterCompleted(chapter.id);
+                  <div className="space-y-3">
+                    {modules.map((module, moduleIndex) => {
+                      const isModuleExpanded = expandedModules.has(module.id);
+                      const moduleCompletedChapters = module.chapters.filter(ch =>
+                        isChapterCompleted(ch.id)
+                      ).length;
+                      const moduleProgress = module.chapters.length > 0
+                        ? Math.round((moduleCompletedChapters / module.chapters.length) * 100)
+                        : 0;
 
                       return (
                         <div
-                          key={chapter.id}
-                          className="border border-border rounded-lg overflow-hidden hover:border-teal-500/50 transition-colors"
+                          key={module.id}
+                          className="border-2 border-border rounded-lg overflow-hidden"
                         >
-                          {/* Chapter Header */}
+                          {/* Module Header */}
                           <button
-                            onClick={() => toggleChapter(chapter.id)}
-                            className="w-full p-3 flex items-start gap-3 hover:bg-accent/50 transition-colors"
+                            onClick={() => toggleModule(module.id)}
+                            className="w-full p-4 flex items-start gap-3 hover:bg-accent/50 transition-colors bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-950/20"
                           >
-                            <div
-                              className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${
-                                isCompleted ? "bg-emerald-500" : "bg-muted"
-                              }`}
-                            >
-                              {isCompleted ? (
-                                <CheckCircle2 className="h-4 w-4 text-white" />
-                              ) : (
-                                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                              )}
-                            </div>
+                            <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                             <div className="flex-1 text-left min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-xs font-semibold text-muted-foreground">
-                                  Chapitre {index + 1}
+                                  Module {moduleIndex + 1}
                                 </span>
-                                {chapter.contentItems.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {chapter.contentItems.length}{" "}
-                                    {chapter.contentItems.length > 1
-                                      ? "éléments"
-                                      : "élément"}
+                                <Badge variant="secondary" className="text-xs">
+                                  {module.chapters.length}{" "}
+                                  {module.chapters.length > 1 ? "chapitres" : "chapitre"}
+                                </Badge>
+                                {moduleProgress > 0 && (
+                                  <Badge
+                                    variant={moduleProgress === 100 ? "default" : "outline"}
+                                    className="text-xs"
+                                  >
+                                    {moduleProgress}%
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="font-semibold text-sm line-clamp-2">
-                                {chapter.title}
+                              <h3 className="font-semibold text-base line-clamp-2">
+                                {module.title}
                               </h3>
-                              {chapter.description && (
+                              {module.description && (
                                 <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                                  {chapter.description}
+                                  {module.description}
                                 </p>
                               )}
                             </div>
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                            {isModuleExpanded ? (
+                              <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
                             )}
                           </button>
 
-                          {/* Content Items */}
-                          {isExpanded && chapter.contentItems.length > 0 && (
-                            <div className="border-t border-border bg-muted/30">
-                              {chapter.contentItems.map((item, itemIndex) => {
-                                const Icon = getContentIcon(item.contentType);
-                                const isActive =
-                                  selectedContent?.contentId === item.id;
+                          {/* Chapters in Module */}
+                          {isModuleExpanded && (
+                            <div className="border-t border-border bg-muted/20">
+                              {module.chapters.length > 0 ? (
+                                <div className="p-2 space-y-1">
+                                  {module.chapters.map((chapter, chapterIndex) => {
+                                    const isExpanded = expandedChapters.has(chapter.id);
+                                    const isCompleted = isChapterCompleted(chapter.id);
+                                    const contentItems = chapter.contentItems || [];
 
-                                return (
-                                  <button
-                                    key={item.id}
-                                    onClick={() =>
-                                      openContent(chapter.id, item.id)
-                                    }
-                                    className={`w-full p-3 pl-12 flex items-center gap-3 hover:bg-accent transition-colors ${
-                                      isActive
-                                        ? "bg-teal-50 dark:bg-teal-950/30"
-                                        : ""
-                                    }`}
-                                  >
-                                    <Icon
-                                      className={`h-4 w-4 flex-shrink-0 ${
-                                        isActive
-                                          ? "text-teal-600"
-                                          : "text-muted-foreground"
-                                      }`}
-                                    />
-                                    <span
-                                      className={`text-sm flex-1 text-left line-clamp-1 ${
-                                        isActive
-                                          ? "font-semibold text-teal-600 dark:text-teal-400"
-                                          : "text-foreground"
-                                      }`}
-                                    >
-                                      {item.title}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
+                                    return (
+                                      <div
+                                        key={chapter.id}
+                                        className="border border-border rounded-lg overflow-hidden hover:border-teal-500/50 transition-colors"
+                                      >
+                                        {/* Chapter Header */}
+                                        <button
+                                          onClick={() => toggleChapter(chapter.id)}
+                                          className="w-full p-3 flex items-start gap-3 hover:bg-accent/50 transition-colors"
+                                        >
+                                          <div
+                                            className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${
+                                              isCompleted ? "bg-emerald-500" : "bg-muted"
+                                            }`}
+                                          >
+                                            {isCompleted ? (
+                                              <CheckCircle2 className="h-4 w-4 text-white" />
+                                            ) : (
+                                              <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                                            )}
+                                          </div>
+                                          <div className="flex-1 text-left min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="text-xs font-semibold text-muted-foreground">
+                                                Chapitre {chapterIndex + 1}
+                                              </span>
+                                              {contentItems.length > 0 && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  {contentItems.length}{" "}
+                                                  {contentItems.length > 1 ? "éléments" : "élément"}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <h3 className="font-semibold text-sm line-clamp-2">
+                                              {chapter.title}
+                                            </h3>
+                                            {chapter.description && (
+                                              <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                                                {chapter.description}
+                                              </p>
+                                            )}
+                                          </div>
+                                          {isExpanded ? (
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                                          )}
+                                        </button>
 
-                          {isExpanded && chapter.contentItems.length === 0 && (
-                            <div className="p-4 pl-12 text-sm text-muted-foreground text-center border-t border-border bg-muted/30">
-                              Aucun contenu disponible
+                                        {/* Content Items */}
+                                        {isExpanded && contentItems.length > 0 && (
+                                          <div className="border-t border-border bg-muted/30">
+                                            {contentItems.map((item) => {
+                                              const Icon = getContentIcon(item.contentType);
+                                              const isActive = selectedContent?.contentId === item.id;
+
+                                              return (
+                                                <button
+                                                  key={item.id}
+                                                  onClick={() => openContent(chapter.id, item.id)}
+                                                  className={`w-full p-3 pl-12 flex items-center gap-3 hover:bg-accent transition-colors ${
+                                                    isActive ? "bg-teal-50 dark:bg-teal-950/30" : ""
+                                                  }`}
+                                                >
+                                                  <Icon
+                                                    className={`h-4 w-4 flex-shrink-0 ${
+                                                      isActive ? "text-teal-600" : "text-muted-foreground"
+                                                    }`}
+                                                  />
+                                                  <span
+                                                    className={`text-sm flex-1 text-left line-clamp-1 ${
+                                                      isActive
+                                                        ? "font-semibold text-teal-600 dark:text-teal-400"
+                                                        : "text-foreground"
+                                                    }`}
+                                                  >
+                                                    {item.title}
+                                                  </span>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+
+                                        {isExpanded && contentItems.length === 0 && (
+                                          <div className="p-4 pl-12 text-sm text-muted-foreground text-center border-t border-border bg-muted/30">
+                                            Aucun contenu disponible
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="p-4 text-sm text-muted-foreground text-center">
+                                  Ce module ne contient pas encore de chapitres
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -373,10 +463,10 @@ export function CourseContentView({
                     })}
                   </div>
 
-                  {chapters.length === 0 && (
+                  {modules.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
-                      <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm">Aucun chapitre disponible</p>
+                      <FolderOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">Aucun module disponible</p>
                     </div>
                   )}
                 </CardContent>
@@ -434,10 +524,10 @@ export function CourseContentView({
                         </div>
                       </div>
                     </div>
-                    {chapters.length > 0 && (
+                    {allChapters.length > 0 && (
                       <Button
                         onClick={() => {
-                          const firstChapter = chapters[0];
+                          const firstChapter = allChapters[0];
                           if (firstChapter.contentItems.length > 0) {
                             openContent(
                               firstChapter.id,
@@ -456,6 +546,33 @@ export function CourseContentView({
               </Card>
             ) : (
               <div className="space-y-6">
+                {/* Breadcrumb Navigation */}
+                {currentContent.module && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Link
+                      href="/etudiant"
+                      className="hover:text-foreground transition-colors"
+                    >
+                      Mes cours
+                    </Link>
+                    <ChevronRight className="h-4 w-4" />
+                    <button
+                      onClick={() => setSelectedContent(null)}
+                      className="hover:text-foreground transition-colors"
+                    >
+                      {course.title}
+                    </button>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="text-teal-600 font-medium">
+                      {currentContent.module.title}
+                    </span>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="text-foreground font-medium">
+                      {currentContent.chapter?.title}
+                    </span>
+                  </div>
+                )}
+
                 {/* Content Header */}
                 <Card className="border-border">
                   <CardContent className="p-6">
@@ -542,7 +659,7 @@ export function CourseContentView({
                                   </h4>
                                   <ul className="space-y-2">
                                     {contentData.attachments.map(
-                                      (attachment: any, idx: number) => (
+                                      (attachment: { name: string; url: string; type: string; size: number }, idx: number) => (
                                         <li key={idx}>
                                           <a
                                             href={attachment.url}
@@ -881,11 +998,11 @@ export function CourseContentView({
                         openContent(currentChapter.id, prevContent.id);
                       } else {
                         // Go to previous chapter
-                        const chapterIndex = chapters.findIndex(
+                        const chapterIndex = allChapters.findIndex(
                           (ch) => ch.id === currentChapter?.id
                         );
                         if (chapterIndex > 0) {
-                          const prevChapter = chapters[chapterIndex - 1];
+                          const prevChapter = allChapters[chapterIndex - 1];
                           if (prevChapter.contentItems.length > 0) {
                             const lastContent =
                               prevChapter.contentItems[
@@ -898,7 +1015,7 @@ export function CourseContentView({
                     }}
                     disabled={
                       !currentContent.chapter ||
-                      (chapters.findIndex(
+                      (allChapters.findIndex(
                         (ch) => ch.id === currentContent.chapter?.id
                       ) === 0 &&
                         currentContent.chapter.contentItems.findIndex(
@@ -929,11 +1046,11 @@ export function CourseContentView({
                         openContent(currentChapter.id, nextContent.id);
                       } else {
                         // Go to next chapter
-                        const chapterIndex = chapters.findIndex(
+                        const chapterIndex = allChapters.findIndex(
                           (ch) => ch.id === currentChapter?.id
                         );
-                        if (chapterIndex < chapters.length - 1) {
-                          const nextChapter = chapters[chapterIndex + 1];
+                        if (chapterIndex < allChapters.length - 1) {
+                          const nextChapter = allChapters[chapterIndex + 1];
                           if (nextChapter.contentItems.length > 0) {
                             const firstContent = nextChapter.contentItems[0];
                             openContent(nextChapter.id, firstContent.id);
@@ -943,10 +1060,10 @@ export function CourseContentView({
                     }}
                     disabled={
                       !currentContent.chapter ||
-                      (chapters.findIndex(
+                      (allChapters.findIndex(
                         (ch) => ch.id === currentContent.chapter?.id
                       ) ===
-                        chapters.length - 1 &&
+                        allChapters.length - 1 &&
                         currentContent.chapter.contentItems.findIndex(
                           (item) => item.id === currentContent.content.id
                         ) ===
