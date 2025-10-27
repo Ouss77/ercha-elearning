@@ -201,7 +201,11 @@ export async function getQuizzesByCourseWithAttempts(
   >
 > {
   try {
+    // Import modules table for the new structure
+    const { modules } = await import("@/drizzle/schema");
+
     // Get all quiz content items for the course
+    // Need to join through modules since chapters now reference moduleId
     const quizzes = await db
       .select({
         quizId: contentItems.id,
@@ -213,13 +217,25 @@ export async function getQuizzesByCourseWithAttempts(
       })
       .from(contentItems)
       .innerJoin(chapters, eq(contentItems.chapterId, chapters.id))
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
       .where(
         and(
-          eq(chapters.courseId, courseId),
+          eq(modules.courseId, courseId),
           eq(contentItems.contentType, "quiz")
         )
       )
       .orderBy(chapters.orderIndex, contentItems.orderIndex);
+
+    console.log(
+      `[Quiz Query Debug] Found ${quizzes.length} quizzes for course ${courseId}`
+    );
+    if (quizzes.length > 0) {
+      console.log(`[Quiz Query Debug] First quiz:`, {
+        id: quizzes[0].quizId,
+        title: quizzes[0].quizTitle,
+        chapterId: quizzes[0].chapterId,
+      });
+    }
 
     // For each quiz, get the student's attempt data
     const quizzesWithAttempts = await Promise.all(
@@ -234,6 +250,17 @@ export async function getQuizzesByCourseWithAttempts(
             )
           )
           .orderBy(desc(quizAttempts.attemptedAt));
+
+        console.log(
+          `[Quiz Attempts Debug] Quiz ${quiz.quizId}: Found ${attempts.length} attempts for student ${studentId}`
+        );
+        if (attempts.length > 0) {
+          console.log(`[Quiz Attempts Debug] Latest attempt:`, {
+            score: attempts[0].score,
+            passed: attempts[0].passed,
+            attemptedAt: attempts[0].attemptedAt,
+          });
+        }
 
         const bestAttempt = attempts.reduce<(typeof attempts)[0] | null>(
           (best, current) => {
@@ -269,6 +296,12 @@ export async function getQuizzesByCourseWithAttempts(
     return { success: true, data: quizzesWithAttempts };
   } catch (error) {
     console.error("Error fetching quizzes with attempts:", error);
+    console.error("Error details:", {
+      courseId,
+      studentId,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       success: false,
       error:
