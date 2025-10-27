@@ -22,7 +22,8 @@ interface CourseCardProps {
     domain: string;
     teacher: string;
     thumbnail: string;
-    totalChapters: number;
+    totalChapters?: number;
+    totalModules?: number;
   };
 }
 
@@ -139,10 +140,10 @@ export function CourseCard({ course }: CourseCardProps) {
             </div>
             <div>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                Chapitres
+                {course.totalModules ? 'Modules' : 'Chapitres'}
               </p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {course.totalChapters}
+                {course.totalModules || course.totalChapters}
               </p>
             </div>
           </div>

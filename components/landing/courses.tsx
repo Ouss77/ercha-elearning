@@ -104,7 +104,7 @@ export function Courses() {
                   {stats.totalChapters}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Chapitres Total
+                  Modules Total
                 </p>
               </div>
             </CardContent>

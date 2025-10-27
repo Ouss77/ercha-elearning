@@ -194,13 +194,13 @@ export default function CourseDetailView({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chapitres</CardTitle>
+            <CardTitle className="text-sm font-medium">Contenu</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalChapters}</div>
             <p className="text-xs text-muted-foreground">
-              {chapters.length} chapitres créés
+              {chapters.length} chapitres au total
             </p>
           </CardContent>
         </Card>
@@ -313,7 +313,7 @@ export default function CourseDetailView({
                 Contenu du cours ({chapters.length} chapitres)
               </CardTitle>
               <CardDescription>
-                Liste des chapitres dans l'ordre de présentation
+                Liste de tous les chapitres organisés par modules
               </CardDescription>
             </CardHeader>
             <CardContent>

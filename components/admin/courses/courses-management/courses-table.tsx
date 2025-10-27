@@ -67,7 +67,7 @@ export function CoursesTable({
               <TableHead className="hidden md:table-cell w-[140px]">Domaine</TableHead>
               <TableHead className="hidden lg:table-cell w-[150px]">Professeur</TableHead>
               <TableHead className="hidden lg:table-cell w-[100px]">Étudiants</TableHead>
-              <TableHead className="hidden xl:table-cell w-[100px]">Chapitres</TableHead>
+              <TableHead className="hidden xl:table-cell w-[100px]">Modules</TableHead>
               <TableHead className="hidden sm:table-cell w-[130px]">Statut</TableHead>
               <TableHead className="text-right w-[180px]">Actions</TableHead>
             </TableRow>
