@@ -13,6 +13,9 @@ import { db } from "@/lib/db";
 import { chapterProgress } from "@/drizzle/schema";
 import { eq, and, inArray } from "drizzle-orm";
 
+// Revalidate this page every 10 seconds to keep quiz attempts fresh
+export const revalidate = 10;
+
 interface CoursePageProps {
   params: { id: string };
 }

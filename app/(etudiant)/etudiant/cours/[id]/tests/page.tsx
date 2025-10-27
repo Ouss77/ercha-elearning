@@ -6,6 +6,9 @@ import {
 } from "@/lib/db/queries";
 import { notFound } from "next/navigation";
 
+// Revalidate this page every 10 seconds
+export const revalidate = 10;
+
 interface CourseQuizzesPageProps {
   params: {
     id: string;

@@ -13,8 +13,11 @@ import {
   Calendar,
   Flag,
   RotateCcw,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface CourseQuizzesViewProps {
   courseId: number;
@@ -39,11 +42,21 @@ export function CourseQuizzesView({
   courseTitle,
   quizzes,
 }: CourseQuizzesViewProps) {
+  const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    router.refresh();
+    // Reset loading state after a delay
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   const stats = {
     total: quizzes.length,
     completed: quizzes.filter((q) => q.passed).length,
     pending: quizzes.filter((q) => !q.passed).length,
-    attempted: quizzes.filter((q) => q.totalAttempts > 0).length,
+    totalAttempts: quizzes.reduce((sum, q) => sum + q.totalAttempts, 0),
   };
 
   const formatDate = (date: Date | null) => {
@@ -138,10 +151,10 @@ export function CourseQuizzesView({
                   Tentatives
                 </p>
                 <p className="text-3xl sm:text-4xl font-bold text-cyan-600 dark:text-cyan-400">
-                  {stats.attempted}
+                  {stats.totalAttempts}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tests essayés
+                  Total d&apos;essais
                 </p>
               </div>
               <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
@@ -153,9 +166,21 @@ export function CourseQuizzesView({
       </div>
 
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{courseTitle}</h2>
-        <p className="text-muted-foreground">Tests et évaluations du cours</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">{courseTitle}</h2>
+          <p className="text-muted-foreground">Tests et évaluations du cours</p>
+        </div>
+        <Button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Actualiser</span>
+        </Button>
       </div>
 
       {/* Quizzes List */}
