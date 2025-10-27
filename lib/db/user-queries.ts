@@ -6,17 +6,22 @@ import type { User } from "@/types/user";
 import { createBaseQueries } from "./base-queries";
 import { DbResult, DbErrorCode } from "./types";
 import { handleDbError } from "./error-handler";
-import { validateId, validateEmail, validateRequired, validateEnum } from "./validation";
+import {
+  validateId,
+  validateEmail,
+  validateRequired,
+  validateEnum,
+} from "./validation";
 
 // Create base query operations for users table
 const userBaseQueries = createBaseQueries(users, users.id);
 
 /**
  * Get a user by email address
- * 
+ *
  * @param email - The user's email address
  * @returns Result with user or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const result = await getUserByEmail('user@example.com');
@@ -25,28 +30,32 @@ const userBaseQueries = createBaseQueries(users, users.id);
  * }
  * ```
  */
-export async function getUserByEmail(email: string): Promise<DbResult<User | null>> {
+export async function getUserByEmail(
+  email: string
+): Promise<DbResult<User | null>> {
   // Validate email format
   const validEmail = validateEmail(email);
   if (!validEmail.success) return validEmail as any;
 
   try {
-    const result = await userBaseQueries.findOne(eq(users.email, validEmail.data));
+    const result = await userBaseQueries.findOne(
+      eq(users.email, validEmail.data)
+    );
     if (!result.success) return result;
 
     const mappedUser = mapUserFromDb(result.data);
     return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error, 'getUserByEmail');
+    return handleDbError(error, "getUserByEmail");
   }
 }
 
 /**
  * Create a new user with validation
- * 
+ *
  * @param data - User data to create
  * @returns Result with created user
- * 
+ *
  * @example
  * ```typescript
  * const result = await createUser({
@@ -76,15 +85,19 @@ export async function createUser(data: {
   const validEmail = validateEmail(data.email);
   if (!validEmail.success) return validEmail as any;
 
-  const validPassword = validateRequired(data.password, 'password');
+  const validPassword = validateRequired(data.password, "password");
   if (!validPassword.success) return validPassword as any;
 
-  const validName = validateRequired(data.name, 'name');
+  const validName = validateRequired(data.name, "name");
   if (!validName.success) return validName as any;
 
   // Validate role if provided
   if (data.role) {
-    const validRole = validateEnum(data.role, ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const, 'role');
+    const validRole = validateEnum(
+      data.role,
+      ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const,
+      "role"
+    );
     if (!validRole.success) return validRole as any;
   }
 
@@ -117,23 +130,23 @@ export async function createUser(data: {
     if (!mappedUser) {
       return {
         success: false,
-        error: 'Failed to map created user',
+        error: "Failed to map created user",
         code: DbErrorCode.DATABASE_ERROR,
       };
     }
 
     return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error, 'createUser');
+    return handleDbError(error, "createUser");
   }
 }
 
 /**
  * Get a user by ID
- * 
+ *
  * @param id - The user ID
  * @returns Result with user or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const result = await getUserById(1);
@@ -154,16 +167,16 @@ export async function getUserById(id: number): Promise<DbResult<User | null>> {
     const mappedUser = mapUserFromDb(result.data);
     return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error, 'getUserById');
+    return handleDbError(error, "getUserById");
   }
 }
 
 /**
  * Get all users with optional role filtering and their enrolled courses
- * 
+ *
  * @param roleFilter - Optional role to filter by
  * @returns Result with array of users with their enrolled courses
- * 
+ *
  * @example
  * ```typescript
  * const result = await getAllUsers('STUDENT');
@@ -177,7 +190,11 @@ export async function getAllUsers(
 ): Promise<DbResult<Array<User & { enrolledCourses: string[] }>>> {
   // Validate role filter if provided
   if (roleFilter) {
-    const validRole = validateEnum(roleFilter, ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const, 'roleFilter');
+    const validRole = validateEnum(
+      roleFilter,
+      ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const,
+      "roleFilter"
+    );
     if (!validRole.success) return validRole as any;
   }
 
@@ -203,7 +220,7 @@ export async function getAllUsers(
             .innerJoin(courses, eq(enrollments.courseId, courses.id))
             .where(eq(enrollments.studentId, user.id));
 
-          courseSlugs.push(...enrolledCourses.map(c => c.slug));
+          courseSlugs.push(...enrolledCourses.map((c) => c.slug));
         }
 
         // Get courses the user is teaching (as a trainer)
@@ -213,34 +230,36 @@ export async function getAllUsers(
             .from(courses)
             .where(eq(courses.teacherId, user.id));
 
-          courseSlugs.push(...teachingCourses.map(c => c.slug));
+          courseSlugs.push(...teachingCourses.map((c) => c.slug));
         }
 
         // Remove duplicates
         const uniqueSlugs = [...new Set(courseSlugs)];
 
         const mappedUser = mapUserFromDb(user);
-        return mappedUser ? { ...mappedUser, enrolledCourses: uniqueSlugs } : null;
+        return mappedUser
+          ? { ...mappedUser, enrolledCourses: uniqueSlugs }
+          : null;
       })
     );
 
     const filteredUsers = usersWithCourses.filter(
       (u): u is User & { enrolledCourses: string[] } => u !== null
     );
-    
+
     return { success: true, data: filteredUsers };
   } catch (error) {
-    return handleDbError(error, 'getAllUsers');
+    return handleDbError(error, "getAllUsers");
   }
 }
 
 /**
  * Update a user by ID with validation
- * 
+ *
  * @param id - The user ID
  * @param data - Partial user data to update
  * @returns Result with updated user
- * 
+ *
  * @example
  * ```typescript
  * const result = await updateUser(1, {
@@ -280,7 +299,11 @@ export async function updateUser(
 
   // Validate role if provided
   if (data.role) {
-    const validRole = validateEnum(data.role, ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const, 'role');
+    const validRole = validateEnum(
+      data.role,
+      ["STUDENT", "TRAINER", "SUB_ADMIN", "ADMIN"] as const,
+      "role"
+    );
     if (!validRole.success) return validRole as any;
   }
 
@@ -295,22 +318,22 @@ export async function updateUser(
     if (!mappedUser) {
       return {
         success: false,
-        error: 'Failed to map updated user',
+        error: "Failed to map updated user",
         code: DbErrorCode.DATABASE_ERROR,
       };
     }
 
     return { success: true, data: mappedUser };
   } catch (error) {
-    return handleDbError(error, 'updateUser');
+    return handleDbError(error, "updateUser");
   }
 }
 
 /**
  * Get all teachers (users with TRAINER role)
- * 
+ *
  * @returns Result with array of teacher users
- * 
+ *
  * @example
  * ```typescript
  * const result = await getTeachers();
@@ -327,19 +350,19 @@ export async function getTeachers(): Promise<DbResult<User[]>> {
     const mappedUsers = result.data
       .map(mapUserFromDb)
       .filter((u): u is User => u !== null);
-    
+
     return { success: true, data: mappedUsers };
   } catch (error) {
-    return handleDbError(error, 'getTeachers');
+    return handleDbError(error, "getTeachers");
   }
 }
 
 /**
  * Validate that a user exists and has the TRAINER role
- * 
+ *
  * @param teacherId - The user ID to validate
  * @returns Result with boolean indicating if user is a valid teacher
- * 
+ *
  * @example
  * ```typescript
  * const result = await validateTeacherAssignment(5);
@@ -348,7 +371,9 @@ export async function getTeachers(): Promise<DbResult<User[]>> {
  * }
  * ```
  */
-export async function validateTeacherAssignment(teacherId: number): Promise<DbResult<boolean>> {
+export async function validateTeacherAssignment(
+  teacherId: number
+): Promise<DbResult<boolean>> {
   // Validate ID
   const validId = validateId(teacherId);
   if (!validId.success) return validId as any;
@@ -357,18 +382,17 @@ export async function validateTeacherAssignment(teacherId: number): Promise<DbRe
     const result = await userBaseQueries.exists(
       and(eq(users.id, validId.data), eq(users.role, "TRAINER"))!
     );
-    
+
     return result;
   } catch (error) {
-    return handleDbError(error, 'validateTeacherAssignment');
+    return handleDbError(error, "validateTeacherAssignment");
   }
 }
-
 
 /**
  * Get teacher's students statistics
  * Aggregates student progress across all teacher's courses
- * 
+ *
  * @param teacherId - The teacher ID
  * @returns Result with student statistics
  */
@@ -377,9 +401,13 @@ export async function getTeacherStudentsStats(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, modules } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, modules } = await import(
+      "@/drizzle/schema"
+    );
     const { sql, desc, and } = await import("drizzle-orm");
-    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+    const { chapterCountSql, completedChapterCountSql } = await import(
+      "./query-builders"
+    );
 
     // Get all unique students enrolled in teacher's courses
     const studentsResult = await db
@@ -411,14 +439,14 @@ export async function getTeacherStudentsStats(teacherId: number) {
 
     return { success: true, data: studentsResult };
   } catch (error) {
-    return handleDbError(error, 'getTeacherStudentsStats');
+    return handleDbError(error, "getTeacherStudentsStats");
   }
 }
 
 /**
  * Get all students enrolled in teacher's courses
  * Optimized to reduce N+1 queries by using parallel queries and efficient joins
- * 
+ *
  * @param teacherId - The teacher ID
  * @returns Result with enriched student data including progress and quiz stats
  */
@@ -427,7 +455,9 @@ export async function getTeacherStudents(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, domains, modules } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, domains, modules } = await import(
+      "@/drizzle/schema"
+    );
     const { sql, desc, and } = await import("drizzle-orm");
 
     // Execute all queries in parallel to avoid sequential N+1 queries
@@ -538,6 +568,6 @@ export async function getTeacherStudents(teacherId: number) {
 
     return { success: true, data: enrichedStudents };
   } catch (error) {
-    return handleDbError(error, 'getTeacherStudents');
+    return handleDbError(error, "getTeacherStudents");
   }
 }

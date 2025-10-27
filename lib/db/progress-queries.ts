@@ -1,9 +1,9 @@
 /**
  * Chapter progress query operations
- * 
+ *
  * This module provides database operations for tracking student progress through course chapters.
  * Includes marking chapters as complete/incomplete and retrieving progress statistics.
- * 
+ *
  * @module progress-queries
  */
 
@@ -16,15 +16,18 @@ import { validateId } from "./validation";
 import { DbResult } from "./types";
 
 // Create base queries for chapter progress
-const progressBaseQueries = createBaseQueries(chapterProgress, chapterProgress.id);
+const progressBaseQueries = createBaseQueries(
+  chapterProgress,
+  chapterProgress.id
+);
 
 /**
  * Get chapter progress for a specific student and chapter
- * 
+ *
  * @param studentId - The student's user ID
  * @param chapterId - The chapter ID
  * @returns Result with the progress record or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const progress = await getChapterProgress(1, 5);
@@ -54,11 +57,11 @@ export async function getChapterProgress(
 /**
  * Get all chapter progress for a student in a specific course
  * Optimized with a single join to fetch chapter details
- * 
+ *
  * @param studentId - The student's user ID
  * @param courseId - The course ID
  * @returns Result with array of progress records with chapter details
- * 
+ *
  * @example
  * ```typescript
  * const progress = await getStudentProgressByCourse(1, 10);
@@ -70,14 +73,18 @@ export async function getChapterProgress(
 export async function getStudentProgressByCourse(
   studentId: number,
   courseId: number
-): Promise<DbResult<Array<{
-  id: number;
-  studentId: number | null;
-  chapterId: number | null;
-  completedAt: Date | null;
-  chapterTitle: string;
-  chapterOrderIndex: number;
-}>>> {
+): Promise<
+  DbResult<
+    Array<{
+      id: number;
+      studentId: number | null;
+      chapterId: number | null;
+      completedAt: Date | null;
+      chapterTitle: string;
+      chapterOrderIndex: number;
+    }>
+  >
+> {
   const validStudentId = validateId(studentId);
   if (!validStudentId.success) return validStudentId as any;
 
@@ -108,18 +115,18 @@ export async function getStudentProgressByCourse(
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error, 'getStudentProgressByCourse');
+    return handleDbError(error, "getStudentProgressByCourse");
   }
 }
 
 /**
  * Mark a chapter as complete for a student
  * Idempotent operation - returns existing record if already completed
- * 
+ *
  * @param studentId - The student's user ID
  * @param chapterId - The chapter ID
  * @returns Result with the progress record (existing or newly created)
- * 
+ *
  * @example
  * ```typescript
  * const result = await markChapterComplete(1, 5);
@@ -162,11 +169,11 @@ export async function markChapterComplete(
 
 /**
  * Unmark a chapter as complete for a student (remove progress record)
- * 
+ *
  * @param studentId - The student's user ID
  * @param chapterId - The chapter ID
  * @returns Result with the deleted progress record or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const result = await unmarkChapterComplete(1, 5);
@@ -198,7 +205,6 @@ export async function unmarkChapterComplete(
 
     return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error, 'unmarkChapterComplete');
+    return handleDbError(error, "unmarkChapterComplete");
   }
 }
-

@@ -10,18 +10,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   BookOpen,
   Users,
   CheckCircle2,
   Calendar,
   FileText,
-  Mail,
-  Award,
-  TrendingUp,
   Clock,
   ArrowLeft,
+  Edit,
+  Eye,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -99,14 +98,35 @@ export default function CourseDetailView({
 
   return (
     <div className="space-y-6">
-      {/* Header with back button */}
-      <div className="flex items-center gap-4">
+      {/* Header with back button and actions */}
+      <div className="flex items-center justify-between">
         <Link href="/formateur/cours">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour aux cours
           </Button>
         </Link>
+        
+        <div className="flex gap-2">
+          <Link href={`/formateur/cours/${course.id}/modifier`}>
+            <Button variant="outline" size="sm">
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </Button>
+          </Link>
+          <Link href={`/cours/${course.id}`} target="_blank">
+            <Button variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-2" />
+              Aperçu
+            </Button>
+          </Link>
+          <Link href={`/formateur/cours/${course.id}/analytics`}>
+            <Button size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analyses
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Course Header Card */}
@@ -114,7 +134,7 @@ export default function CourseDetailView({
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-6">
             {/* Course Thumbnail */}
-            <div className="relative w-full md:w-64 h-40 rounded-lg overflow-hidden bg-muted">
+            <div className="relative w-full md:w-64 h-40 rounded-lg overflow-hidden bg-muted flex-shrink-0">
               {course.thumbnailUrl ? (
                 <Image
                   src={course.thumbnailUrl}
@@ -131,34 +151,32 @@ export default function CourseDetailView({
 
             {/* Course Info */}
             <div className="flex-1 space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl">{course.title}</CardTitle>
-                  <div className="flex gap-2">
-                    {course.domainName && (
-                      <Badge
-                        style={{
-                          backgroundColor: course.domainColor || "#6366f1",
-                          color: "white",
-                        }}
-                      >
-                        {course.domainName}
-                      </Badge>
-                    )}
-                    <Badge variant={course.isActive ? "default" : "secondary"}>
-                      {course.isActive ? "Actif" : "Inactif"}
+              <div className="space-y-2">
+                <CardTitle className="text-2xl md:text-3xl">{course.title}</CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  {course.domainName && (
+                    <Badge
+                      style={{
+                        backgroundColor: course.domainColor || "#6366f1",
+                        color: "white",
+                      }}
+                    >
+                      {course.domainName}
                     </Badge>
-                  </div>
+                  )}
+                  <Badge variant={course.isActive ? "default" : "secondary"}>
+                    {course.isActive ? "Actif" : "Inactif"}
+                  </Badge>
                 </div>
               </div>
 
               {course.description && (
-                <CardDescription className="text-base">
+                <CardDescription className="text-base leading-relaxed">
                   {course.description}
                 </CardDescription>
               )}
 
-              <div className="flex gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground pt-2">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   Créé le {formatDate(course.createdAt)}
@@ -176,182 +194,129 @@ export default function CourseDetailView({
       </Card>
 
       {/* Statistics Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Étudiants inscrits
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completedStudents} ont terminé
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.completedStudents} ont terminé le cours
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Contenu</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <BookOpen className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalChapters}</div>
-            <p className="text-xs text-muted-foreground">
-              {chapters.length} chapitres au total
+            <p className="text-xs text-muted-foreground mt-1">
+              {chapters.length} chapitres répartis en modules
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Taux de complétion
             </CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle2 className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.completionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completedStudents}/{stats.totalStudents} étudiants
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.completedStudents} sur {stats.totalStudents} étudiants
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Progrès moyen</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.averageProgress}%</div>
-            <p className="text-xs text-muted-foreground">Progression globale</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Left Column - Teacher Info and Chapters */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Teacher Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Informations sur le formateur
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage
-                    src={course.teacherAvatarUrl || ""}
-                    alt={course.teacherName || ""}
-                  />
-                  <AvatarFallback>
-                    {getInitials(course.teacherName)}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <h3 className="text-xl font-semibold">
-                      {course.teacherName}
-                    </h3>
-                    {course.teacherEmail && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                        <Mail className="h-4 w-4" />
-                        {course.teacherEmail}
-                      </div>
-                    )}
-                  </div>
-
-                  {course.teacherBio && (
-                    <div>
-                      <Separator className="mb-3" />
-                      <p className="text-sm text-muted-foreground">
-                        {course.teacherBio}
-                      </p>
-                    </div>
-                  )}
-
-                  {course.domainName && (
-                    <div>
-                      <Separator className="mb-3" />
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          Domaine d'expertise:
-                        </span>
-                        <Badge
-                          style={{
-                            backgroundColor: course.domainColor || "#6366f1",
-                            color: "white",
-                          }}
-                        >
-                          {course.domainName}
-                        </Badge>
-                      </div>
-                      {course.domainDescription && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {course.domainDescription}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Chapters (takes more space) */}
+        <div className="lg:col-span-2">
           {/* Chapters List */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Contenu du cours ({chapters.length} chapitres)
-              </CardTitle>
-              <CardDescription>
-                Liste de tous les chapitres organisés par modules
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Contenu du cours
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {chapters.length} chapitre{chapters.length > 1 ? 's' : ''} organisé{chapters.length > 1 ? 's' : ''} par modules
+                  </CardDescription>
+                </div>
+                <Link href={`/formateur/cours/${course.id}/chapitres`}>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Gérer
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               {chapters.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
                   {chapters.map((chapter, index) => (
                     <div
                       key={chapter.id}
-                      className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      className="group flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/50 transition-all cursor-pointer"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         {index + 1}
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium">{chapter.title}</h4>
+                      <div className="flex-1 space-y-1.5 min-w-0">
+                        <h4 className="font-medium leading-tight group-hover:text-primary transition-colors">
+                          {chapter.title}
+                        </h4>
                         {chapter.description && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                             {chapter.description}
                           </p>
                         )}
-                        <div className="flex gap-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap gap-2 pt-1">
                           {chapter.contentType && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="secondary" className="text-xs">
                               {chapter.contentType}
                             </Badge>
                           )}
                           {chapter.createdAt && (
-                            <span>Créé le {formatDate(chapter.createdAt)}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(chapter.createdAt)}
+                            </span>
                           )}
                         </div>
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucun chapitre créé pour ce cours</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <h3 className="font-medium text-lg mb-2">Aucun chapitre</h3>
+                  <p className="text-sm mb-4">Commencez par créer votre premier chapitre</p>
+                  <Link href={`/formateur/cours/${course.id}/chapitres/nouveau`}>
+                    <Button>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer un chapitre
+                    </Button>
+                  </Link>
                 </div>
               )}
             </CardContent>
@@ -359,31 +324,42 @@ export default function CourseDetailView({
         </div>
 
         {/* Right Column - Recent Enrollments */}
-        <div className="space-y-6">
+        <div>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Inscriptions récentes
-              </CardTitle>
-              <CardDescription>
-                Derniers étudiants inscrits au cours
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Inscriptions récentes
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Derniers étudiants inscrits
+                  </CardDescription>
+                </div>
+                {recentEnrollments.length > 0 && (
+                  <Link href={`/formateur/etudiants?courseId=${course.id}`}>
+                    <Button variant="ghost" size="sm">
+                      Voir tous
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {recentEnrollments.length > 0 ? (
-                <div className="space-y-4">
-                  {recentEnrollments.map((enrollment) => (
+                <div className="space-y-3">
+                  {recentEnrollments.slice(0, 8).map((enrollment) => (
                     <div
                       key={enrollment.studentId}
-                      className="flex items-center gap-3"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                     >
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10 ring-2 ring-background">
                         <AvatarImage
                           src={enrollment.studentAvatarUrl || ""}
                           alt={enrollment.studentName || ""}
                         />
-                        <AvatarFallback>
+                        <AvatarFallback className="text-xs">
                           {getInitials(enrollment.studentName)}
                         </AvatarFallback>
                       </Avatar>
@@ -396,15 +372,21 @@ export default function CourseDetailView({
                         </p>
                       </div>
                       {enrollment.completedAt && (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                        <div className="flex items-center gap-1">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-green-600 font-medium hidden sm:inline">
+                            Terminé
+                          </span>
+                        </div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">Aucun étudiant inscrit</p>
+                  <p className="text-xs mt-1">Les inscriptions apparaîtront ici</p>
                 </div>
               )}
             </CardContent>
