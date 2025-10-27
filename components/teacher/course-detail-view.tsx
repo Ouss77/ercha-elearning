@@ -106,7 +106,7 @@ export default function CourseDetailView({
             Retour aux cours
           </Button>
         </Link>
-        
+
         <div className="flex gap-2">
           <Link href={`/formateur/cours/${course.id}/modifier`}>
             <Button variant="outline" size="sm">
@@ -152,7 +152,9 @@ export default function CourseDetailView({
             {/* Course Info */}
             <div className="flex-1 space-y-3">
               <div className="space-y-2">
-                <CardTitle className="text-2xl md:text-3xl">{course.title}</CardTitle>
+                <CardTitle className="text-2xl md:text-3xl">
+                  {course.title}
+                </CardTitle>
                 <div className="flex flex-wrap gap-2">
                   {course.domainName && (
                     <Badge
@@ -252,7 +254,8 @@ export default function CourseDetailView({
                     Contenu du cours
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    {chapters.length} chapitre{chapters.length > 1 ? 's' : ''} organisé{chapters.length > 1 ? 's' : ''} par modules
+                    {chapters.length} chapitre{chapters.length > 1 ? "s" : ""}{" "}
+                    organisé{chapters.length > 1 ? "s" : ""} par modules
                   </CardDescription>
                 </div>
                 <Link href={`/formateur/cours/${course.id}/chapitres`}>
@@ -296,9 +299,9 @@ export default function CourseDetailView({
                           )}
                         </div>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Eye className="h-4 w-4" />
@@ -310,8 +313,12 @@ export default function CourseDetailView({
                 <div className="text-center py-12 text-muted-foreground">
                   <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-30" />
                   <h3 className="font-medium text-lg mb-2">Aucun chapitre</h3>
-                  <p className="text-sm mb-4">Commencez par créer votre premier chapitre</p>
-                  <Link href={`/formateur/cours/${course.id}/chapitres/nouveau`}>
+                  <p className="text-sm mb-4">
+                    Commencez par créer votre premier chapitre
+                  </p>
+                  <Link
+                    href={`/formateur/cours/${course.id}/chapitres/nouveau`}
+                  >
                     <Button>
                       <FileText className="h-4 w-4 mr-2" />
                       Créer un chapitre
@@ -386,7 +393,9 @@ export default function CourseDetailView({
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">Aucun étudiant inscrit</p>
-                  <p className="text-xs mt-1">Les inscriptions apparaîtront ici</p>
+                  <p className="text-xs mt-1">
+                    Les inscriptions apparaîtront ici
+                  </p>
                 </div>
               )}
             </CardContent>
