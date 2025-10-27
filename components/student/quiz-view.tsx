@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Trophy,
   RotateCcw,
+  Flag,
 } from "lucide-react";
 
 interface Question {
@@ -418,7 +419,7 @@ export default function QuizView({
                     onClick={() => router.push("/etudiant/jalons")}
                     className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 text-white"
                   >
-                    <Trophy className="h-4 w-4 mr-2" />
+                    <Flag className="h-4 w-4 mr-2" />
                     Voir mes jalons
                   </Button>
                 )}
