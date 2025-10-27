@@ -377,7 +377,7 @@ export async function getTeacherStudentsStats(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, modules } = await import("@/drizzle/schema");
     const { sql, desc, and } = await import("drizzle-orm");
     const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
 
@@ -396,7 +396,8 @@ export async function getTeacherStudentsStats(teacherId: number) {
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id))
       .innerJoin(users, eq(enrollments.studentId, users.id))
-      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(modules, eq(courses.id, modules.courseId))
+      .leftJoin(chapters, eq(modules.id, chapters.moduleId))
       .leftJoin(
         chapterProgress,
         and(
@@ -426,7 +427,7 @@ export async function getTeacherStudents(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, domains } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, domains, modules } = await import("@/drizzle/schema");
     const { sql, desc, and } = await import("drizzle-orm");
 
     // Execute all queries in parallel to avoid sequential N+1 queries
@@ -459,7 +460,12 @@ export async function getTeacherStudents(teacherId: number) {
           chapterProgress,
           and(
             eq(chapterProgress.studentId, enrollments.studentId),
-            sql`${chapterProgress.chapterId} IN (SELECT id FROM ${chapters} WHERE course_id = ${courses.id})`
+            sql`${chapterProgress.chapterId} IN (
+              SELECT ${chapters.id} 
+              FROM ${chapters} 
+              INNER JOIN ${modules} ON ${chapters.moduleId} = ${modules.id}
+              WHERE ${modules.courseId} = ${courses.id}
+            )`
           )
         )
         .where(eq(courses.teacherId, validId.data))
@@ -481,14 +487,15 @@ export async function getTeacherStudents(teacherId: number) {
         )
         .orderBy(desc(enrollments.createdAt)),
 
-      // Get total chapters for each course
+      // Get total chapters for each course (through modules)
       db
         .select({
-          courseId: chapters.courseId,
+          courseId: modules.courseId,
           totalChapters: sql<number>`cast(count(*) as int)`,
         })
         .from(chapters)
-        .groupBy(chapters.courseId),
+        .innerJoin(modules, eq(chapters.moduleId, modules.id))
+        .groupBy(modules.courseId),
     ]);
 
     // Create lookup maps for efficient data enrichment

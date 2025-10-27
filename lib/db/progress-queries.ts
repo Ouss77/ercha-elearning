@@ -9,7 +9,7 @@
 
 import { eq, and } from "drizzle-orm";
 import { db } from "./db";
-import { chapterProgress, chapters } from "@/drizzle/schema";
+import { chapterProgress, chapters, modules } from "@/drizzle/schema";
 import { createBaseQueries } from "./base-queries";
 import { handleDbError } from "./error-handler";
 import { validateId } from "./validation";
@@ -97,10 +97,11 @@ export async function getStudentProgressByCourse(
       })
       .from(chapterProgress)
       .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
+      .innerJoin(modules, eq(chapters.moduleId, modules.id))
       .where(
         and(
           eq(chapterProgress.studentId, validStudentId.data),
-          eq(chapters.courseId, validCourseId.data)
+          eq(modules.courseId, validCourseId.data)
         )
       )
       .orderBy(chapters.orderIndex);

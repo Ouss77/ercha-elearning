@@ -1,6 +1,6 @@
 /**
  * Query composition utilities for building complex database queries
- * 
+ *
  * This module provides reusable query fragments, pagination, sorting,
  * and common join helpers to compose complex queries from simpler building blocks.
  */
@@ -8,17 +8,17 @@
 import { SQL, sql, asc, desc, and, eq } from "drizzle-orm";
 import type { PgSelect } from "drizzle-orm/pg-core";
 import { db } from "./db";
-import { 
-  courses, 
-  domains, 
-  users, 
-  enrollments, 
+import {
+  courses,
+  domains,
+  users,
+  enrollments,
   chapters,
   chapterProgress,
   contentItems,
   classes,
   finalProjects,
-  modules
+  modules,
 } from "@/drizzle/schema";
 
 /**
@@ -35,15 +35,15 @@ export interface PaginationOptions {
 /**
  * Sort direction
  */
-export type SortDirection = 'asc' | 'desc';
+export type SortDirection = "asc" | "desc";
 
 /**
  * Apply pagination to a query
- * 
+ *
  * @param query - The query builder to paginate
  * @param options - Pagination options (page and pageSize)
  * @returns Query with limit and offset applied
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(users);
@@ -56,14 +56,14 @@ export function paginate<T extends PgSelect>(
 ) {
   const { page, pageSize } = options;
   const offset = (page - 1) * pageSize;
-  
+
   return query.limit(pageSize).offset(offset);
 }
 
 /**
  * Create pagination metadata from total count
  * @deprecated Use calculatePaginationMeta from './pagination' instead
- * 
+ *
  * @param total - Total number of items
  * @param options - Pagination options
  * @returns Pagination metadata
@@ -74,7 +74,7 @@ export function createPaginationMeta(
 ) {
   const { page, pageSize } = options;
   const totalPages = Math.ceil(total / pageSize);
-  
+
   return {
     page,
     pageSize,
@@ -87,12 +87,12 @@ export function createPaginationMeta(
 
 /**
  * Apply sorting to a query
- * 
+ *
  * @param query - The query builder to sort
  * @param column - The column to sort by
  * @param direction - Sort direction ('asc' or 'desc')
  * @returns Query with ordering applied
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(users);
@@ -102,18 +102,18 @@ export function createPaginationMeta(
 export function orderBy<T extends PgSelect>(
   query: T,
   column: any,
-  direction: SortDirection = 'asc'
+  direction: SortDirection = "asc"
 ) {
-  return query.orderBy(direction === 'asc' ? asc(column) : desc(column));
+  return query.orderBy(direction === "asc" ? asc(column) : desc(column));
 }
 
 /**
  * Apply multiple sort criteria to a query
- * 
+ *
  * @param query - The query builder to sort
  * @param sorts - Array of sort criteria
  * @returns Query with multiple orderings applied
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(users);
@@ -128,9 +128,9 @@ export function orderByMultiple<T extends PgSelect>(
   sorts: Array<{ column: any; direction: SortDirection }>
 ) {
   const orderClauses = sorts.map(({ column, direction }) =>
-    direction === 'asc' ? asc(column) : desc(column)
+    direction === "asc" ? asc(column) : desc(column)
   );
-  
+
   return query.orderBy(...orderClauses);
 }
 
@@ -141,10 +141,10 @@ export function orderByMultiple<T extends PgSelect>(
 /**
  * Add domain join to a course query
  * Includes domain id, name, description, and color
- * 
+ *
  * @param query - The query builder
  * @returns Query with domain joined
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(courses);
@@ -158,10 +158,10 @@ export function withDomain<T extends PgSelect>(query: T) {
 /**
  * Add teacher (user) join to a course query
  * Includes teacher id, name, email, and avatarUrl
- * 
+ *
  * @param query - The query builder
  * @returns Query with teacher joined
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(courses);
@@ -175,10 +175,10 @@ export function withTeacher<T extends PgSelect>(query: T) {
 /**
  * Add student (user) join to an enrollment query
  * Includes student id, name, email, and avatarUrl
- * 
+ *
  * @param query - The query builder
  * @returns Query with student joined
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(enrollments);
@@ -192,10 +192,10 @@ export function withStudent<T extends PgSelect>(query: T) {
 /**
  * Add course join to an enrollment query
  * Includes course details
- * 
+ *
  * @param query - The query builder
  * @returns Query with course joined
- * 
+ *
  * @example
  * ```typescript
  * const query = db.select().from(enrollments);
@@ -208,7 +208,7 @@ export function withCourse<T extends PgSelect>(query: T) {
 
 /**
  * Add chapters join to a course query (through modules)
- * 
+ *
  * @param query - The query builder
  * @returns Query with modules and chapters joined
  */
@@ -221,7 +221,7 @@ export function withChapters<T extends PgSelect>(query: T) {
 
 /**
  * Add content items join to a chapter query
- * 
+ *
  * @param query - The query builder
  * @returns Query with content items joined
  */
@@ -231,7 +231,7 @@ export function withContentItems<T extends PgSelect>(query: T) {
 
 /**
  * Add chapter progress join for a specific student
- * 
+ *
  * @param query - The query builder
  * @param studentId - The student ID to filter progress
  * @returns Query with chapter progress joined
@@ -256,7 +256,7 @@ export function withChapterProgress<T extends PgSelect>(
 /**
  * SQL fragment for counting enrollments
  * Use in select() to get enrollment count
- * 
+ *
  * @example
  * ```typescript
  * const result = await db
@@ -308,7 +308,7 @@ export function studentCountSql(): SQL<number> {
 /**
  * SQL fragment for calculating completion percentage
  * Returns a value between 0 and 100
- * 
+ *
  * @example
  * ```typescript
  * const result = await db
@@ -317,7 +317,8 @@ export function studentCountSql(): SQL<number> {
  *     completionRate: completionPercentageSql()
  *   })
  *   .from(courses)
- *   .leftJoin(chapters, eq(courses.id, chapters.courseId))
+ *   .leftJoin(modules, eq(courses.id, modules.courseId))
+ *   .leftJoin(chapters, eq(modules.id, chapters.moduleId))
  *   .leftJoin(chapterProgress, eq(chapters.id, chapterProgress.chapterId))
  *   .groupBy(courses.id);
  * ```
@@ -341,9 +342,9 @@ export function completionPercentageSql(): SQL<number> {
 /**
  * Build a base query for courses with domain and teacher
  * Common starting point for course queries
- * 
+ *
  * @returns Query builder with courses, domain, and teacher joined
- * 
+ *
  * @example
  * ```typescript
  * const query = courseWithDetailsBase();
@@ -383,9 +384,9 @@ export function courseWithDetailsBase() {
 
 /**
  * Build a base query for courses with stats (enrollments and chapters)
- * 
+ *
  * @returns Query builder with courses, stats, domain, and teacher
- * 
+ *
  * @example
  * ```typescript
  * const query = courseWithStatsBase();
@@ -440,7 +441,7 @@ export function courseWithStatsBase() {
 
 /**
  * Build a base query for enrollments with course and student details
- * 
+ *
  * @returns Query builder with enrollments, course, and student joined
  */
 export function enrollmentWithDetailsBase() {
@@ -473,7 +474,7 @@ export function enrollmentWithDetailsBase() {
 
 /**
  * Build a base query for chapters with content items
- * 
+ *
  * @returns Query builder with chapters and content items
  */
 export function chapterWithContentBase() {
@@ -499,35 +500,41 @@ export function chapterWithContentBase() {
 
 /**
  * Create a filter for active entities
- * 
+ *
  * @param table - Table with isActive column
  * @returns SQL condition for active entities
  */
-export function activeFilter(table: typeof courses | typeof users | typeof classes) {
+export function activeFilter(
+  table: typeof courses | typeof users | typeof classes
+) {
   return eq(table.isActive, true);
 }
 
 /**
  * Create a filter for entities by role
- * 
+ *
  * @param role - User role to filter by
  * @returns SQL condition for role
  */
-export function roleFilter(role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN") {
+export function roleFilter(
+  role: "STUDENT" | "TRAINER" | "SUB_ADMIN" | "ADMIN"
+) {
   return eq(users.role, role);
 }
 
 /**
  * Combine multiple SQL conditions with AND
- * 
+ *
  * @param conditions - Array of SQL conditions
  * @returns Combined SQL condition
  */
-export function combineFilters(...conditions: (SQL | undefined)[]): SQL | undefined {
+export function combineFilters(
+  ...conditions: (SQL | undefined)[]
+): SQL | undefined {
   const validConditions = conditions.filter((c): c is SQL => c !== undefined);
-  
+
   if (validConditions.length === 0) return undefined;
   if (validConditions.length === 1) return validConditions[0];
-  
+
   return and(...validConditions);
 }

@@ -1,6 +1,9 @@
 import dynamic from "next/dynamic";
 import { requireAuth } from "@/lib/auth/auth";
-import { getTeacherStudents, getTeacherClassesWithDetails } from "@/lib/db/queries";
+import {
+  getTeacherStudents,
+  getTeacherClassesWithDetails,
+} from "@/lib/db/queries";
 import type { Metadata } from "next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, FolderOpen } from "lucide-react";
@@ -20,10 +23,7 @@ const StudentProgress = dynamic<{
 const ClassView = dynamic<{
   classes: any[];
 }>(
-  () =>
-    import("@/components/teacher/class-view").then(
-      (mod) => mod.ClassView
-    ),
+  () => import("@/components/teacher/class-view").then((mod) => mod.ClassView),
   { ssr: false }
 );
 

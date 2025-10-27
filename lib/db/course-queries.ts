@@ -1,17 +1,23 @@
 /**
  * Course query operations
- * 
+ *
  * This module provides all database operations related to courses,
  * including CRUD operations, course statistics, and course-domain-teacher relationships.
- * 
+ *
  * All functions return DbResult types for consistent error handling.
- * 
+ *
  * @module course-queries
  */
 
 import { eq, desc } from "drizzle-orm";
 import { db } from "./index";
-import { courses, domains, users, enrollments, modules } from "@/drizzle/schema";
+import {
+  courses,
+  domains,
+  users,
+  enrollments,
+  modules,
+} from "@/drizzle/schema";
 import { mapCourseFromDb } from "./mappers";
 import { generateSlug, generateUniqueSlug } from "@/lib/utils/slug";
 import { createBaseQueries } from "./base-queries";
@@ -25,7 +31,7 @@ const courseBaseQueries = createBaseQueries(courses, courses.id);
 
 /**
  * Create a new course with validation and unique slug generation
- * 
+ *
  * @param data - Course creation data
  * @returns Result with created course or error
  */
@@ -38,29 +44,44 @@ export async function createCourse(data: {
   isActive?: boolean;
 }): Promise<DbResult<any>> {
   // Validate required fields
-  const titleValidation = validateString(data.title, 'title', { minLength: 1, maxLength: 255 });
+  const titleValidation = validateString(data.title, "title", {
+    minLength: 1,
+    maxLength: 255,
+  });
   if (!titleValidation.success) return titleValidation;
 
   const domainIdValidation = validateId(data.domainId);
   if (!domainIdValidation.success) return domainIdValidation;
 
   // Validate foreign key references
-  const domainExists = await validateForeignKey(domains, domains.id, data.domainId, 'domainId');
+  const domainExists = await validateForeignKey(
+    domains,
+    domains.id,
+    data.domainId,
+    "domainId"
+  );
   if (!domainExists.success) return domainExists as any;
 
   if (data.teacherId) {
     const teacherIdValidation = validateId(data.teacherId);
     if (!teacherIdValidation.success) return teacherIdValidation;
 
-    const teacherExists = await validateForeignKey(users, users.id, data.teacherId, 'teacherId');
+    const teacherExists = await validateForeignKey(
+      users,
+      users.id,
+      data.teacherId,
+      "teacherId"
+    );
     if (!teacherExists.success) return teacherExists as any;
   }
 
   try {
     // Generate a unique slug
     const baseSlug = generateSlug(titleValidation.data);
-    const existingCourses = await db.select({ slug: courses.slug }).from(courses);
-    const existingSlugs = existingCourses.map(c => c.slug);
+    const existingCourses = await db
+      .select({ slug: courses.slug })
+      .from(courses);
+    const existingSlugs = existingCourses.map((c) => c.slug);
     const uniqueSlug = generateUniqueSlug(baseSlug, existingSlugs);
 
     const result = await courseBaseQueries.create({
@@ -80,13 +101,13 @@ export async function createCourse(data: {
     const mappedCourse = mapCourseFromDb(result.data);
     return { success: true, data: mappedCourse };
   } catch (error) {
-    return handleDbError(error, 'createCourse');
+    return handleDbError(error, "createCourse");
   }
 }
 
 /**
  * Update an existing course
- * 
+ *
  * @param id - Course ID
  * @param data - Partial course data to update
  * @returns Result with updated course or error
@@ -107,7 +128,10 @@ export async function updateCourse(
 
   // Validate title if provided
   if (data.title !== undefined) {
-    const titleValidation = validateString(data.title, 'title', { minLength: 1, maxLength: 255 });
+    const titleValidation = validateString(data.title, "title", {
+      minLength: 1,
+      maxLength: 255,
+    });
     if (!titleValidation.success) return titleValidation;
   }
 
@@ -116,7 +140,12 @@ export async function updateCourse(
     const domainIdValidation = validateId(data.domainId);
     if (!domainIdValidation.success) return domainIdValidation;
 
-    const domainExists = await validateForeignKey(domains, domains.id, data.domainId, 'domainId');
+    const domainExists = await validateForeignKey(
+      domains,
+      domains.id,
+      data.domainId,
+      "domainId"
+    );
     if (!domainExists.success) return domainExists as any;
   }
 
@@ -125,7 +154,12 @@ export async function updateCourse(
     const teacherIdValidation = validateId(data.teacherId);
     if (!teacherIdValidation.success) return teacherIdValidation;
 
-    const teacherExists = await validateForeignKey(users, users.id, data.teacherId, 'teacherId');
+    const teacherExists = await validateForeignKey(
+      users,
+      users.id,
+      data.teacherId,
+      "teacherId"
+    );
     if (!teacherExists.success) return teacherExists as any;
   }
 
@@ -140,13 +174,13 @@ export async function updateCourse(
     const mappedCourse = mapCourseFromDb(result.data);
     return { success: true, data: mappedCourse };
   } catch (error) {
-    return handleDbError(error, 'updateCourse');
+    return handleDbError(error, "updateCourse");
   }
 }
 
 /**
  * Get a course by ID
- * 
+ *
  * @param id - Course ID
  * @returns Result with course or null if not found
  */
@@ -165,7 +199,7 @@ export async function getCourseById(id: number): Promise<DbResult<any>> {
     const mappedCourse = mapCourseFromDb(result.data);
     return { success: true, data: mappedCourse };
   } catch (error) {
-    return handleDbError(error, 'getCourseById');
+    return handleDbError(error, "getCourseById");
   }
 }
 
@@ -222,25 +256,24 @@ export async function deleteCourse(id: number) {
 /**
  * Get all courses with details (domain, teacher, enrollment count, chapter count)
  * Uses query composition for maintainability
- * 
+ *
  * @returns Result with array of courses with details
  */
 export async function getCoursesWithDetails(): Promise<DbResult<any[]>> {
   try {
     // Use the query composition helper for courses with stats
-    const result = await courseWithStatsBase()
-      .orderBy(desc(courses.createdAt));
+    const result = await courseWithStatsBase().orderBy(desc(courses.createdAt));
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error, 'getCoursesWithDetails');
+    return handleDbError(error, "getCoursesWithDetails");
   }
 }
 
 /**
  * Get a single course with details (domain, teacher, enrollment count, chapter count)
  * Uses query composition for maintainability
- * 
+ *
  * @param id - Course ID
  * @returns Result with course details or null if not found
  */
@@ -257,40 +290,46 @@ export async function getCourseWithDetails(id: number): Promise<DbResult<any>> {
 
     return { success: true, data: result[0] || null };
   } catch (error) {
-    return handleDbError(error, 'getCourseWithDetails');
+    return handleDbError(error, "getCourseWithDetails");
   }
 }
 
 /**
  * Check if a course has any enrollments
  * Uses the exists utility for optimized performance
- * 
+ *
  * @param courseId - Course ID
  * @returns Result with boolean indicating if enrollments exist
  */
-export async function courseHasEnrollments(courseId: number): Promise<DbResult<boolean>> {
+export async function courseHasEnrollments(
+  courseId: number
+): Promise<DbResult<boolean>> {
   const idValidation = validateId(courseId);
   if (!idValidation.success) return idValidation;
 
   try {
     // Use the base queries exists utility for better performance
-    const enrollmentBaseQueries = createBaseQueries(enrollments, enrollments.id);
-    const result = await enrollmentBaseQueries.exists(eq(enrollments.courseId, idValidation.data));
+    const enrollmentBaseQueries = createBaseQueries(
+      enrollments,
+      enrollments.id
+    );
+    const result = await enrollmentBaseQueries.exists(
+      eq(enrollments.courseId, idValidation.data)
+    );
 
     return result;
   } catch (error) {
-    return handleDbError(error, 'courseHasEnrollments');
+    return handleDbError(error, "courseHasEnrollments");
   }
 }
-
 
 /**
  * Get teacher's courses with enrollment and progress statistics
  * Uses query composition helpers for aggregations
- * 
+ *
  * @param teacherId - The teacher ID
  * @returns Result with courses and statistics
- * 
+ *
  * @performance
  * - Complexity: O(n) where n = number of courses
  * - Uses database-level aggregations for efficiency
@@ -303,9 +342,13 @@ export async function getTeacherCoursesWithStats(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress, modules } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, modules } = await import(
+      "@/drizzle/schema"
+    );
     const { sql } = await import("drizzle-orm");
-    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+    const { chapterCountSql, completedChapterCountSql } = await import(
+      "./query-builders"
+    );
 
     const result = await db
       .select({
@@ -343,14 +386,14 @@ export async function getTeacherCoursesWithStats(teacherId: number) {
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error, 'getTeacherCoursesWithStats');
+    return handleDbError(error, "getTeacherCoursesWithStats");
   }
 }
 
 /**
  * Get recent activity for teacher's courses
  * Optimized to use a single query with UNION ALL for better performance
- * 
+ *
  * @param teacherId - The teacher ID
  * @param limit - Maximum number of activities to return (default: 10)
  * @returns Result with recent activity items
@@ -416,14 +459,14 @@ export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
 
     return { success: true, data: allActivity.rows };
   } catch (error) {
-    return handleDbError(error, 'getTeacherRecentActivity');
+    return handleDbError(error, "getTeacherRecentActivity");
   }
 }
 
 /**
  * Get detailed course information for teacher view
  * Uses query composition and parallel queries for better performance
- * 
+ *
  * @param courseId - The course ID
  * @param teacherId - The teacher ID (for authorization)
  * @returns Result with detailed course information
@@ -468,66 +511,76 @@ export async function getTeacherCourseDetails(
       .from(courses)
       .leftJoin(domains, eq(courses.domainId, domains.id))
       .leftJoin(users, eq(courses.teacherId, users.id))
-      .where(and(eq(courses.id, validCourseId.data), eq(courses.teacherId, validTeacherId.data)))
+      .where(
+        and(
+          eq(courses.id, validCourseId.data),
+          eq(courses.teacherId, validTeacherId.data)
+        )
+      )
       .limit(1);
 
     if (!courseResult[0]) {
-      return { success: false, error: "Course not found or access denied", code: DbErrorCode.NOT_FOUND };
+      return {
+        success: false,
+        error: "Course not found or access denied",
+        code: DbErrorCode.NOT_FOUND,
+      };
     }
 
     const course = courseResult[0];
 
     // Execute remaining queries in parallel for better performance
-    const [chaptersResult, enrollmentStats, progressStats, recentEnrollments] = await Promise.all([
-      // Get chapters with their details (through modules)
-      db
-        .select({
-          id: chapters.id,
-          title: chapters.title,
-          description: chapters.description,
-          orderIndex: chapters.orderIndex,
-          createdAt: chapters.createdAt,
-        })
-        .from(chapters)
-        .innerJoin(modules, eq(chapters.moduleId, modules.id))
-        .where(eq(modules.courseId, validCourseId.data))
-        .orderBy(chapters.orderIndex),
+    const [chaptersResult, enrollmentStats, progressStats, recentEnrollments] =
+      await Promise.all([
+        // Get chapters with their details (through modules)
+        db
+          .select({
+            id: chapters.id,
+            title: chapters.title,
+            description: chapters.description,
+            orderIndex: chapters.orderIndex,
+            createdAt: chapters.createdAt,
+          })
+          .from(chapters)
+          .innerJoin(modules, eq(chapters.moduleId, modules.id))
+          .where(eq(modules.courseId, validCourseId.data))
+          .orderBy(chapters.orderIndex),
 
-      // Get enrollment statistics
-      db
-        .select({
-          totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
-          completedStudents: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.studentId} end) as int)`,
-        })
-        .from(enrollments)
-        .where(eq(enrollments.courseId, validCourseId.data)),
+        // Get enrollment statistics
+        db
+          .select({
+            totalStudents: sql<number>`cast(count(distinct ${enrollments.studentId}) as int)`,
+            completedStudents: sql<number>`cast(count(distinct case when ${enrollments.completedAt} is not null then ${enrollments.studentId} end) as int)`,
+          })
+          .from(enrollments)
+          .where(eq(enrollments.courseId, validCourseId.data)),
 
-      // Get progress statistics (through modules)
-      db
-        .select({
-          totalProgress: completedChapterCountSql(),
-        })
-        .from(chapterProgress)
-        .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
-        .innerJoin(modules, eq(chapters.moduleId, modules.id))
-        .where(eq(modules.courseId, validCourseId.data)),
+        // Get progress statistics (through modules)
+        db
+          .select({
+            totalProgress: completedChapterCountSql(),
+          })
+          .from(chapterProgress)
+          .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
+          .innerJoin(modules, eq(chapters.moduleId, modules.id))
+          .where(eq(modules.courseId, validCourseId.data)),
 
-      // Get recent student enrollments
-      db
-        .select({
-          studentId: users.id,
-          studentName: users.name,
-          studentEmail: users.email,
-          studentAvatarUrl: users.avatarUrl,
-          enrolledAt: enrollments.createdAt,
-          completedAt: enrollments.completedAt,
-        })
-        .from(enrollments)
-        .innerJoin(users, eq(enrollments.studentId, users.id))
-        .where(eq(enrollments.courseId, validCourseId.data))
-        .orderBy(desc(enrollments.createdAt))
-        .limit(10),
-    ]);
+        // Get recent student enrollments
+        db
+          .select({
+            studentId: users.id,
+            studentName: users.name,
+            studentEmail: users.email,
+            studentAvatarUrl: users.avatarUrl,
+            enrolledAt: enrollments.createdAt,
+            completedAt: enrollments.completedAt,
+          })
+          .from(enrollments)
+          .innerJoin(users, eq(enrollments.studentId, users.id))
+          .where(eq(enrollments.courseId, validCourseId.data))
+          .orderBy(desc(enrollments.createdAt))
+          .limit(10),
+      ]);
 
     const stats = enrollmentStats[0];
     const totalChapters = chaptersResult.length;
@@ -559,7 +612,7 @@ export async function getTeacherCourseDetails(
       },
     };
   } catch (error) {
-    return handleDbError(error, 'getTeacherCourseDetails');
+    return handleDbError(error, "getTeacherCourseDetails");
   }
 }
 

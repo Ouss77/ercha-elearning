@@ -1,28 +1,39 @@
 /**
  * Class management query functions
- * 
+ *
  * This module provides database operations for managing classes and class enrollments.
  * Classes are used to group students by teacher for organizational purposes.
  */
 
-import { eq, and, desc, sql, inArray } from 'drizzle-orm';
-import { db } from './db';
-import { classes, classEnrollments, classCourses, domains, users, courses, enrollments } from '@/drizzle/schema';
-import { DbResult, DbErrorCode } from './types';
-import { handleDbError } from './error-handler';
-import { 
-  validateId, 
-  validateRequired, 
-  validateString, 
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { db } from "./db";
+import {
+  classes,
+  classEnrollments,
+  classCourses,
+  domains,
+  users,
+  courses,
+  enrollments,
+} from "@/drizzle/schema";
+import { DbResult, DbErrorCode } from "./types";
+import { handleDbError } from "./error-handler";
+import {
+  validateId,
+  validateRequired,
+  validateString,
   validateForeignKey,
-  validateNumberRange 
-} from './validation';
-import { createBaseQueries, findByIdOrFail } from './base-queries';
-import { withTransaction, type Transaction } from './transactions';
+  validateNumberRange,
+} from "./validation";
+import { createBaseQueries, findByIdOrFail } from "./base-queries";
+import { withTransaction, type Transaction } from "./transactions";
 
 // Create base query operations for classes and enrollments
 const classBaseQueries = createBaseQueries(classes, classes.id);
-const enrollmentBaseQueries = createBaseQueries(classEnrollments, classEnrollments.id);
+const enrollmentBaseQueries = createBaseQueries(
+  classEnrollments,
+  classEnrollments.id
+);
 
 /**
  * Interface for class creation data
@@ -76,10 +87,10 @@ export interface ClassDetails {
 
 /**
  * Create a new class with validation
- * 
+ *
  * @param data - Class creation data
  * @returns Result with created class
- * 
+ *
  * @example
  * ```typescript
  * const result = await createClass({
@@ -95,7 +106,10 @@ export async function createClass(
   data: CreateClassData
 ): Promise<DbResult<typeof classes.$inferSelect>> {
   // Validate required fields
-  const nameValidation = validateString(data.name, 'name', { minLength: 1, maxLength: 255 });
+  const nameValidation = validateString(data.name, "name", {
+    minLength: 1,
+    maxLength: 255,
+  });
   if (!nameValidation.success) return nameValidation as any;
 
   // Validate teacher if provided
@@ -109,7 +123,7 @@ export async function createClass(
       users,
       users.id,
       teacherIdValidation.data,
-      'teacherId'
+      "teacherId"
     );
     if (!teacherExists.success) return teacherExists as any;
     validatedTeacherId = teacherIdValidation.data;
@@ -124,7 +138,7 @@ export async function createClass(
       domains,
       domains.id,
       domainIdValidation.data,
-      'domainId'
+      "domainId"
     );
     if (!domainExists.success) return domainExists as any;
   }
@@ -142,10 +156,10 @@ export async function createClass(
 /**
  * Get all classes for a teacher using query composition
  * Returns classes directly assigned to the teacher or in domains they teach
- * 
+ *
  * @param teacherId - The teacher's user ID
  * @returns Result with array of classes with stats
- * 
+ *
  * @example
  * ```typescript
  * const result = await getTeacherClasses(1);
@@ -202,17 +216,19 @@ export async function getTeacherClasses(
       data: result as ClassWithStats[],
     };
   } catch (error) {
-    return handleDbError(error, 'getTeacherClasses');
+    return handleDbError(error, "getTeacherClasses");
   }
 }
 
 /**
  * Get students enrolled in a class (for admin/sub-admin)
- * 
+ *
  * @param classId - The class ID
  * @returns Result with array of students
  */
-export async function getClassStudents(classId: number): Promise<DbResult<any[]>> {
+export async function getClassStudents(
+  classId: number
+): Promise<DbResult<any[]>> {
   const classIdValidation = validateId(classId);
   if (!classIdValidation.success) return classIdValidation as any;
 
@@ -236,17 +252,17 @@ export async function getClassStudents(classId: number): Promise<DbResult<any[]>
       data: students,
     };
   } catch (error) {
-    return handleDbError(error, 'getClassStudents');
+    return handleDbError(error, "getClassStudents");
   }
 }
 
 /**
  * Get class details with enrolled students using base queries and composition
- * 
+ *
  * @param classId - The class ID
  * @param teacherId - The teacher's user ID (for authorization)
  * @returns Result with class details and student list
- * 
+ *
  * @example
  * ```typescript
  * const result = await getClassDetails(1, 2);
@@ -292,7 +308,7 @@ export async function getClassDetails(
     if (!classInfo[0]) {
       return {
         success: false,
-        error: 'Class not found or access denied',
+        error: "Class not found or access denied",
         code: DbErrorCode.NOT_FOUND,
       };
     }
@@ -321,17 +337,17 @@ export async function getClassDetails(
       },
     };
   } catch (error) {
-    return handleDbError(error, 'getClassDetails');
+    return handleDbError(error, "getClassDetails");
   }
 }
 
 /**
  * Add a student to a class with capacity validation and transaction support
- * 
+ *
  * @param classId - The class ID
  * @param studentId - The student's user ID
  * @returns Result with created enrollment
- * 
+ *
  * @example
  * ```typescript
  * const result = await addStudentToClass(1, 5);
@@ -367,7 +383,7 @@ export async function addStudentToClass(
       if (existing.length > 0) {
         return {
           success: false,
-          error: 'Student already enrolled in this class',
+          error: "Student already enrolled in this class",
           code: DbErrorCode.CONSTRAINT_VIOLATION,
         };
       }
@@ -384,7 +400,7 @@ export async function addStudentToClass(
       if (!classData[0]) {
         return {
           success: false,
-          error: 'Class not found',
+          error: "Class not found",
           code: DbErrorCode.NOT_FOUND,
         };
       }
@@ -394,7 +410,7 @@ export async function addStudentToClass(
         users,
         users.id,
         studentIdValidation.data,
-        'studentId'
+        "studentId"
       );
       if (!studentExists.success) return studentExists as any;
 
@@ -412,18 +428,18 @@ export async function addStudentToClass(
         data: result[0],
       };
     } catch (error) {
-      return handleDbError(error, 'addStudentToClass');
+      return handleDbError(error, "addStudentToClass");
     }
   });
 }
 
 /**
  * Remove a student from a class using base queries
- * 
+ *
  * @param classId - The class ID
  * @param studentId - The student's user ID
  * @returns Result with deleted enrollment
- * 
+ *
  * @example
  * ```typescript
  * const result = await removeStudentFromClass(1, 5);
@@ -456,7 +472,7 @@ export async function removeStudentFromClass(
     if (result.length === 0) {
       return {
         success: false,
-        error: 'Enrollment not found',
+        error: "Enrollment not found",
         code: DbErrorCode.NOT_FOUND,
       };
     }
@@ -466,13 +482,13 @@ export async function removeStudentFromClass(
       data: result[0],
     };
   } catch (error) {
-    return handleDbError(error, 'removeStudentFromClass');
+    return handleDbError(error, "removeStudentFromClass");
   }
 }
 
 /**
  * Update a class
- * 
+ *
  * @param classId - The class ID
  * @param data - Partial class data to update
  * @returns Result with updated class
@@ -486,7 +502,10 @@ export async function updateClass(
 
   // Validate name if provided
   if (data.name !== undefined) {
-    const nameValidation = validateString(data.name, 'name', { minLength: 1, maxLength: 255 });
+    const nameValidation = validateString(data.name, "name", {
+      minLength: 1,
+      maxLength: 255,
+    });
     if (!nameValidation.success) return nameValidation as any;
   }
 
@@ -499,7 +518,7 @@ export async function updateClass(
       users,
       users.id,
       teacherIdValidation.data,
-      'teacherId'
+      "teacherId"
     );
     if (!teacherExists.success) return teacherExists as any;
   }
@@ -513,7 +532,7 @@ export async function updateClass(
       domains,
       domains.id,
       domainIdValidation.data,
-      'domainId'
+      "domainId"
     );
     if (!domainExists.success) return domainExists as any;
   }
@@ -523,7 +542,7 @@ export async function updateClass(
 
 /**
  * Delete a class
- * 
+ *
  * @param classId - The class ID
  * @returns Result with deleted class
  */
@@ -535,7 +554,7 @@ export async function deleteClass(
 
 /**
  * Get class by ID
- * 
+ *
  * @param classId - The class ID
  * @returns Result with class or null
  */
@@ -547,7 +566,7 @@ export async function getClassById(
 
 /**
  * Get all classes (for admin/sub-admin)
- * 
+ *
  * @returns Result with array of classes with stats
  */
 export async function getAllClasses(): Promise<DbResult<ClassWithStats[]>> {
@@ -584,13 +603,13 @@ export async function getAllClasses(): Promise<DbResult<ClassWithStats[]>> {
       data: result as ClassWithStats[],
     };
   } catch (error) {
-    return handleDbError(error, 'getAllClasses');
+    return handleDbError(error, "getAllClasses");
   }
 }
 
 /**
  * Assign a course to a class and auto-enroll all students
- * 
+ *
  * @param classId - The class ID
  * @param courseId - The course ID
  * @returns Result with created class-course link
@@ -622,7 +641,7 @@ export async function assignCourseToClass(
       if (existing.length > 0) {
         return {
           success: false,
-          error: 'Course already assigned to this class',
+          error: "Course already assigned to this class",
           code: DbErrorCode.CONSTRAINT_VIOLATION,
         };
       }
@@ -632,7 +651,7 @@ export async function assignCourseToClass(
         courses,
         courses.id,
         courseIdValidation.data,
-        'courseId'
+        "courseId"
       );
       if (!courseExists.success) return courseExists as any;
 
@@ -670,14 +689,14 @@ export async function assignCourseToClass(
         data: result[0],
       };
     } catch (error) {
-      return handleDbError(error, 'assignCourseToClass');
+      return handleDbError(error, "assignCourseToClass");
     }
   });
 }
 
 /**
  * Remove a course from a class
- * 
+ *
  * @param classId - The class ID
  * @param courseId - The course ID
  * @returns Result with deleted class-course link
@@ -706,7 +725,7 @@ export async function removeCourseFromClass(
     if (result.length === 0) {
       return {
         success: false,
-        error: 'Course assignment not found',
+        error: "Course assignment not found",
         code: DbErrorCode.NOT_FOUND,
       };
     }
@@ -716,17 +735,19 @@ export async function removeCourseFromClass(
       data: result[0],
     };
   } catch (error) {
-    return handleDbError(error, 'removeCourseFromClass');
+    return handleDbError(error, "removeCourseFromClass");
   }
 }
 
 /**
  * Get all courses assigned to a class
- * 
+ *
  * @param classId - The class ID
  * @returns Result with array of courses
  */
-export async function getClassCourses(classId: number): Promise<DbResult<any[]>> {
+export async function getClassCourses(
+  classId: number
+): Promise<DbResult<any[]>> {
   const classIdValidation = validateId(classId);
   if (!classIdValidation.success) return classIdValidation as any;
 
@@ -753,14 +774,14 @@ export async function getClassCourses(classId: number): Promise<DbResult<any[]>>
       data: result,
     };
   } catch (error) {
-    return handleDbError(error, 'getClassCourses');
+    return handleDbError(error, "getClassCourses");
   }
 }
 
 /**
  * Auto-enroll a student in all courses assigned to their class
  * Called when a student is added to a class
- * 
+ *
  * @param classId - The class ID
  * @param studentId - The student's user ID
  * @returns Result with number of enrollments created
@@ -807,17 +828,17 @@ export async function autoEnrollStudentInClassCourses(
         data: { enrollmentsCreated: result.length },
       };
     } catch (error) {
-      return handleDbError(error, 'autoEnrollStudentInClassCourses');
+      return handleDbError(error, "autoEnrollStudentInClassCourses");
     }
   });
 }
 
 /**
  * Get teacher's classes with their courses and students
- * 
+ *
  * @param teacherId - The teacher's user ID
  * @returns Result with array of classes with courses and students
- * 
+ *
  * @example
  * ```typescript
  * const result = await getTeacherClassesWithDetails(1);
@@ -884,6 +905,6 @@ export async function getTeacherClassesWithDetails(teacherId: number) {
       data: classesWithDetails,
     };
   } catch (error) {
-    return handleDbError(error, 'getTeacherClassesWithDetails');
+    return handleDbError(error, "getTeacherClassesWithDetails");
   }
 }

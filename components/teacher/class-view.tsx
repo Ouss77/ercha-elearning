@@ -19,14 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Users,
-  BookOpen,
-  FolderOpen,
-  Calendar,
-  Mail,
-  Eye,
-} from "lucide-react";
+import { Users, BookOpen, FolderOpen, Calendar, Mail, Eye } from "lucide-react";
 import Image from "next/image";
 
 interface ClassData {
