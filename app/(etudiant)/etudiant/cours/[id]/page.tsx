@@ -40,8 +40,13 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const modules = await getModulesWithChaptersAndContent(courseId);
 
   // Calculate total chapters across all modules
-  const totalChapters = modules.reduce((sum, module) => sum + module.chapters.length, 0);
-  const allChapterIds = modules.flatMap(module => module.chapters.map(ch => ch.id));
+  const totalChapters = modules.reduce(
+    (sum, module) => sum + module.chapters.length,
+    0
+  );
+  const allChapterIds = modules.flatMap((module) =>
+    module.chapters.map((ch) => ch.id)
+  );
 
   // Fetch domain
   let domain = null;
@@ -69,9 +74,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
     const completedChaptersData = await db
       .select({ chapterId: chapterProgress.chapterId })
       .from(chapterProgress)
-      .where(
-        eq(chapterProgress.studentId, studentId)
-      );
+      .where(eq(chapterProgress.studentId, studentId));
 
     completedChapters = completedChaptersData
       .map((cp) => cp.chapterId)

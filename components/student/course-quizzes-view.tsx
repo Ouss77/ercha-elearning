@@ -178,7 +178,9 @@ export function CourseQuizzesView({
           size="sm"
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
           <span className="hidden sm:inline">Actualiser</span>
         </Button>
       </div>
