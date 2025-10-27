@@ -89,6 +89,7 @@ export {
   createClass,
   getAllClasses,
   getTeacherClasses,
+  getTeacherClassesWithDetails,
   getClassDetails,
   getClassStudents,
   addStudentToClass,

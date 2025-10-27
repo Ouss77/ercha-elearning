@@ -11,7 +11,7 @@
 
 import { eq, desc } from "drizzle-orm";
 import { db } from "./index";
-import { courses, domains, users, enrollments } from "@/drizzle/schema";
+import { courses, domains, users, enrollments, modules } from "@/drizzle/schema";
 import { mapCourseFromDb } from "./mappers";
 import { generateSlug, generateUniqueSlug } from "@/lib/utils/slug";
 import { createBaseQueries } from "./base-queries";
@@ -303,7 +303,7 @@ export async function getTeacherCoursesWithStats(teacherId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { chapters, chapterProgress } = await import("@/drizzle/schema");
+    const { chapters, chapterProgress, modules } = await import("@/drizzle/schema");
     const { sql } = await import("drizzle-orm");
     const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
 
@@ -325,7 +325,8 @@ export async function getTeacherCoursesWithStats(teacherId: number) {
       .from(courses)
       .leftJoin(domains, eq(courses.domainId, domains.id))
       .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
-      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(modules, eq(courses.id, modules.courseId))
+      .leftJoin(chapters, eq(modules.id, chapters.moduleId))
       .leftJoin(chapterProgress, eq(chapters.id, chapterProgress.chapterId))
       .where(eq(courses.teacherId, validId.data))
       .groupBy(
@@ -387,7 +388,8 @@ export async function getTeacherRecentActivity(teacherId: number, limit = 10) {
         FROM ${chapterProgress}
         INNER JOIN ${users} ON ${chapterProgress.studentId} = ${users.id}
         INNER JOIN ${chapters} ON ${chapterProgress.chapterId} = ${chapters.id}
-        INNER JOIN ${courses} ON ${chapters.courseId} = ${courses.id}
+        INNER JOIN ${modules} ON ${chapters.moduleId} = ${modules.id}
+        INNER JOIN ${courses} ON ${modules.courseId} = ${courses.id}
         WHERE ${courses.teacherId} = ${validId.data}
           AND ${chapterProgress.completedAt} IS NOT NULL
       )
@@ -477,7 +479,7 @@ export async function getTeacherCourseDetails(
 
     // Execute remaining queries in parallel for better performance
     const [chaptersResult, enrollmentStats, progressStats, recentEnrollments] = await Promise.all([
-      // Get chapters with their details
+      // Get chapters with their details (through modules)
       db
         .select({
           id: chapters.id,
@@ -487,7 +489,8 @@ export async function getTeacherCourseDetails(
           createdAt: chapters.createdAt,
         })
         .from(chapters)
-        .where(eq(chapters.courseId, validCourseId.data))
+        .innerJoin(modules, eq(chapters.moduleId, modules.id))
+        .where(eq(modules.courseId, validCourseId.data))
         .orderBy(chapters.orderIndex),
 
       // Get enrollment statistics
@@ -499,14 +502,15 @@ export async function getTeacherCourseDetails(
         .from(enrollments)
         .where(eq(enrollments.courseId, validCourseId.data)),
 
-      // Get progress statistics
+      // Get progress statistics (through modules)
       db
         .select({
           totalProgress: completedChapterCountSql(),
         })
         .from(chapterProgress)
         .innerJoin(chapters, eq(chapterProgress.chapterId, chapters.id))
-        .where(eq(chapters.courseId, validCourseId.data)),
+        .innerJoin(modules, eq(chapters.moduleId, modules.id))
+        .where(eq(modules.courseId, validCourseId.data)),
 
       // Get recent student enrollments
       db

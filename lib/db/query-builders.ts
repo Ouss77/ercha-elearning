@@ -17,7 +17,8 @@ import {
   chapterProgress,
   contentItems,
   classes,
-  finalProjects
+  finalProjects,
+  modules
 } from "@/drizzle/schema";
 
 /**
@@ -206,13 +207,16 @@ export function withCourse<T extends PgSelect>(query: T) {
 }
 
 /**
- * Add chapters join to a course query
+ * Add chapters join to a course query (through modules)
  * 
  * @param query - The query builder
- * @returns Query with chapters joined
+ * @returns Query with modules and chapters joined
  */
 export function withChapters<T extends PgSelect>(query: T) {
-  return query.leftJoin(chapters, eq(courses.id, chapters.courseId));
+  const { modules } = require("@/drizzle/schema");
+  return query
+    .leftJoin(modules, eq(courses.id, modules.courseId))
+    .leftJoin(chapters, eq(modules.id, chapters.moduleId));
 }
 
 /**
@@ -420,7 +424,8 @@ export function courseWithStatsBase() {
     .leftJoin(domains, eq(courses.domainId, domains.id))
     .leftJoin(users, eq(courses.teacherId, users.id))
     .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
-    .leftJoin(chapters, eq(courses.id, chapters.courseId))
+    .leftJoin(modules, eq(courses.id, modules.courseId))
+    .leftJoin(chapters, eq(modules.id, chapters.moduleId))
     .groupBy(
       courses.id,
       domains.id,
@@ -475,7 +480,7 @@ export function chapterWithContentBase() {
   return db
     .select({
       id: chapters.id,
-      courseId: chapters.courseId,
+      moduleId: chapters.moduleId,
       title: chapters.title,
       description: chapters.description,
       orderIndex: chapters.orderIndex,

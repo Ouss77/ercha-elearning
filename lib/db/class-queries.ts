@@ -811,3 +811,79 @@ export async function autoEnrollStudentInClassCourses(
     }
   });
 }
+
+/**
+ * Get teacher's classes with their courses and students
+ * 
+ * @param teacherId - The teacher's user ID
+ * @returns Result with array of classes with courses and students
+ * 
+ * @example
+ * ```typescript
+ * const result = await getTeacherClassesWithDetails(1);
+ * if (result.success) {
+ *   result.data.forEach(classItem => {
+ *     console.log(`${classItem.name}: ${classItem.studentCount} students, ${classItem.courseCount} courses`);
+ *   });
+ * }
+ * ```
+ */
+export async function getTeacherClassesWithDetails(teacherId: number) {
+  const validId = validateId(teacherId);
+  if (!validId.success) return validId as any;
+
+  try {
+    // Get all classes for the teacher
+    const classesResult = await getTeacherClasses(validId.data);
+    if (!classesResult.success) return classesResult;
+
+    const teacherClasses = classesResult.data;
+
+    // Get courses for each class
+    const classesWithDetails = await Promise.all(
+      teacherClasses.map(async (classItem) => {
+        // Get courses assigned to this class
+        const coursesData = await db
+          .select({
+            courseId: courses.id,
+            courseTitle: courses.title,
+            courseDescription: courses.description,
+            courseThumbnailUrl: courses.thumbnailUrl,
+            assignedAt: classCourses.assignedAt,
+          })
+          .from(classCourses)
+          .innerJoin(courses, eq(classCourses.courseId, courses.id))
+          .where(eq(classCourses.classId, classItem.id))
+          .orderBy(desc(classCourses.assignedAt));
+
+        // Get students in this class
+        const studentsData = await db
+          .select({
+            studentId: users.id,
+            studentName: users.name,
+            studentEmail: users.email,
+            studentAvatarUrl: users.avatarUrl,
+            enrolledAt: classEnrollments.enrolledAt,
+          })
+          .from(classEnrollments)
+          .innerJoin(users, eq(classEnrollments.studentId, users.id))
+          .where(eq(classEnrollments.classId, classItem.id))
+          .orderBy(desc(classEnrollments.enrolledAt));
+
+        return {
+          ...classItem,
+          courses: coursesData,
+          students: studentsData,
+          courseCount: coursesData.length,
+        };
+      })
+    );
+
+    return {
+      success: true,
+      data: classesWithDetails,
+    };
+  } catch (error) {
+    return handleDbError(error, 'getTeacherClassesWithDetails');
+  }
+}
