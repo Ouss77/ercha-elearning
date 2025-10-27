@@ -1,6 +1,6 @@
 /**
  * Enrollment query functions
- * 
+ *
  * This module provides database operations for managing course enrollments,
  * including CRUD operations and queries for student and course relationships.
  */
@@ -20,10 +20,10 @@ const enrollmentBaseQueries = createBaseQueries(enrollments, enrollments.id);
 
 /**
  * Get an enrollment by ID
- * 
+ *
  * @param id - The enrollment ID
  * @returns Result with the enrollment or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const result = await getEnrollmentById(1);
@@ -32,7 +32,9 @@ const enrollmentBaseQueries = createBaseQueries(enrollments, enrollments.id);
  * }
  * ```
  */
-export async function getEnrollmentById(id: number): Promise<DbResult<AppEnrollment | null>> {
+export async function getEnrollmentById(
+  id: number
+): Promise<DbResult<AppEnrollment | null>> {
   const result = await enrollmentBaseQueries.findById(id);
   if (!result.success) return result;
 
@@ -43,10 +45,10 @@ export async function getEnrollmentById(id: number): Promise<DbResult<AppEnrollm
 /**
  * Get all enrollments for a specific student with course details
  * Optimized with a single query using joins
- * 
+ *
  * @param studentId - The student's user ID
  * @returns Result with array of enrollments with course information
- * 
+ *
  * @example
  * ```typescript
  * const result = await getEnrollmentsByStudentId(5);
@@ -57,7 +59,9 @@ export async function getEnrollmentById(id: number): Promise<DbResult<AppEnrollm
  * }
  * ```
  */
-export async function getEnrollmentsByStudentId(studentId: number): Promise<DbResult<any[]>> {
+export async function getEnrollmentsByStudentId(
+  studentId: number
+): Promise<DbResult<any[]>> {
   const validId = validateId(studentId);
   if (!validId.success) return validId as any;
 
@@ -87,17 +91,17 @@ export async function getEnrollmentsByStudentId(studentId: number): Promise<DbRe
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error, 'getEnrollmentsByStudentId');
+    return handleDbError(error, "getEnrollmentsByStudentId");
   }
 }
 
 /**
  * Get all enrollments for a specific course
  * Optimized to return only necessary fields
- * 
+ *
  * @param courseId - The course ID
  * @returns Result with array of enrollments
- * 
+ *
  * @example
  * ```typescript
  * const result = await getEnrollmentsByCourseId(10);
@@ -106,11 +110,15 @@ export async function getEnrollmentsByStudentId(studentId: number): Promise<DbRe
  * }
  * ```
  */
-export async function getEnrollmentsByCourseId(courseId: number): Promise<DbResult<AppEnrollment[]>> {
+export async function getEnrollmentsByCourseId(
+  courseId: number
+): Promise<DbResult<AppEnrollment[]>> {
   const validId = validateId(courseId);
   if (!validId.success) return validId as any;
 
-  const result = await enrollmentBaseQueries.findMany(eq(enrollments.courseId, validId.data));
+  const result = await enrollmentBaseQueries.findMany(
+    eq(enrollments.courseId, validId.data)
+  );
   if (!result.success) return result;
 
   const mappedEnrollments = result.data
@@ -123,10 +131,10 @@ export async function getEnrollmentsByCourseId(courseId: number): Promise<DbResu
 /**
  * Create a new enrollment with foreign key validation
  * Validates that both student and course exist before creating enrollment
- * 
+ *
  * @param data - Enrollment data with studentId and courseId
  * @returns Result with the created enrollment
- * 
+ *
  * @example
  * ```typescript
  * const result = await createEnrollment({
@@ -150,10 +158,20 @@ export async function createEnrollment(data: {
   if (!validCourseId.success) return validCourseId as any;
 
   // Validate foreign key references
-  const studentExists = await validateForeignKey(users, users.id, validStudentId.data, 'studentId');
+  const studentExists = await validateForeignKey(
+    users,
+    users.id,
+    validStudentId.data,
+    "studentId"
+  );
   if (!studentExists.success) return studentExists as any;
 
-  const courseExists = await validateForeignKey(courses, courses.id, validCourseId.data, 'courseId');
+  const courseExists = await validateForeignKey(
+    courses,
+    courses.id,
+    validCourseId.data,
+    "courseId"
+  );
   if (!courseExists.success) return courseExists as any;
 
   // Validate that the course is active
@@ -167,11 +185,11 @@ export async function createEnrollment(data: {
     if (course.length === 0 || !course[0].isActive) {
       return {
         success: false,
-        error: 'Cannot enroll in an inactive course',
+        error: "Cannot enroll in an inactive course",
       } as any;
     }
   } catch (error) {
-    return handleDbError(error, 'createEnrollment');
+    return handleDbError(error, "createEnrollment");
   }
 
   // Create the enrollment
@@ -186,20 +204,19 @@ export async function createEnrollment(data: {
   return { success: true, data: mappedEnrollment };
 }
 
-
 /**
  * Get student enrolled courses with progress statistics
  * Uses query composition to build complex query from reusable fragments
- * 
+ *
  * @param studentId - The student ID
  * @returns Result with enrolled courses and progress data
- * 
+ *
  * @performance
  * - Complexity: O(n) where n = number of enrollments
  * - Uses joins to avoid N+1 queries
  * - Aggregates chapter progress at database level
  * - Recommended: Cache results for frequently accessed students (5-minute TTL)
- * 
+ *
  * @example
  * ```typescript
  * const result = await getStudentEnrolledCoursesWithProgress(studentId);
@@ -215,9 +232,13 @@ export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
   if (!validId.success) return validId as any;
 
   try {
-    const { domains, chapters, chapterProgress } = await import("@/drizzle/schema");
-    const { and } = await import("drizzle-orm");
-    const { chapterCountSql, completedChapterCountSql } = await import("./query-builders");
+    const { domains, chapters, chapterProgress, modules } = await import(
+      "@/drizzle/schema"
+    );
+    const { and, sql } = await import("drizzle-orm");
+    const { chapterCountSql, completedChapterCountSql } = await import(
+      "./query-builders"
+    );
 
     const result = await db
       .select({
@@ -235,12 +256,16 @@ export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
         teacherName: users.name,
         totalChapters: chapterCountSql(),
         completedChapters: completedChapterCountSql(),
+        totalModules: sql<number>`COUNT(DISTINCT ${modules.id})`.as(
+          "total_modules"
+        ),
       })
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id))
       .leftJoin(domains, eq(courses.domainId, domains.id))
       .leftJoin(users, eq(courses.teacherId, users.id))
-      .leftJoin(chapters, eq(courses.id, chapters.courseId))
+      .leftJoin(modules, eq(modules.courseId, courses.id))
+      .leftJoin(chapters, eq(chapters.moduleId, modules.id))
       .leftJoin(
         chapterProgress,
         and(
@@ -267,6 +292,6 @@ export async function getStudentEnrolledCoursesWithProgress(studentId: number) {
 
     return { success: true, data: result };
   } catch (error) {
-    return handleDbError(error, 'getStudentEnrolledCoursesWithProgress');
+    return handleDbError(error, "getStudentEnrolledCoursesWithProgress");
   }
 }

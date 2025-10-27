@@ -25,6 +25,7 @@ interface Course {
   progress: number;
   totalChapters: number;
   completedChapters: number;
+  totalModules?: number; // New field for module count
   lastAccessed?: string;
   isCompleted: boolean;
 }
@@ -90,7 +91,15 @@ export function CourseCard({ course }: CourseCardProps) {
             {course.domain}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            {course.completedChapters}/{course.totalChapters} chapitres
+            {course.totalModules ? (
+              <>
+                {course.totalModules} module{course.totalModules > 1 ? "s" : ""}
+              </>
+            ) : (
+              <>
+                {course.completedChapters}/{course.totalChapters} modules
+              </>
+            )}
           </span>
         </div>
         <CardTitle className="text-lg line-clamp-1">{course.title}</CardTitle>

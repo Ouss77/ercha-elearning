@@ -31,6 +31,7 @@ interface StudentDashboardProps {
     teacherName: string | null;
     totalChapters: number;
     completedChapters: number;
+    totalModules: number;
   }>;
 }
 
@@ -45,6 +46,7 @@ interface Course {
   progress: number;
   totalChapters: number;
   completedChapters: number;
+  totalModules?: number;
   lastAccessed?: string;
   isCompleted: boolean;
 }
@@ -75,6 +77,7 @@ export function StudentDashboard({
         progress,
         totalChapters: enrollment.totalChapters,
         completedChapters: enrollment.completedChapters,
+        totalModules: enrollment.totalModules,
         lastAccessed: enrollment.enrolledAt.toISOString().split("T")[0],
         isCompleted: enrollment.completedAt !== null,
       };
